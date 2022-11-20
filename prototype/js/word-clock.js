@@ -1,7 +1,7 @@
   // Change the strings below to reflect your planned grid.
   // Make sure all strings are the same length.
   // Any spaces will be replaced with random characters from RANDCHARS.
-  // 11x15
+  // 16x16
   var row_strs = [
     " ÉSÓN VORA      ",
     " UN DOS TRES    ",
@@ -26,7 +26,7 @@
   // Code below replaces spaces in the text grid above with random chars.
   // This is easier than adding random chars manually when you're experimenting.
   // Change RANDCHARS if you want a different set of letters in your grid."
-  var RANDCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%&";
+  var RANDCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   for (r = 0; r < NUM_ROWS; r++) {
     chars = row_strs[r].split('');
     for (var c = 0; c < chars.length; c++) {
