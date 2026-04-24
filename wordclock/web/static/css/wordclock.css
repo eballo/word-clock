@@ -1,0 +1,111 @@
+/* Word Clock Simulator — dark style
+   Evolved from the original prototype by Enric Ballo */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0a0a0a;
+  color: #fff;
+  font-family: 'Courier New', Courier, monospace;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1.2rem;
+  padding: 2rem 1rem;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  color: #333;
+  text-transform: uppercase;
+}
+
+/* ── Grid ─────────────────────────────────────────────────────────── */
+
+.word-clock {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 2px;
+  background: #000;
+  padding: 1.2rem;
+  border-radius: 6px;
+  border: 1px solid #1a1a1a;
+  width: min(96vw, 580px);
+}
+
+.tile {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(8px, 2vw, 18px);
+  font-weight: 700;
+  color: #1c1c1c;
+  border-radius: 2px;
+  transition: color 0.25s ease, text-shadow 0.25s ease;
+  user-select: none;
+}
+
+.tile.on {
+  color: #fff;
+  text-shadow:
+    0 0 6px rgba(255, 200, 80, 0.8),
+    0 0 18px rgba(255, 150, 20, 0.4);
+}
+
+/* ── Sentence ─────────────────────────────────────────────────────── */
+
+.sentence {
+  font-size: clamp(10px, 1.6vw, 14px);
+  color: #444;
+  letter-spacing: 0.1em;
+  text-align: center;
+  min-height: 1.5em;
+}
+
+/* ── Controls ─────────────────────────────────────────────────────── */
+
+.controls { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+
+.controls-time {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.controls label { font-size: 11px; color: #444; }
+
+.controls input[type="number"] {
+  width: 50px;
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 3px;
+  color: #ccc;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 5px 6px;
+  text-align: center;
+}
+.controls input[type="number"]:focus { outline: none; border-color: #555; }
+.controls input::-webkit-inner-spin-button,
+.controls input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+.controls button {
+  background: transparent;
+  border: 1px solid #222;
+  border-radius: 3px;
+  color: #555;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 5px 12px;
+  transition: border-color 0.15s, color 0.15s;
+}
+.controls button:hover { border-color: #666; color: #ccc; }
+.controls button:active { transform: scale(0.97); }
