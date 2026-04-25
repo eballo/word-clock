@@ -83,6 +83,7 @@ jobs:
           OLD=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
           bump2version --no-commit --no-tag --current-version "$OLD" ${{ steps.bump.outputs.level }}
           NEW=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          sed -i "s/version-${OLD}-blue/version-${NEW}-blue/g" README.md
           echo "old_version=$OLD" >> "$GITHUB_OUTPUT"
           echo "new_version=$NEW" >> "$GITHUB_OUTPUT"
 
