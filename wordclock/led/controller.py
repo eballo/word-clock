@@ -18,23 +18,27 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
-DEFAULT_LED_COUNT  = 256
-DEFAULT_LED_PIN    = 18
+DEFAULT_LED_COUNT = 256
+DEFAULT_LED_PIN = 18
 DEFAULT_BRIGHTNESS = 128
-DEFAULT_FREQ_HZ    = 800_000
-DEFAULT_DMA        = 10
+DEFAULT_FREQ_HZ = 800_000
+DEFAULT_DMA = 10
 
 
 _DEFAULT_COLOR = (255, 200, 50)
-_ANSI_BOLD  = "\033[1m"
-_ANSI_DIM   = "\033[2m"
+_ANSI_BOLD = "\033[1m"
+_ANSI_DIM = "\033[2m"
 _ANSI_RESET = "\033[0m"
 
 
 class BaseLedController(ABC):
-
-    def __init__(self, num_leds: int = DEFAULT_LED_COUNT, brightness: int = DEFAULT_BRIGHTNESS, grid: list[str] | None = None):
-        self.num_leds   = num_leds
+    def __init__(
+        self,
+        num_leds: int = DEFAULT_LED_COUNT,
+        brightness: int = DEFAULT_BRIGHTNESS,
+        grid: list[str] | None = None,
+    ):
+        self.num_leds = num_leds
         self.brightness = brightness
         self._grid = grid
         self._pixels: list[tuple[int, int, int]] = [(0, 0, 0)] * num_leds
@@ -70,9 +74,14 @@ class BaseLedController(ABC):
 
 
 class RealLedController(BaseLedController):
-
-    def __init__(self, num_leds=DEFAULT_LED_COUNT, brightness=DEFAULT_BRIGHTNESS,
-                 pin=DEFAULT_LED_PIN, freq_hz=DEFAULT_FREQ_HZ, dma=DEFAULT_DMA):
+    def __init__(
+        self,
+        num_leds=DEFAULT_LED_COUNT,
+        brightness=DEFAULT_BRIGHTNESS,
+        pin=DEFAULT_LED_PIN,
+        freq_hz=DEFAULT_FREQ_HZ,
+        dma=DEFAULT_DMA,
+    ):
         super().__init__(num_leds, brightness)
         self._pin, self._freq_hz, self._dma = pin, freq_hz, dma
         self._strip = None
@@ -80,19 +89,28 @@ class RealLedController(BaseLedController):
     def begin(self) -> None:
         try:
             from rpi_ws281x import PixelStrip  # type: ignore[import]
+
             self._strip = PixelStrip(
-                self.num_leds, self._pin, self._freq_hz,
-                self._dma, False, self.brightness, 0,
+                self.num_leds,
+                self._pin,
+                self._freq_hz,
+                self._dma,
+                False,
+                self.brightness,
+                0,
             )
             self._strip.begin()
             logger.info("RealLedController ready (%d LEDs, GPIO%d)", self.num_leds, self._pin)
         except ImportError as e:
-            raise RuntimeError("rpi-ws281x not installed. Run: uv pip install 'wordclock[rpi]'") from e
+            raise RuntimeError(
+                "rpi-ws281x not installed. Run: uv pip install 'wordclock[rpi]'"
+            ) from e
 
     def show(self) -> None:
         if not self._strip:
             return
         from rpi_ws281x import Color  # type: ignore[import]
+
         for i, (r, g, b) in enumerate(self._pixels):
             self._strip.setPixelColor(i, Color(r, g, b))
         self._strip.show()
@@ -103,7 +121,6 @@ class RealLedController(BaseLedController):
 
 
 class MockLedController(BaseLedController):
-
     def begin(self) -> None:
         logger.info("MockLedController ready (%d LEDs)", self.num_leds)
 
@@ -113,6 +130,7 @@ class MockLedController(BaseLedController):
 
     def clear(self) -> None:
         self._pixels = [(0, 0, 0)] * self.num_leds
+        logger.info("LEDs cleared")
 
     def display_leds(
         self,
@@ -142,9 +160,6 @@ class MockLedController(BaseLedController):
                     line.append(f"{_ANSI_DIM}{ch}{_ANSI_RESET}")
             print("".join(line))
         print()
-
-    def clear(self) -> None:
-        logger.info("LEDs cleared")
 
 
 def create_controller(mock: bool = False, **kwargs) -> BaseLedController:

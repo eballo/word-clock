@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from argparse import ArgumentParser
 from datetime import datetime
-from logging import basicConfig, getLogger, DEBUG, INFO
+from logging import DEBUG, INFO, basicConfig, getLogger
 
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
@@ -15,8 +15,12 @@ SUPPORTED_LANGUAGES = ("english",)
 def _get_layout(lang: str):
     if lang == "english":
         from wordclock.layouts.english import (
-            build_display_grid, get_leds_for_time, NUM_ROWS, NUM_COLS
+            NUM_COLS,
+            NUM_ROWS,
+            build_display_grid,
+            get_leds_for_time,
         )
+
         return build_display_grid, get_leds_for_time, NUM_ROWS, NUM_COLS
     raise ValueError(f"Unsupported language: {lang}")
 
@@ -57,12 +61,14 @@ def create_app(led_controller=None) -> Flask:
 
         _, _, num_rows, num_cols = _get_layout(lang)
         grid = app.config["GRIDS"][lang]
-        return jsonify({
-            "language": lang,
-            "rows": num_rows,
-            "cols": num_cols,
-            "grid": [list(row) for row in grid],
-        })
+        return jsonify(
+            {
+                "language": lang,
+                "rows": num_rows,
+                "cols": num_cols,
+                "grid": [list(row) for row in grid],
+            }
+        )
 
     @app.get("/api/time")
     def get_time():
@@ -87,14 +93,16 @@ def create_app(led_controller=None) -> Flask:
         result = get_leds(h, m, grid=grid)
         _push_leds(result["led_indices"])
 
-        return jsonify({
-            "language":    lang,
-            "hours":       result["hours"],
-            "minutes":     result["minutes"],
-            "sentence":    result["sentence"],
-            "coords":      result["coords"],
-            "led_indices": result["led_indices"],
-        })
+        return jsonify(
+            {
+                "language": lang,
+                "hours": result["hours"],
+                "minutes": result["minutes"],
+                "sentence": result["sentence"],
+                "coords": result["coords"],
+                "led_indices": result["led_indices"],
+            }
+        )
 
     @app.post("/api/brightness")
     def set_brightness():
@@ -124,6 +132,7 @@ def main() -> None:
     )
 
     from wordclock.led.controller import create_controller
+
     ctrl = create_controller(mock=args.mock)
     app = create_app(led_controller=ctrl)
     logger.info("Wordclock API → http://%s:%d", args.host, args.port)

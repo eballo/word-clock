@@ -1,16 +1,17 @@
 """Unit tests — English layout."""
 
 import pytest
+
 from wordclock.layouts.english import (
-    GRID_RAW, NUM_ROWS, NUM_COLS,
-    time_to_sentence,
-    sentence_to_coords,
+    NUM_COLS,
+    NUM_ROWS,
     get_leds_for_time,
+    sentence_to_coords,
+    time_to_sentence,
 )
 
 
 class TestTimeToSentence:
-
     def test_oclock(self):
         assert "OCLOCK" in time_to_sentence(10, 0)
 
@@ -68,16 +69,13 @@ class TestTimeToSentence:
             s = time_to_sentence(h, 0)
             assert s.startswith("IT IS"), f"Failed for hour {h}: {s}"
 
-    @pytest.mark.parametrize("h,m", [
-        (h, m) for h in range(24) for m in range(0, 60, 5)
-    ])
+    @pytest.mark.parametrize("h,m", [(h, m) for h in range(24) for m in range(0, 60, 5)])
     def test_all_times_generate_sentence(self, h, m):
         s = time_to_sentence(h, m)
         assert len(s) > 0
 
 
 class TestSentenceToCoords:
-
     def test_coords_in_range(self):
         coords = sentence_to_coords("IT IS TEN OCLOCK")
         for row, col in coords:
@@ -90,11 +88,10 @@ class TestSentenceToCoords:
 
     def test_finds_it_is(self):
         coords = sentence_to_coords("IT IS")
-        assert len(coords) == 4   # I T I S
+        assert len(coords) == 4  # I T I S
 
 
 class TestGetLedsForTime:
-
     def test_returns_correct_keys(self):
         result = get_leds_for_time(10, 0)
         assert all(k in result for k in ("sentence", "coords", "led_indices", "hours", "minutes"))

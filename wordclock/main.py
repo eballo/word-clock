@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from argparse import ArgumentParser
 from datetime import datetime
-from logging import basicConfig, getLogger, INFO, DEBUG
+from logging import DEBUG, INFO, basicConfig, getLogger
 from time import sleep
 
 logger = getLogger(__name__)
@@ -43,19 +43,18 @@ def run_clock(
 
 def main() -> None:
     parser = ArgumentParser(description="Wordclock — LED word clock")
-    parser.add_argument("--lang",       default="english", choices=["english"])
-    parser.add_argument("--mock",       action="store_true", help="Simulated LEDs")
+    parser.add_argument("--lang", default="english", choices=["english"])
+    parser.add_argument("--mock", action="store_true", help="Simulated LEDs")
     parser.add_argument("--brightness", type=int, default=128)
-    parser.add_argument("--interval",   type=int, default=30)
-    parser.add_argument("--debug",      action="store_true")
+    parser.add_argument("--interval", type=int, default=30)
+    parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
     basicConfig(
         level=DEBUG if args.debug else INFO,
         format="%(asctime)s %(levelname)-8s %(name)s — %(message)s",
     )
-    run_clock(lang=args.lang, mock=args.mock,
-              brightness=args.brightness, interval=args.interval)
+    run_clock(lang=args.lang, mock=args.mock, brightness=args.brightness, interval=args.interval)
 
 
 if __name__ == "__main__":

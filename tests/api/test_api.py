@@ -1,6 +1,7 @@
 """Integration tests — Flask API."""
 
 import pytest
+
 from wordclock.api.app import create_app
 
 

@@ -66,33 +66,33 @@ NUM_COLS: int = len(GRID_RAW[0])
 # Vocabulary
 # ---------------------------------------------------------------------------
 HOUR_WORDS: list[str] = [
-    "TWELVE",   # 0 / 12
-    "ONE",      # 1
-    "TWO",      # 2
-    "THREE",    # 3
-    "FOUR",     # 4
-    "FIVE",     # 5
-    "SIX",      # 6
-    "SEVEN",    # 7
-    "EIGHT",    # 8
-    "NINE",     # 9
-    "TEN",      # 10
-    "ELEVEN",   # 11
+    "TWELVE",  # 0 / 12
+    "ONE",  # 1
+    "TWO",  # 2
+    "THREE",  # 3
+    "FOUR",  # 4
+    "FIVE",  # 5
+    "SIX",  # 6
+    "SEVEN",  # 7
+    "EIGHT",  # 8
+    "NINE",  # 9
+    "TEN",  # 10
+    "ELEVEN",  # 11
 ]
 
 MINUTE_WORDS: list[str] = [
-    "OCLOCK",           # 0  :00
-    "FIVE PAST",        # 1  :05
-    "TEN PAST",         # 2  :10
-    "A QUARTER PAST",   # 3  :15
-    "TWENTY PAST",      # 4  :20
-    "TWENTY FIVE PAST", # 5  :25
-    "HALF PAST",        # 6  :30
-    "TWENTY FIVE TO",   # 7  :35
-    "TWENTY TO",        # 8  :40
-    "A QUARTER TO",     # 9  :45
-    "TEN TO",           # 10 :50
-    "FIVE TO",          # 11 :55
+    "OCLOCK",  # 0  :00
+    "FIVE PAST",  # 1  :05
+    "TEN PAST",  # 2  :10
+    "A QUARTER PAST",  # 3  :15
+    "TWENTY PAST",  # 4  :20
+    "TWENTY FIVE PAST",  # 5  :25
+    "HALF PAST",  # 6  :30
+    "TWENTY FIVE TO",  # 7  :35
+    "TWENTY TO",  # 8  :40
+    "A QUARTER TO",  # 9  :45
+    "TEN TO",  # 10 :50
+    "FIVE TO",  # 11 :55
 ]
 
 _NEXT_HOUR: frozenset[int] = frozenset(range(7, 12))  # :35 → :55
@@ -220,11 +220,11 @@ def get_leds_for_time(
     coords = sentence_to_coords(sentence, grid)
     led_indices = coords_to_led_indices(coords, snake=snake)
     return {
-        "sentence":    sentence,
-        "coords":      coords,
+        "sentence": sentence,
+        "coords": coords,
         "led_indices": led_indices,
-        "hours":       hours,
-        "minutes":     minutes,
+        "hours": hours,
+        "minutes": minutes,
     }
 
 
@@ -233,9 +233,19 @@ def get_leds_for_time(
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     cases = [
-        (12,  0), (1,   0), (3,   5), (6,  10),
-        (10, 15), (8,  20), (4,  25), (7,  30),
-        (11, 35), (2,  40), (9,  45), (5,  50), (3, 55),
+        (12, 0),
+        (1, 0),
+        (3, 5),
+        (6, 10),
+        (10, 15),
+        (8, 20),
+        (4, 25),
+        (7, 30),
+        (11, 35),
+        (2, 40),
+        (9, 45),
+        (5, 50),
+        (3, 55),
     ]
     print("=" * 55)
     print("  English word clock — layout test")
