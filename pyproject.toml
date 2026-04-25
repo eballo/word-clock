@@ -1,0 +1,47 @@
+[project]
+name = "wordclock"
+version = "0.1.0"
+description = "Rellotge de paraules en català amb LEDs WS2812B (Raspberry Pi)"
+readme = "README.md"
+license = { text = "GPL-3.0" }
+requires-python = ">=3.13"
+authors = [{ name = "Enric Ballo" }]
+
+dependencies = [
+    "aiofiles>=24.0",
+    "fastapi>=0.115",
+    "jinja2>=3.1",
+    "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+rpi = [
+    "rpi-ws281x>=5.0",
+]
+dev = [
+    "httpx>=0.27",
+    "pre-commit>=4.0",
+    "pytest>=8.0",
+    "pytest-cov>=6.0",
+    "ruff>=0.9",
+]
+
+[project.scripts]
+wordclock       = "wordclock.main:main"
+wordclock-api   = "wordclock.api.app:main"
+wordclock-serve = "wordclock.main:main_serve"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts   = "--cov=wordclock --cov-report=term-missing -v"

@@ -5,7 +5,7 @@
 The software stack runs entirely on the Raspberry Pi. It consists of:
 
 - **Raspberry Pi OS Lite** — headless operating system
-- **Python 3.11+** — managed by `uv`
+- **Python 3.13+** — managed by `uv`
 - **wordclock** — the Python package (LED control, time logic)
 - **Flask API** — serves the web interface and REST endpoints
 - **systemd** — keeps the clock running automatically on boot

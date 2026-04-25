@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Word Clock Simulator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/wordclock.css">
+</head>
+<body>
+  <main>
+    <h1 class="title">Word Clock</h1>
+    <div id="word-clock" class="word-clock" aria-label="Word clock display"></div>
+    <p id="sentence" class="sentence" aria-live="polite"></p>
+    <div class="controls">
+      <div class="controls-time">
+        <label for="hour-input">H</label>
+        <input id="hour-input" type="number" min="0" max="23" placeholder="HH">
+        <label for="min-input">M</label>
+        <input id="min-input" type="number" min="0" max="59" placeholder="MM">
+        <button id="btn-set">Set</button>
+        <button id="btn-now">Now</button>
+        <button id="btn-demo">Demo</button>
+      </div>
+    </div>
+  </main>
+  <script src="/static/js/wordclock.js"></script>
+</body>
+</html>
