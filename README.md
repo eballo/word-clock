@@ -9,7 +9,7 @@ in different languages without any hardware changes.
 ```
 word-clock/
 ├── prototype/    # Browser-based JavaScript simulator to validate the grid layout
-├── wordclock/    # Python package — LED control, time logic, Flask API and web UI
+├── wordclock/    # Python package — LED control, time logic, FastAPI and web UI
 ├── tests/        # Unit and integration tests
 ├── docs/         # Step-by-step build documentation
 └── README.md
