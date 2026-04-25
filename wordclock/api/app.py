@@ -3,13 +3,20 @@ from __future__ import annotations
 from argparse import ArgumentParser
 from datetime import datetime
 from logging import DEBUG, INFO, basicConfig, getLogger
+from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request
-from flask_cors import CORS
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 
 logger = getLogger(__name__)
 
 SUPPORTED_LANGUAGES = ("english",)
+
+_WEB_DIR = Path(__file__).parent.parent / "web"
 
 
 def _get_layout(lang: str):
@@ -20,106 +27,94 @@ def _get_layout(lang: str):
             build_display_grid,
             get_leds_for_time,
         )
-
         return build_display_grid, get_leds_for_time, NUM_ROWS, NUM_COLS
     raise ValueError(f"Unsupported language: {lang}")
 
 
-def create_app(led_controller=None) -> Flask:
-    app = Flask(
-        __name__,
-        template_folder="../web/templates",
-        static_folder="../web/static",
+class BrightnessRequest(BaseModel):
+    brightness: int
+
+
+def create_app(led_controller=None) -> FastAPI:
+    app = FastAPI()
+    app.add_middleware(
+        CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
     )
-    CORS(app)
-    app.config["LED_CONTROLLER"] = led_controller
-    # Pre-build one grid per language
-    app.config["GRIDS"] = {
-        "english": _get_layout("english")[0](),
-    }
+    app.state.led_controller = led_controller
+    app.state.grids = {"english": _get_layout("english")[0]()}
+
+    templates = Jinja2Templates(directory=_WEB_DIR / "templates")
+    app.mount("/static", StaticFiles(directory=_WEB_DIR / "static"), name="static")
 
     def _push_leds(indices: list[int]) -> None:
-        ctrl = app.config.get("LED_CONTROLLER")
+        ctrl = app.state.led_controller
         if ctrl:
             ctrl.display_leds(indices)
 
-    # ── Web ────────────────────────────────────────────────────────────
-    @app.get("/")
-    def index():
-        return render_template("index.html")
+    @app.get("/", response_class=HTMLResponse)
+    def index(request: Request):
+        return templates.TemplateResponse(request, "index.html")
 
-    # ── API ────────────────────────────────────────────────────────────
     @app.get("/api/health")
     def health():
-        return jsonify({"status": "ok", "version": "0.1.0"})
+        return {"status": "ok", "version": "0.1.0"}
 
     @app.get("/api/grid")
-    def get_grid():
-        lang = request.args.get("lang", "english")
+    def get_grid(lang: str = "english"):
         if lang not in SUPPORTED_LANGUAGES:
-            return jsonify({"error": f"Unknown language: {lang}"}), 400
-
+            raise HTTPException(status_code=400, detail=f"Unknown language: {lang}")
         _, _, num_rows, num_cols = _get_layout(lang)
-        grid = app.config["GRIDS"][lang]
-        return jsonify(
-            {
-                "language": lang,
-                "rows": num_rows,
-                "cols": num_cols,
-                "grid": [list(row) for row in grid],
-            }
-        )
+        grid = app.state.grids[lang]
+        return {
+            "language": lang,
+            "rows": num_rows,
+            "cols": num_cols,
+            "grid": [list(row) for row in grid],
+        }
 
     @app.get("/api/time")
-    def get_time():
-        lang = request.args.get("lang", "english")
+    def get_time(lang: str = "english", h: int | None = None, m: int | None = None):
         if lang not in SUPPORTED_LANGUAGES:
-            return jsonify({"error": f"Unknown language: {lang}"}), 400
-
-        try:
-            now = datetime.now()
-            h = int(request.args.get("h", now.hour))
-            m = int(request.args.get("m", now.minute))
-        except (ValueError, TypeError):
-            return jsonify({"error": "h and m must be integers"}), 400
-
+            raise HTTPException(status_code=400, detail=f"Unknown language: {lang}")
+        now = datetime.now()
+        h = h if h is not None else now.hour
+        m = m if m is not None else now.minute
         if not (0 <= h <= 23):
-            return jsonify({"error": "h must be 0-23"}), 400
+            raise HTTPException(status_code=400, detail="h must be 0-23")
         if not (0 <= m <= 59):
-            return jsonify({"error": "m must be 0-59"}), 400
-
+            raise HTTPException(status_code=400, detail="m must be 0-59")
         _, get_leds, _, _ = _get_layout(lang)
-        grid = app.config["GRIDS"][lang]
+        grid = app.state.grids[lang]
         result = get_leds(h, m, grid=grid)
         _push_leds(result["led_indices"])
-
-        return jsonify(
-            {
-                "language": lang,
-                "hours": result["hours"],
-                "minutes": result["minutes"],
-                "sentence": result["sentence"],
-                "coords": result["coords"],
-                "led_indices": result["led_indices"],
-            }
-        )
+        return {
+            "language": lang,
+            "hours": result["hours"],
+            "minutes": result["minutes"],
+            "sentence": result["sentence"],
+            "coords": result["coords"],
+            "led_indices": result["led_indices"],
+        }
 
     @app.post("/api/brightness")
-    def set_brightness():
-        data = request.get_json(silent=True) or {}
-        brightness = data.get("brightness")
-        if not isinstance(brightness, int) or not (0 <= brightness <= 255):
-            return jsonify({"error": "brightness must be an integer 0-255"}), 400
-        ctrl = app.config.get("LED_CONTROLLER")
+    def set_brightness(body: BrightnessRequest):
+        if not (0 <= body.brightness <= 255):
+            raise HTTPException(status_code=400, detail="brightness must be an integer 0-255")
+        ctrl = app.state.led_controller
         if ctrl:
-            ctrl.brightness = brightness
-        return jsonify({"brightness": brightness})
+            ctrl.brightness = body.brightness
+        return {"brightness": body.brightness}
 
     return app
 
 
+def _run_app(app: FastAPI, host: str, port: int, debug: bool) -> None:
+    import uvicorn
+    uvicorn.run(app, host=host, port=port, log_level="debug" if debug else "info")
+
+
 def main() -> None:
-    parser = ArgumentParser(description="Wordclock Flask API")
+    parser = ArgumentParser(description="Wordclock API server")
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", "-p", default=5000, type=int)
     parser.add_argument("--mock", action="store_true")
@@ -136,7 +131,7 @@ def main() -> None:
     ctrl = create_controller(mock=args.mock)
     app = create_app(led_controller=ctrl)
     logger.info("Wordclock API → http://%s:%d", args.host, args.port)
-    app.run(host=args.host, port=args.port, debug=args.debug, use_reloader=False)
+    _run_app(app, host=args.host, port=args.port, debug=args.debug)
 
 
 if __name__ == "__main__":

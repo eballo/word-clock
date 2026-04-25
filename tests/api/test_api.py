@@ -1,6 +1,7 @@
-"""Integration tests — Flask API."""
+"""Integration tests — FastAPI."""
 
 import pytest
+from fastapi.testclient import TestClient
 
 from wordclock.api.app import create_app
 
@@ -8,8 +9,7 @@ from wordclock.api.app import create_app
 @pytest.fixture()
 def client():
     app = create_app(led_controller=None)
-    app.config["TESTING"] = True
-    with app.test_client() as c:
+    with TestClient(app) as c:
         yield c
 
 
@@ -17,14 +17,14 @@ class TestHealth:
     def test_health_ok(self, client):
         r = client.get("/api/health")
         assert r.status_code == 200
-        assert r.get_json()["status"] == "ok"
+        assert r.json()["status"] == "ok"
 
 
 class TestGrid:
     def test_grid_default_language(self, client):
         r = client.get("/api/grid")
         assert r.status_code == 200
-        data = r.get_json()
+        data = r.json()
         assert data["rows"] == 16
         assert data["cols"] == 16
         assert len(data["grid"]) == 16
@@ -38,7 +38,7 @@ class TestTime:
     def test_current_time(self, client):
         r = client.get("/api/time")
         assert r.status_code == 200
-        data = r.get_json()
+        data = r.json()
         assert "sentence" in data
         assert "coords" in data
         assert "led_indices" in data
@@ -46,7 +46,7 @@ class TestTime:
     def test_specific_time(self, client):
         r = client.get("/api/time?h=10&m=15")
         assert r.status_code == 200
-        data = r.get_json()
+        data = r.json()
         assert "QUARTER" in data["sentence"]
         assert "PAST" in data["sentence"]
 
@@ -67,7 +67,7 @@ class TestBrightness:
     def test_set_brightness(self, client):
         r = client.post("/api/brightness", json={"brightness": 100})
         assert r.status_code == 200
-        assert r.get_json()["brightness"] == 100
+        assert r.json()["brightness"] == 100
 
     def test_invalid_brightness(self, client):
         r = client.post("/api/brightness", json={"brightness": 300})
