@@ -49,14 +49,19 @@ jobs:
                            -H "Accept: application/vnd.github+json" \
                            "https://api.github.com/repos/$REPO/commits/$SHA/pulls")
           SRC_BRANCH=$(printf '%s' "$PR_JSON" | jq -r '.[0].head.ref // empty')
+          PR_TITLE=$(printf '%s' "$PR_JSON" | jq -r '.[0].title // empty')
 
           if [ -z "$SRC_BRANCH" ]; then
             MERGE_MSG=$(git log -1 --pretty=%B)
             SRC_FULL=$(printf '%s' "$MERGE_MSG" | sed -n 's/.*from \([^ ]*\).*/\1/p')
             SRC_BRANCH="${SRC_FULL#*/}"
           fi
+          if [ -z "$PR_TITLE" ]; then
+            PR_TITLE=$(git log -1 --pretty=%s)
+          fi
 
           echo "Source branch: ${SRC_BRANCH:-<unknown>}"
+          echo "PR title: ${PR_TITLE:-<unknown>}"
 
           case "$SRC_BRANCH" in
             fix/*)   LEVEL=patch ;;
@@ -65,6 +70,11 @@ jobs:
           esac
 
           echo "level=$LEVEL" >> "$GITHUB_OUTPUT"
+          {
+            echo "pr_title<<EOF"
+            echo "$PR_TITLE"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Bump version
         id: version
@@ -76,10 +86,41 @@ jobs:
           echo "old_version=$OLD" >> "$GITHUB_OUTPUT"
           echo "new_version=$NEW" >> "$GITHUB_OUTPUT"
 
+      - name: Update release log
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
+          PR_TITLE: ${{ steps.bump.outputs.pr_title }}
+        run: |
+          python - <<'PY'
+          import os
+          from datetime import date
+          from pathlib import Path
+
+          path = Path("docs/release.md")
+          version = os.environ["NEW_VERSION"].strip()
+          description = (os.environ.get("PR_TITLE", "").strip() or "—")
+          today = date.today().isoformat()
+
+          text = path.read_text(encoding="utf-8")
+          new_row = f"| v{version} | {today} | {description} |\n"
+          lines = text.splitlines(keepends=True)
+          insert_at = next(i for i, l in enumerate(lines) if l.startswith("|---"))
+          lines.insert(insert_at + 1, new_row)
+          path.write_text("".join(lines), encoding="utf-8")
+          PY
+
       - name: Commit, tag and push
         run: |
           set -euo pipefail
-          git add pyproject.toml
+          git add pyproject.toml README.md docs/release.md
           git commit -m "Bump version: ${{ steps.version.outputs.old_version }} -> ${{ steps.version.outputs.new_version }}"
           git tag "v${{ steps.version.outputs.new_version }}"
           git push --follow-tags origin main
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.version.outputs.new_version }}" \
+            --title "v${{ steps.version.outputs.new_version }}" \
+            --generate-notes
