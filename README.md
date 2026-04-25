@@ -39,6 +39,10 @@ to build and how I am thinking about it. Things will change as I learn.
 - Set up the Raspberry Pi and configure it to run the clock automatically on boot
 - Design and 3D-print the front panel with the letter grid
 
+## Releases
+
+See [docs/release.md](docs/release.md) for the full release history.
+
 ## Reference/Useful links
 
 - [rpi_wordclock](https://github.com/bk1285/rpi_wordclock) — inspiration for the software and API design
