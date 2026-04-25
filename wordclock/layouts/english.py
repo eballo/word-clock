@@ -250,6 +250,9 @@ if __name__ == "__main__":
     print("=" * 55)
     print("  English word clock — layout test")
     print("=" * 55)
+    print()
+    print(f"{'TIME':<8} | {'SENTENCE'}")
+    print("-" * 40)
     for h, m in cases:
-        r = get_leds_for_time(h, m)
-        print(f"  {h:02d}:{m:02d}  →  {r['sentence']}")
+        res = get_leds_for_time(h, m)
+        print(f"{h:02d}:{m:02d}    | {res['sentence']}")

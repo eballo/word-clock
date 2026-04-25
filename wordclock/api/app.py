@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 logger = getLogger(__name__)
 
-SUPPORTED_LANGUAGES = ("english",)
+SUPPORTED_LANGUAGES = ("english", "catalan", "spanish")
 
 _WEB_DIR = Path(__file__).parent.parent / "web"
 
@@ -22,6 +22,24 @@ _WEB_DIR = Path(__file__).parent.parent / "web"
 def _get_layout(lang: str):
     if lang == "english":
         from wordclock.layouts.english import (
+            NUM_COLS,
+            NUM_ROWS,
+            build_display_grid,
+            get_leds_for_time,
+        )
+
+        return build_display_grid, get_leds_for_time, NUM_ROWS, NUM_COLS
+    elif lang == "catalan":
+        from wordclock.layouts.catalan import (
+            NUM_COLS,
+            NUM_ROWS,
+            build_display_grid,
+            get_leds_for_time,
+        )
+
+        return build_display_grid, get_leds_for_time, NUM_ROWS, NUM_COLS
+    elif lang == "spanish":
+        from wordclock.layouts.spanish import (
             NUM_COLS,
             NUM_ROWS,
             build_display_grid,
@@ -42,7 +60,7 @@ def create_app(led_controller=None) -> FastAPI:
         CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
     )
     app.state.led_controller = led_controller
-    app.state.grids = {"english": _get_layout("english")[0]()}
+    app.state.grids = {lang: _get_layout(lang)[0]() for lang in SUPPORTED_LANGUAGES}
 
     templates = Jinja2Templates(directory=_WEB_DIR / "templates")
     app.mount("/static", StaticFiles(directory=_WEB_DIR / "static"), name="static")
@@ -64,6 +82,7 @@ def create_app(led_controller=None) -> FastAPI:
     def get_grid(lang: str = "english"):
         if lang not in SUPPORTED_LANGUAGES:
             raise HTTPException(status_code=400, detail=f"Unknown language: {lang}")
+        logger.debug("Fetching grid for language: %s", lang)
         _, _, num_rows, num_cols = _get_layout(lang)
         grid = app.state.grids[lang]
         return {
@@ -77,6 +96,7 @@ def create_app(led_controller=None) -> FastAPI:
     def get_time(lang: str = "english", h: int | None = None, m: int | None = None):
         if lang not in SUPPORTED_LANGUAGES:
             raise HTTPException(status_code=400, detail=f"Unknown language: {lang}")
+        logger.debug("Fetching time for language: %s, h: %s, m: %s", lang, h, m)
         now = datetime.now()
         h = h if h is not None else now.hour
         m = m if m is not None else now.minute
