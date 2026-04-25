@@ -116,7 +116,7 @@ jobs:
           git add pyproject.toml README.md docs/release.md
           git commit -m "Bump version: ${{ steps.version.outputs.old_version }} -> ${{ steps.version.outputs.new_version }}"
           git tag "v${{ steps.version.outputs.new_version }}"
-          git push --follow-tags origin main
+          git push origin main "v${{ steps.version.outputs.new_version }}"
 
       - name: Create GitHub Release
         env:
