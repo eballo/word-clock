@@ -13,7 +13,7 @@ Front panel: 3D-printed, opaque black, interchangeable per language.
 Primary language: English. Catalan planned next.
 
 **Stack:**
-- Python 3.11+, managed by `uv`
+- Python 3.13+, managed by `uv`
 - FastAPI + uvicorn (API + web simulator)
 - jinja2 + aiofiles (templates + static files)
 - rpi-ws281x (Raspberry Pi only, optional extra)
@@ -43,7 +43,6 @@ word-clock/
 │   └── CLAUDE.md       # This file
 ├── .pre-commit-config.yaml
 ├── pyproject.toml
-├── .python-version     # 3.11
 ├── .gitignore
 └── README.md
 ```

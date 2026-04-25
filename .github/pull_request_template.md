@@ -1,4 +1,4 @@
-## Overview
+## WordClock - Overview
 
 Briefly describe what this pull request accomplishes and what impact it aims to achieve.
 Include the main changes introduced and any relevant background information.
