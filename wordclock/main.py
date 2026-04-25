@@ -72,6 +72,7 @@ def serve(
     logger.info("Wordclock API → http://%s:%d", host, port)
     app = create_app(led_controller=ctrl)
     from wordclock.api.app import _run_app
+
     _run_app(app, host=host, port=port, debug=debug)
 
 

@@ -27,6 +27,7 @@ def _get_layout(lang: str):
             build_display_grid,
             get_leds_for_time,
         )
+
         return build_display_grid, get_leds_for_time, NUM_ROWS, NUM_COLS
     raise ValueError(f"Unsupported language: {lang}")
 
@@ -110,6 +111,7 @@ def create_app(led_controller=None) -> FastAPI:
 
 def _run_app(app: FastAPI, host: str, port: int, debug: bool) -> None:
     import uvicorn
+
     uvicorn.run(app, host=host, port=port, log_level="debug" if debug else "info")
 
 
