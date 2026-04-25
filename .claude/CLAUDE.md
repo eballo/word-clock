@@ -1,6 +1,6 @@
 # Word Clock — Project Skill
 
-Read this file before writing any documentation, Flask API code, or Python
+Read this file before writing any documentation, API code, or Python
 for this project. It captures all conventions agreed during development.
 
 ---
@@ -14,9 +14,10 @@ Primary language: English. Catalan planned next.
 
 **Stack:**
 - Python 3.11+, managed by `uv`
-- Flask 3.x + flask-cors (API + web simulator)
+- FastAPI + uvicorn (API + web simulator)
+- jinja2 + aiofiles (templates + static files)
 - rpi-ws281x (Raspberry Pi only, optional extra)
-- pytest + pytest-cov + ruff (dev)
+- pytest + pytest-cov + ruff + pre-commit (dev)
 
 ---
 
@@ -28,18 +29,19 @@ word-clock/
 ├── wordclock/          # Python package
 │   ├── layouts/        # One file per language (english.py, catalan.py…)
 │   ├── led/            # LED controller (real + mock)
-│   ├── api/            # Flask API (app.py)
+│   ├── api/            # FastAPI app (app.py)
 │   ├── web/            # Templates + static (CSS, JS)
 │   │   ├── templates/index.html
 │   │   └── static/{css,js}/wordclock.*
 │   ├── __init__.py
-│   └── main.py         # Clock loop entry point
+│   └── main.py         # Clock loop + serve entry points
 ├── tests/
-│   ├── unit/           # test_<layout>.py
-│   └── integration/    # test_api.py
+│   ├── layouts/        # test_english_layout.py, test_catalan_layout.py…
+│   └── api/            # test_api.py
 ├── docs/               # Numbered markdown docs (see below)
 ├── .claude/
-│   └── SKILL.md        # This file
+│   └── CLAUDE.md       # This file
+├── .pre-commit-config.yaml
 ├── pyproject.toml
 ├── .python-version     # 3.11
 ├── .gitignore
@@ -98,7 +100,7 @@ One short paragraph summarising what this doc covers.
 
 ---
 
-## Flask API conventions
+## API conventions (wordclock/api/app.py)
 
 ### App factory
 Always use `create_app(led_controller=None)` factory pattern.
@@ -126,9 +128,9 @@ All responses return JSON. Success:
 }
 ```
 
-Error:
+Error (FastAPI `HTTPException`):
 ```json
-{"error": "h must be 0-23"}
+{"detail": "h must be 0-23"}
 ```
 
 ### HTTP status codes
@@ -141,22 +143,23 @@ Languages are validated against `SUPPORTED_LANGUAGES = ("english",)`.
 To add a new language: add to the tuple and add a branch in `_get_layout()`.
 
 ### CORS
-Always enable with `CORS(app)` — needed for the web simulator.
+Always enable with `CORSMiddleware` — needed for the web simulator.
 
 ---
 
 ## Layout conventions (wordclock/layouts/)
 
 ### Grid design rules
-- **Filler character is `.`** (dot) — never use a letter that appears in a
+- **Filler character is `x` (lowercase)** — never use a letter that appears in a
   real word as filler, to avoid `build_display_grid()` corrupting words.
+  Exception: uppercase `X` is a real letter (e.g. in SIX) and must be preserved.
 - All rows must be exactly `NUM_COLS` characters (16).
 - Words must be findable left-to-right within a single row.
 - Comment each row with the words it contains.
 
 ### build_display_grid()
-Replaces `.` with random uppercase letters. Accepts an optional `seed` for
-deterministic output in tests.
+Replaces lowercase `x` with random uppercase letters. Accepts an optional `seed`
+for deterministic output in tests.
 
 ### time_to_sentence()
 Returns a sentence in ALL CAPS, e.g. `"IT IS A QUARTER PAST TEN"`.
@@ -183,18 +186,16 @@ Main entry point. Returns:
 ## LED controller conventions
 
 ### MockLedController
-- Accepts `_grid: list[str]` injected by `main.py` after `build_display_grid()`.
-- `show()` prints the full grid: active letters **UPPERCASE**, inactive lowercase,
-  surrounded by a `┌─┐ │ │ └─┘` border.
+- Accepts `grid: list[str]` passed via `create_controller(grid=grid)`.
+- `display_leds()` logs the active indices and prints the grid with ANSI
+  bold (active letters) and ANSI dim (inactive letters).
 - Use `logger.info` for the LED count, `print()` for the grid itself.
 
 ### main.py
-Always inject the grid after creating the controller:
+Always pass the grid when creating the controller in mock mode:
 ```python
 grid = build_display_grid()
-ctrl = create_controller(mock=mock)
-if hasattr(ctrl, "_grid"):
-    ctrl._grid = grid
+ctrl = create_controller(mock=mock, brightness=brightness, grid=grid if mock else None)
 ```
 
 ### create_controller()
@@ -207,7 +208,8 @@ if hasattr(ctrl, "_grid"):
 
 - `from __future__ import annotations` at the top of every module.
 - Type hints everywhere (return types, parameters).
-- `logger = logging.getLogger(__name__)` in every module.
+- Specific imports: `from logging import getLogger` not `import logging`.
+- `logger = getLogger(__name__)` in every module.
 - No bare `except` — always catch specific exceptions.
 - Constants in `UPPER_SNAKE_CASE`, including `frozenset`.
 - Docstrings on all public functions with `Args:` and `Returns:` sections.
@@ -216,21 +218,22 @@ if hasattr(ctrl, "_grid"):
 
 ## Test conventions
 
-### Unit tests (tests/unit/)
+### Layout tests (tests/layouts/)
 - One file per layout: `test_english_layout.py`, `test_catalan_layout.py`.
 - Group tests in classes: `TestTimeToSentence`, `TestSentenceToCoords`,
   `TestGetLedsForTime`.
 - Always include a parametrized test that covers all 24×12 time combinations.
 
-### Integration tests (tests/integration/test_api.py)
-- Use `create_app(led_controller=None)` with `TESTING=True`.
+### API tests (tests/api/test_api.py)
+- Use `create_app(led_controller=None)` with FastAPI `TestClient`.
 - Test all endpoints: health, grid, time (valid + invalid), brightness.
 - Assert both status code and response body.
+- Use `r.json()` (not `r.get_json()`).
 
 ### Running tests
 ```bash
 uv run pytest                    # all tests with coverage
-uv run pytest tests/unit/        # unit only
+uv run pytest tests/layouts/     # layout tests only
 uv run pytest -k "test_six"      # filter by name
 ```
 
@@ -241,8 +244,10 @@ uv run pytest -k "test_six"      # filter by name
 ```bash
 uv sync --extra dev              # install all dev dependencies
 uv run wordclock --mock --debug  # run clock loop with grid display
-uv run wordclock-api --mock      # run Flask API + web simulator
+uv run wordclock-api --mock      # run FastAPI + web simulator
+uv run wordclock-serve --mock    # run clock loop + API together
 uv run pytest                    # run tests
 uv run ruff check .              # lint
 uv run ruff format .             # format
+uv run pre-commit run --all-files  # run all pre-commit hooks manually
 ```
