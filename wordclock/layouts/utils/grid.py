@@ -1,5 +1,3 @@
-"""Pure grid-manipulation utilities."""
-
 from __future__ import annotations
 
 from random import Random

@@ -1,20 +1,26 @@
-"""Layout registry — maps language names to their layout modules."""
-
 from __future__ import annotations
 
 import importlib
+from enum import StrEnum
 
 from wordclock.layouts.base import LayoutModule
 
-SUPPORTED_LANGUAGES: tuple[str, ...] = ("english", "catalan", "spanish")
+
+class Language(StrEnum):
+    english = "english"
+    catalan = "catalan"
+    spanish = "spanish"
 
 
-def get_layout(lang: str) -> LayoutModule:
+SUPPORTED_LANGUAGES: tuple[str, ...] = tuple(lang.value for lang in Language)
+
+
+def get_layout(lang: str | Language) -> LayoutModule:
     """
     Return the layout module for *lang*.
 
     Args:
-        lang: Language name, must be one of :data:`SUPPORTED_LANGUAGES`.
+        lang: Language name or :class:`Language` enum value.
 
     Returns:
         The layout module satisfying the :class:`~wordclock.layouts.base.LayoutModule` protocol.
@@ -22,6 +28,7 @@ def get_layout(lang: str) -> LayoutModule:
     Raises:
         ValueError: If *lang* is not a supported language.
     """
-    if lang not in SUPPORTED_LANGUAGES:
+    key = lang.value if isinstance(lang, Language) else lang
+    if key not in SUPPORTED_LANGUAGES:
         raise ValueError(f"Unknown language: {lang!r}")
-    return importlib.import_module(f"wordclock.layouts.{lang}")  # type: ignore[return-value]
+    return importlib.import_module(f"wordclock.layouts.{key}")  # type: ignore[return-value]

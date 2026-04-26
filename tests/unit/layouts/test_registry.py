@@ -1,5 +1,3 @@
-"""Unit tests — layout registry."""
-
 from __future__ import annotations
 
 import pytest

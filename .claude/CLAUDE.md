@@ -15,6 +15,7 @@ Supported languages: English, Catalan, Spanish.
 **Stack:**
 - Python 3.13+, managed by `uv`
 - FastAPI + uvicorn (API + web simulator)
+- Typer (CLI — `wordclock` and `wordclock-generate` entry points)
 - jinja2 + aiofiles (templates + static files)
 - rpi-ws281x (Raspberry Pi only, optional extra)
 - pytest + pytest-cov + ruff + pre-commit (dev)

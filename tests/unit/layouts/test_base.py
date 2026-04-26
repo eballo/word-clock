@@ -1,5 +1,3 @@
-"""Unit tests — shared base functions (create_layout, coords_to_led_indices)."""
-
 from __future__ import annotations
 
 from wordclock.layouts.base import coords_to_led_indices

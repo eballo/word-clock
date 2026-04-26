@@ -1,5 +1,3 @@
-"""Shared utilities for word-clock layout modules."""
-
 from __future__ import annotations
 
 from wordclock.layouts.utils.cli import main

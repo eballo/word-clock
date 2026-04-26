@@ -16,9 +16,10 @@ from __future__ import annotations
 
 import wordclock.layouts.base as base
 from wordclock.layouts.base import LedResult
+from wordclock.layouts.registry import Language
 from wordclock.layouts.utils import load_grid
 
-GRID_RAW: list[str] = load_grid("spanish")
+GRID_RAW: list[str] = load_grid(Language.spanish)
 
 NUM_ROWS: int = len(GRID_RAW)
 NUM_COLS: int = len(GRID_RAW[0])
@@ -103,20 +104,6 @@ def sentence_to_coords(sentence: str, grid: list[str] | None = None) -> list[tup
     )
 
 
-def coords_to_led_indices(coords: list[tuple[int, int]], snake: bool = True) -> list[int]:
-    """
-    Convert ``(row, col)`` pairs to absolute LED indices.
-
-    Args:
-        coords: List of ``(row, col)`` pairs.
-        snake: Apply snake wiring. Default ``True``.
-
-    Returns:
-        List of integer LED indices.
-    """
-    return base.coords_to_led_indices(coords, NUM_COLS, snake=snake)
-
-
 def get_leds_for_time(
     hours: int,
     minutes: int,
@@ -135,31 +122,13 @@ def get_leds_for_time(
     Returns:
         :class:`~wordclock.layouts.base.LedResult` dict.
     """
-    sentence = time_to_sentence(hours, minutes)
-    coords = sentence_to_coords(sentence, grid)
-    led_indices = coords_to_led_indices(coords, snake=snake)
-    return LedResult(
-        sentence=sentence,
-        coords=coords,
-        led_indices=led_indices,
-        hours=hours,
-        minutes=minutes,
+    return base.build_leds_for_time(
+        hours,
+        minutes,
+        grid=grid if grid is not None else GRID_RAW,
+        num_rows=NUM_ROWS,
+        num_cols=NUM_COLS,
+        time_to_sentence_fn=time_to_sentence,
+        normalize=_NORMALIZE,
+        snake=snake,
     )
-
-
-if __name__ == "__main__":
-    cases = [
-        (1, 0),
-        (2, 15),
-        (10, 30),
-        (4, 45),
-        (12, 50),
-    ]
-    print("=" * 55)
-    print("  Spanish word clock — layout test")
-    print("=" * 55)
-    print(f"\n{'TIME':<8} | {'SENTENCE'}")
-    print("-" * 40)
-    for h, m in cases:
-        res = get_leds_for_time(h, m)
-        print(f"{h:02d}:{m:02d}    | {res['sentence']}")

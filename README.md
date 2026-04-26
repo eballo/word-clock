@@ -4,18 +4,28 @@
 
 > **🚧 Work in progress** — this project is under active development and not yet complete.
 
-[![CI](https://github.com/eballo/word-clock/actions/workflows/ci.yml/badge.svg)](https://github.com/eballo/word-clock/actions/workflows/ci.yml) [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](#) [![Python](https://img.shields.io/badge/python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/) [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](LICENSE)
+[![CI](https://github.com/eballo/word-clock/actions/workflows/ci.yml/badge.svg)](https://github.com/eballo/word-clock/actions/workflows/ci.yml) [![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](#) [![Python](https://img.shields.io/badge/python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/) [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![Typer](https://img.shields.io/badge/Typer-000000?logo=python&logoColor=white)](https://typer.tiangolo.com/) [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](LICENSE)
 
 A 65 × 65 cm word clock with a 16 × 16 LED matrix (256 LEDs) driven by a Raspberry Pi.
 The front panel is 3D-printed and interchangeable, allowing the clock to display time
 in different languages without any hardware changes.
+
+## Motivation
+
+I love the look of word clocks and have wanted one for a long time. The problem is that
+most of the ones I found — whether commercial or open-source — are in English or German.
+I wanted one in Catalan, and I could not find it anywhere.
+
+So I decided to build my own. This project documents the full process step by step: the
+hardware, the software, the 3D-printed panel, and everything in between. I am not an expert
+in any of these areas, so things will change as I experiment and learn.
 
 ## Repository structure
 
 ```
 word-clock/
 ├── prototype/    # Browser-based JavaScript simulator to validate the grid layout
-├── wordclock/    # Python package — LED control, time logic, FastAPI and web UI
+├── wordclock/    # Python package — LED control, time logic, FastAPI + Typer CLI and web UI
 ├── tests/        # Unit and integration tests
 ├── docs/         # Step-by-step build documentation
 └── README.md

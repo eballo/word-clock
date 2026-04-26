@@ -1,23 +1,30 @@
-"""FastAPI route handlers."""
-
 from __future__ import annotations
 
 from datetime import datetime
+from importlib.metadata import version
 from logging import getLogger
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from wordclock.layouts.registry import SUPPORTED_LANGUAGES, get_layout
+from wordclock.api.schemas import BrightnessResponse, GridResponse, HealthResponse, TimeResponse
+from wordclock.layouts.registry import Language, get_layout
 
 logger = getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(prefix="/api")
 
 
 class BrightnessRequest(BaseModel):
     brightness: int
+
+
+def _resolve_lang(lang: str) -> Language:
+    try:
+        return Language(lang)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Unknown language: {lang}")
 
 
 def _push_leds(request: Request, indices: list[int]) -> None:
@@ -31,36 +38,34 @@ def index(request: Request) -> HTMLResponse:
     return request.app.state.templates.TemplateResponse(request, "index.html")
 
 
-@router.get("/api/health")
-def health() -> dict:
-    return {"status": "ok", "version": "0.1.0"}
+@router.get("/health", response_model=HealthResponse)
+def health() -> HealthResponse:
+    return HealthResponse(status="ok", version=version("wordclock"))
 
 
-@router.get("/api/grid")
-def get_grid(request: Request, lang: str = "english") -> dict:
-    if lang not in SUPPORTED_LANGUAGES:
-        raise HTTPException(status_code=400, detail=f"Unknown language: {lang}")
-    logger.debug("Fetching grid for language: %s", lang)
-    layout = get_layout(lang)
-    grid = request.app.state.grids[lang]
-    return {
-        "language": lang,
-        "rows": layout.NUM_ROWS,
-        "cols": layout.NUM_COLS,
-        "grid": [list(row) for row in grid],
-    }
+@router.get("/grid", response_model=GridResponse)
+def get_grid(request: Request, lang: str = "english") -> GridResponse:
+    lang_enum = _resolve_lang(lang)
+    logger.debug("Fetching grid for language: %s", lang_enum.value)
+    grid = request.app.state.grids[lang_enum.value]
+    rows, cols = request.app.state.dims[lang_enum.value]
+    return GridResponse(
+        language=lang_enum.value,
+        rows=rows,
+        cols=cols,
+        grid=[list(row) for row in grid],
+    )
 
 
-@router.get("/api/time")
+@router.get("/time", response_model=TimeResponse)
 def get_time(
     request: Request,
     lang: str = "english",
     h: int | None = None,
     m: int | None = None,
-) -> dict:
-    if lang not in SUPPORTED_LANGUAGES:
-        raise HTTPException(status_code=400, detail=f"Unknown language: {lang}")
-    logger.debug("Fetching time for language: %s, h: %s, m: %s", lang, h, m)
+) -> TimeResponse:
+    lang_enum = _resolve_lang(lang)
+    logger.debug("Fetching time for language: %s, h: %s, m: %s", lang_enum.value, h, m)
     now = datetime.now()
     h = h if h is not None else now.hour
     m = m if m is not None else now.minute
@@ -68,25 +73,25 @@ def get_time(
         raise HTTPException(status_code=400, detail="h must be 0-23")
     if not (0 <= m <= 59):
         raise HTTPException(status_code=400, detail="m must be 0-59")
-    layout = get_layout(lang)
-    grid = request.app.state.grids[lang]
+    layout = get_layout(lang_enum)
+    grid = request.app.state.grids[lang_enum.value]
     result = layout.get_leds_for_time(h, m, grid=grid)
     _push_leds(request, result["led_indices"])
-    return {
-        "language": lang,
-        "hours": result["hours"],
-        "minutes": result["minutes"],
-        "sentence": result["sentence"],
-        "coords": result["coords"],
-        "led_indices": result["led_indices"],
-    }
+    return TimeResponse(
+        language=lang_enum.value,
+        hours=result["hours"],
+        minutes=result["minutes"],
+        sentence=result["sentence"],
+        coords=result["coords"],
+        led_indices=result["led_indices"],
+    )
 
 
-@router.post("/api/brightness")
-def set_brightness(request: Request, body: BrightnessRequest) -> dict:
+@router.post("/brightness", response_model=BrightnessResponse)
+def set_brightness(request: Request, body: BrightnessRequest) -> BrightnessResponse:
     if not (0 <= body.brightness <= 255):
         raise HTTPException(status_code=400, detail="brightness must be an integer 0-255")
     ctrl = request.app.state.led_controller
     if ctrl:
         ctrl.brightness = body.brightness
-    return {"brightness": body.brightness}
+    return BrightnessResponse(brightness=body.brightness)

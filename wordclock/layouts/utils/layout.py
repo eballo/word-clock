@@ -1,5 +1,3 @@
-"""Layout class and module-level convenience wrappers."""
-
 from __future__ import annotations
 
 import json
@@ -21,8 +19,9 @@ class Layout:
         Args:
             name: Layout name matching a file in ``data/`` (e.g. ``"english"``).
         """
-        self.name = name
-        self._path: Path = _DATA_DIR / f"{name}.json"
+        key = name.value if hasattr(name, "value") else name
+        self.name = key
+        self._path: Path = _DATA_DIR / f"{key}.json"
         self._data: dict = json.loads(self._path.read_text(encoding="utf-8"))
 
     @classmethod
