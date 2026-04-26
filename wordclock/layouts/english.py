@@ -1,21 +1,8 @@
 """
 English layout 16x16 (256 LEDs, snake wiring).
 
-Grid:
-     0123456789012345
-  0: ITKISASxTIMExxxx
-  1: TWENTYxFIVExxxxx
-  2: HALFxAQUARTERxxx
-  3: PASTxTENxTOxMINx
-  4: ONExxTWOxTHREExx
-  5: FOURxFIVExSIXNIx  (X uppercase = real letter; x lowercase = filler)
-  6: SEVENxEIGHTxNINx
-  7: ExxxxTENxELEVENx
-  8: NINExTWELVExxxxx
-  9: OCLOCKxxxxxxxxxx
- 10: XXXXXXXXXXXXXXXX
- ...
- 15: XXXXXXXXXXXXXXXX
+Raw grid is defined in data/english.json.
+GRID_RAW is the final display matrix produced once at import time.
 
 Time sentences:
   X:00  → IT IS <HOUR> OCLOCK
@@ -34,100 +21,58 @@ Time sentences:
 
 from __future__ import annotations
 
-from random import Random
-from string import ascii_uppercase
+import wordclock.layouts.base as base
+from wordclock.layouts.base import LedResult
+from wordclock.layouts.utils import load_grid
 
-# ---------------------------------------------------------------------------
-# Grid
-# ---------------------------------------------------------------------------
-GRID_RAW: list[str] = [
-    "ITKISASxTIMExxxx",  #  0  IT IS
-    "TWENTYxFIVExxxxx",  #  1  TWENTY FIVE
-    "HALFxAQUARTERxxx",  #  2  HALF A QUARTER
-    "PASTxTENxTOxMINx",  #  3  PAST TEN TO
-    "ONExxTWOxTHREExx",  #  4  ONE TWO THREE
-    "FOURxFIVExSIXNIx",  #  5  FOUR FIVE SIX  (X in SIX is a real letter)
-    "SEVENxEIGHTxNINx",  #  6  SEVEN EIGHT NIN
-    "ExxxxTENxELEVENx",  #  7  E(NINE) TEN ELEVEN
-    "NINExTWELVExxxxx",  #  8  NINE TWELVE
-    "OCLOCKxxxxxxxxxx",  #  9  OCLOCK
-    "xxxxxxxxxxxxxxxx",  # 10
-    "xxxxxxxxxxxxxxxx",  # 11
-    "xxxxxxxxxxxxxxxx",  # 12
-    "xxxxxxxxxxxxxxxx",  # 13
-    "xxxxxxxxxxxxxxxx",  # 14
-    "xxxxxxxxxxxxxxxx",  # 15
-]
+GRID_RAW: list[str] = load_grid("english")
 
 NUM_ROWS: int = len(GRID_RAW)
 NUM_COLS: int = len(GRID_RAW[0])
 
-# ---------------------------------------------------------------------------
-# Vocabulary
-# ---------------------------------------------------------------------------
 HOUR_WORDS: list[str] = [
-    "TWELVE",  # 0 / 12
-    "ONE",  # 1
-    "TWO",  # 2
-    "THREE",  # 3
-    "FOUR",  # 4
-    "FIVE",  # 5
-    "SIX",  # 6
-    "SEVEN",  # 7
-    "EIGHT",  # 8
-    "NINE",  # 9
-    "TEN",  # 10
-    "ELEVEN",  # 11
+    "TWELVE",
+    "ONE",
+    "TWO",
+    "THREE",
+    "FOUR",
+    "FIVE",
+    "SIX",
+    "SEVEN",
+    "EIGHT",
+    "NINE",
+    "TEN",
+    "ELEVEN",
 ]
 
 MINUTE_WORDS: list[str] = [
-    "OCLOCK",  # 0  :00
-    "FIVE PAST",  # 1  :05
-    "TEN PAST",  # 2  :10
-    "A QUARTER PAST",  # 3  :15
-    "TWENTY PAST",  # 4  :20
-    "TWENTY FIVE PAST",  # 5  :25
-    "HALF PAST",  # 6  :30
-    "TWENTY FIVE TO",  # 7  :35
-    "TWENTY TO",  # 8  :40
-    "A QUARTER TO",  # 9  :45
-    "TEN TO",  # 10 :50
-    "FIVE TO",  # 11 :55
+    "OCLOCK",
+    "FIVE PAST",
+    "TEN PAST",
+    "A QUARTER PAST",
+    "TWENTY PAST",
+    "TWENTY FIVE PAST",
+    "HALF PAST",
+    "TWENTY FIVE TO",
+    "TWENTY TO",
+    "A QUARTER TO",
+    "TEN TO",
+    "FIVE TO",
 ]
 
 _NEXT_HOUR: frozenset[int] = frozenset(range(7, 12))  # :35 → :55
 
 
-# ---------------------------------------------------------------------------
-# Display grid (random filler letters)
-# ---------------------------------------------------------------------------
-def build_display_grid(seed: int | None = None) -> list[str]:
-    """Replace X and space fillers with random uppercase letters."""
-    rng = Random(seed)
-    rows: list[str] = []
-    for row in GRID_RAW:
-        chars = list(row)
-        for i, ch in enumerate(chars):
-            if ch in ("x", " "):
-                chars[i] = rng.choice(ascii_uppercase)
-        rows.append("".join(chars))
-    return rows
-
-
-# ---------------------------------------------------------------------------
-# Time → sentence
-# ---------------------------------------------------------------------------
 def time_to_sentence(hours: int, minutes: int) -> str:
     """
     Convert hours (0-23) and minutes (0-59) to an English word clock sentence.
 
-    Examples:
-        >>> time_to_sentence(10, 0)
-        'IT IS TEN OCLOCK'
-        >>> time_to_sentence(10, 15)
-        'IT IS A QUARTER PAST TEN'
-        >>> time_to_sentence(10, 45)
-        'IT IS A QUARTER TO ELEVEN'
+    Args:
+        hours: Hour value 0-23.
+        minutes: Minute value 0-59.
+
+    Returns:
+        Sentence in ALL CAPS, e.g. ``"IT IS A QUARTER PAST TEN"``.
     """
     minute_index = minutes // 5
     h = hours % 12
@@ -139,98 +84,71 @@ def time_to_sentence(hours: int, minutes: int) -> str:
 
     if minute_index == 0:
         return f"IT IS {hour_word} {minute_phrase}"
-    else:
-        return f"IT IS {minute_phrase} {hour_word}"
+    return f"IT IS {minute_phrase} {hour_word}"
 
 
-# ---------------------------------------------------------------------------
-# Sentence → grid coordinates
-# ---------------------------------------------------------------------------
-def sentence_to_coords(
-    sentence: str,
-    grid: list[str] | None = None,
-) -> list[tuple[int, int]]:
+def sentence_to_coords(sentence: str, grid: list[str] | None = None) -> list[tuple[int, int]]:
     """
-    Find each word of the sentence in the grid (left-to-right, top-to-bottom)
-    and return the (row, col) coordinates of every lit letter.
+    Find each word of *sentence* in *grid* and return ``(row, col)`` pairs.
 
-    Uses the same sequential search logic as the original JS prototype.
+    Args:
+        sentence: ALL-CAPS sentence from :func:`time_to_sentence`.
+        grid: Grid to search; defaults to :data:`GRID_RAW`.
+
+    Returns:
+        List of ``(row, col)`` pairs for every lit letter.
     """
-    if grid is None:
-        grid = GRID_RAW
-
-    coords: list[tuple[int, int]] = []
-    search_row = 0
-    search_col = 0
-
-    for word in sentence.split():
-        for row_idx in range(search_row, NUM_ROWS):
-            col_start = search_col if row_idx == search_row else 0
-            col_idx = grid[row_idx].find(word, col_start)
-            if col_idx != -1:
-                for offset in range(len(word)):
-                    coords.append((row_idx, col_idx + offset))
-                search_row = row_idx
-                search_col = col_idx + len(word)
-                break
-
-    return coords
+    return base.sentence_to_coords(
+        sentence,
+        GRID_RAW if grid is None else grid,
+        NUM_ROWS,
+    )
 
 
-# ---------------------------------------------------------------------------
-# Coordinates → LED indices (snake wiring)
-# ---------------------------------------------------------------------------
-def coords_to_led_indices(
-    coords: list[tuple[int, int]],
-    snake: bool = True,
-) -> list[int]:
-    """Convert (row, col) pairs to absolute LED indices."""
-    indices: list[int] = []
-    for row, col in coords:
-        if snake and row % 2 == 1:
-            idx = row * NUM_COLS + (NUM_COLS - 1 - col)
-        else:
-            idx = row * NUM_COLS + col
-        indices.append(idx)
-    return indices
+def coords_to_led_indices(coords: list[tuple[int, int]], snake: bool = True) -> list[int]:
+    """
+    Convert ``(row, col)`` pairs to absolute LED indices.
+
+    Args:
+        coords: List of ``(row, col)`` pairs.
+        snake: Apply snake wiring. Default ``True``.
+
+    Returns:
+        List of integer LED indices.
+    """
+    return base.coords_to_led_indices(coords, NUM_COLS, snake=snake)
 
 
-# ---------------------------------------------------------------------------
-# Main entry point
-# ---------------------------------------------------------------------------
 def get_leds_for_time(
     hours: int,
     minutes: int,
     grid: list[str] | None = None,
     snake: bool = True,
-) -> dict:
+) -> LedResult:
     """
     Return everything needed to update the display for a given time.
 
+    Args:
+        hours: Hour value 0-23.
+        minutes: Minute value 0-59.
+        grid: Grid to search; defaults to :data:`GRID_RAW`.
+        snake: Apply snake wiring. Default ``True``.
+
     Returns:
-        {
-          "sentence":    "IT IS A QUARTER PAST TEN",
-          "coords":      [(row, col), ...],
-          "led_indices": [42, 43, ...],
-          "hours":       10,
-          "minutes":     15,
-        }
+        :class:`~wordclock.layouts.base.LedResult` dict.
     """
     sentence = time_to_sentence(hours, minutes)
     coords = sentence_to_coords(sentence, grid)
     led_indices = coords_to_led_indices(coords, snake=snake)
-    return {
-        "sentence": sentence,
-        "coords": coords,
-        "led_indices": led_indices,
-        "hours": hours,
-        "minutes": minutes,
-    }
+    return LedResult(
+        sentence=sentence,
+        coords=coords,
+        led_indices=led_indices,
+        hours=hours,
+        minutes=minutes,
+    )
 
 
-# ---------------------------------------------------------------------------
-# Quick CLI test
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     cases = [
         (12, 0),
@@ -250,8 +168,7 @@ if __name__ == "__main__":
     print("=" * 55)
     print("  English word clock — layout test")
     print("=" * 55)
-    print()
-    print(f"{'TIME':<8} | {'SENTENCE'}")
+    print(f"\n{'TIME':<8} | {'SENTENCE'}")
     print("-" * 40)
     for h, m in cases:
         res = get_leds_for_time(h, m)

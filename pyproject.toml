@@ -27,9 +27,10 @@ dev = [
 ]
 
 [project.scripts]
-wordclock       = "wordclock.main:main"
-wordclock-api   = "wordclock.api.app:main"
-wordclock-serve = "wordclock.main:main_serve"
+wordclock          = "wordclock.main:main"
+wordclock-api      = "wordclock.api.app:main"
+wordclock-serve    = "wordclock.main:main_serve"
+wordclock-generate = "wordclock.layouts.utils:main"
 
 [build-system]
 requires = ["hatchling"]
