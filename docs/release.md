@@ -2,6 +2,7 @@
 
 | Version | Date       | Description         |
 |---------|------------|---------------------|
+| v0.6.0 | 2026-04-26 | [#19] Cleaning the house |
 | v0.5.0 | 2026-04-26 | [#17] Extract configuration into json |
 | v0.4.1 | 2026-04-26 | Fix move assets to docs |
 | v0.4.0 | 2026-04-25 | [#11] Add spanish and catalan layout initial version |
