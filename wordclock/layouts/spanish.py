@@ -1,29 +1,30 @@
+"""
+Spanish layout 16x16 (256 LEDs, snake wiring).
+
+Raw grid is defined in data/spanish.json.
+GRID_RAW is the final display matrix produced once at import time.
+
+Time sentences use the Spanish Y/MENOS system:
+  X:00  → ES/SON LA/LAS <HOUR> EN PUNTO
+  X:15  → ES/SON LA/LAS <HOUR> Y CUARTO
+  X:30  → ES/SON LA/LAS <HOUR> Y MEDIA
+  X:35  → ES/SON LA/LAS <HOUR+1> MENOS VEINTICINCO
+  X:45  → ES/SON LA/LAS <HOUR+1> MENOS CUARTO
+"""
+
 from __future__ import annotations
 
-from random import Random
-from string import ascii_uppercase
+import wordclock.layouts.base as base
+from wordclock.layouts.base import LedResult
+from wordclock.layouts.utils import load_grid
 
-GRID_RAW: list[str] = [
-    "ESONxLASxLAxxxxx",
-    "UNAxDOSxTRESxxxx",
-    "CUATROxCINCOxxxx",
-    "SEISxSIETExOCHOx",
-    "NUEVExDIExONCExx",
-    "DOCExYxMENOSxxxx",
-    "CUARTOxVEINTExxx",
-    "CINCOxDIEZxxxxxx",
-    "MEDIAxxxxxxxxxxx",
-    "ENxPUNTOxxxxxxxx",
-    "xxxxxxxxxxxxxxxx",
-    "xxxxxxxxxxxxxxxx",
-    "xxxxxxxxxxxxxxxx",
-    "xxxxxxxxxxxxxxxx",
-    "xxxxxxxxxxxxxxxx",
-    "xxxxxxxxxxxxxxxx",
-]
+GRID_RAW: list[str] = load_grid("spanish")
 
-NUM_ROWS = 16
-NUM_COLS = 16
+NUM_ROWS: int = len(GRID_RAW)
+NUM_COLS: int = len(GRID_RAW[0])
+
+# "VEINTICINCO" does not fit in a single row; split before searching
+_NORMALIZE: dict[str, str] = {"VEINTICINCO": "VEINTE CINCO"}
 
 HOUR_WORDS: list[str] = [
     "DOCE",
@@ -40,26 +41,38 @@ HOUR_WORDS: list[str] = [
     "ONCE",
 ]
 
+_MINUS_MINUTES: frozenset[int] = frozenset({35, 40, 45, 50, 55})
 
-def build_display_grid(seed: int | None = None) -> list[str]:
-    """Replace X and space fillers with random uppercase letters."""
-    rng = Random(seed)
-    rows: list[str] = []
-    for row in GRID_RAW:
-        chars = list(row)
-        for i, ch in enumerate(chars):
-            if ch in ("x", " "):
-                chars[i] = rng.choice(ascii_uppercase)
-        rows.append("".join(chars))
-    return rows
+_MINUTE_PHRASES: dict[int, str] = {
+    5: "Y CINCO",
+    10: "Y DIEZ",
+    15: "Y CUARTO",
+    20: "Y VEINTE",
+    25: "Y VEINTICINCO",
+    30: "Y MEDIA",
+    35: "MENOS VEINTICINCO",
+    40: "MENOS VEINTE",
+    45: "MENOS CUARTO",
+    50: "MENOS DIEZ",
+    55: "MENOS CINCO",
+}
 
 
-def time_to_sentence_esp(hours: int, minutes: int) -> str:
+def time_to_sentence(hours: int, minutes: int) -> str:
+    """
+    Convert hours (0-23) and minutes (0-59) to a Spanish word clock sentence.
+
+    Args:
+        hours: Hour value 0-23.
+        minutes: Minute value 0-59.
+
+    Returns:
+        Sentence in ALL CAPS, e.g. ``"SON LAS DIEZ Y MEDIA"``.
+    """
     h = hours % 12
     m = (minutes // 5) * 5
 
-    # Adjust hour for "MENOS" (from :35 to :55)
-    if m >= 35:
+    if m in _MINUS_MINUTES:
         h = (h + 1) % 12
 
     verb = "ES" if h == 1 else "SON"
@@ -68,103 +81,84 @@ def time_to_sentence_esp(hours: int, minutes: int) -> str:
 
     if m == 0:
         return f"{verb} {art} {h_word} EN PUNTO"
-
-    # Minutes mapping for Spanish "Y" / "MENOS" system
-    minutes_map = {
-        5: "Y CINCO",
-        10: "Y DIEZ",
-        15: "Y CUARTO",
-        20: "Y VEINTE",
-        25: "Y VEINTICINCO",
-        30: "Y MEDIA",
-        35: "MENOS VEINTICINCO",
-        40: "MENOS VEINTE",
-        45: "MENOS CUARTO",
-        50: "MENOS DIEZ",
-        55: "MENOS CINCO",
-    }
-
-    # Handling "VEINTICINCO" which might be split in some grids
-    # For this grid, we use separate words if needed
-    m_phrase = minutes_map[m]
-    return f"{verb} {art} {h_word} {m_phrase}"
+    return f"{verb} {art} {h_word} {_MINUTE_PHRASES[m]}"
 
 
 def sentence_to_coords(sentence: str, grid: list[str] | None = None) -> list[tuple[int, int]]:
-    if grid is None:
-        grid = GRID_RAW
-    coords = []
-    # Special handling for "VEINTICINCO" if it's split into VEINTE and CINCO
-    clean_sentence = sentence.replace("VEINTICINCO", "VEINTE CINCO")
-    words = clean_sentence.split()
+    """
+    Find each word of *sentence* in *grid* and return ``(row, col)`` pairs.
 
-    current_row = 0
-    current_col = 0
+    Args:
+        sentence: ALL-CAPS sentence from :func:`time_to_sentence`.
+        grid: Grid to search; defaults to :data:`GRID_RAW`.
 
-    for word in words:
-        found = False
-        for r in range(current_row, NUM_ROWS):
-            start_c = current_col if r == current_row else 0
-            idx = grid[r].find(word, start_c)
-            if idx != -1:
-                for i in range(len(word)):
-                    coords.append((r, idx + i))
-                current_row = r
-                current_col = idx + len(word)
-                found = True
-                break
-
-        if not found:
-            for r in range(NUM_ROWS):
-                idx = grid[r].find(word)
-                if idx != -1:
-                    for i in range(len(word)):
-                        coords.append((r, idx + i))
-                    current_row = r
-                    current_col = idx + len(word)
-                    break
-    return coords
+    Returns:
+        List of ``(row, col)`` pairs for every lit letter.
+    """
+    return base.sentence_to_coords(
+        sentence,
+        GRID_RAW if grid is None else grid,
+        NUM_ROWS,
+        normalize=_NORMALIZE,
+    )
 
 
 def coords_to_led_indices(coords: list[tuple[int, int]], snake: bool = True) -> list[int]:
-    indices = []
-    for row, col in coords:
-        if snake and row % 2 == 1:
-            idx = row * NUM_COLS + (NUM_COLS - 1 - col)
-        else:
-            idx = row * NUM_COLS + col
-        indices.append(idx)
-    return indices
+    """
+    Convert ``(row, col)`` pairs to absolute LED indices.
+
+    Args:
+        coords: List of ``(row, col)`` pairs.
+        snake: Apply snake wiring. Default ``True``.
+
+    Returns:
+        List of integer LED indices.
+    """
+    return base.coords_to_led_indices(coords, NUM_COLS, snake=snake)
 
 
 def get_leds_for_time(
-    hours: int, minutes: int, grid: list[str] | None = None, snake: bool = True
-) -> dict:
-    sentence = time_to_sentence_esp(hours, minutes)
-    coords = sentence_to_coords(sentence, grid=grid)
+    hours: int,
+    minutes: int,
+    grid: list[str] | None = None,
+    snake: bool = True,
+) -> LedResult:
+    """
+    Return everything needed to update the display for a given time.
+
+    Args:
+        hours: Hour value 0-23.
+        minutes: Minute value 0-59.
+        grid: Grid to search; defaults to :data:`GRID_RAW`.
+        snake: Apply snake wiring. Default ``True``.
+
+    Returns:
+        :class:`~wordclock.layouts.base.LedResult` dict.
+    """
+    sentence = time_to_sentence(hours, minutes)
+    coords = sentence_to_coords(sentence, grid)
     led_indices = coords_to_led_indices(coords, snake=snake)
-    return {
-        "hours": hours,
-        "minutes": minutes,
-        "sentence": sentence,
-        "coords": coords,
-        "led_indices": led_indices,
-    }
+    return LedResult(
+        sentence=sentence,
+        coords=coords,
+        led_indices=led_indices,
+        hours=hours,
+        minutes=minutes,
+    )
 
 
 if __name__ == "__main__":
     cases = [
-        (1, 0),  # 01:00 -> ES LA UNA EN PUNTO
-        (2, 15),  # 02:15 -> SON LAS DOS Y CUARTO
-        (10, 30),  # 10:30 -> SON LAS DIEZ Y MEDIA
-        (4, 45),  # 04:45 -> SON LAS CINCO MENOS CUARTO
-        (12, 50),  # 12:50 -> ES LA UNA MENOS DIEZ
+        (1, 0),
+        (2, 15),
+        (10, 30),
+        (4, 45),
+        (12, 50),
     ]
     print("=" * 55)
     print("  Spanish word clock — layout test")
     print("=" * 55)
-    print()
-    print(f"{'TIME':<8} | {'SENTENCE'}")
+    print(f"\n{'TIME':<8} | {'SENTENCE'}")
     print("-" * 40)
     for h, m in cases:
         res = get_leds_for_time(h, m)

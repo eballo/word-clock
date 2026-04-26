@@ -6,8 +6,8 @@
  * This file only manages the DOM and calls the API.
  */
 
-const API = "";          // same origin as Flask
-let currentLang = "english";
+const API = "";          // same origin as FastAPI
+let currentLang = "catalan";
 
 let numCols = 16;
 let demoInterval = null;

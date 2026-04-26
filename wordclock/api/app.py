@@ -1,57 +1,22 @@
+"""FastAPI application factory."""
+
 from __future__ import annotations
 
 from argparse import ArgumentParser
-from datetime import datetime
 from logging import DEBUG, INFO, basicConfig, getLogger
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
+
+from wordclock.api.routes import router
+from wordclock.layouts.registry import SUPPORTED_LANGUAGES, get_layout
 
 logger = getLogger(__name__)
 
-SUPPORTED_LANGUAGES = ("english", "catalan", "spanish")
-
 _WEB_DIR = Path(__file__).parent.parent / "web"
-
-
-def _get_layout(lang: str):
-    if lang == "english":
-        from wordclock.layouts.english import (
-            NUM_COLS,
-            NUM_ROWS,
-            build_display_grid,
-            get_leds_for_time,
-        )
-
-        return build_display_grid, get_leds_for_time, NUM_ROWS, NUM_COLS
-    elif lang == "catalan":
-        from wordclock.layouts.catalan import (
-            NUM_COLS,
-            NUM_ROWS,
-            build_display_grid,
-            get_leds_for_time,
-        )
-
-        return build_display_grid, get_leds_for_time, NUM_ROWS, NUM_COLS
-    elif lang == "spanish":
-        from wordclock.layouts.spanish import (
-            NUM_COLS,
-            NUM_ROWS,
-            build_display_grid,
-            get_leds_for_time,
-        )
-
-        return build_display_grid, get_leds_for_time, NUM_ROWS, NUM_COLS
-    raise ValueError(f"Unsupported language: {lang}")
-
-
-class BrightnessRequest(BaseModel):
-    brightness: int
 
 
 def create_app(led_controller=None) -> FastAPI:
@@ -60,72 +25,10 @@ def create_app(led_controller=None) -> FastAPI:
         CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
     )
     app.state.led_controller = led_controller
-    app.state.grids = {lang: _get_layout(lang)[0]() for lang in SUPPORTED_LANGUAGES}
-
-    templates = Jinja2Templates(directory=_WEB_DIR / "templates")
+    app.state.grids = {lang: get_layout(lang).GRID_RAW for lang in SUPPORTED_LANGUAGES}
+    app.state.templates = Jinja2Templates(directory=_WEB_DIR / "templates")
     app.mount("/static", StaticFiles(directory=_WEB_DIR / "static"), name="static")
-
-    def _push_leds(indices: list[int]) -> None:
-        ctrl = app.state.led_controller
-        if ctrl:
-            ctrl.display_leds(indices)
-
-    @app.get("/", response_class=HTMLResponse)
-    def index(request: Request):
-        return templates.TemplateResponse(request, "index.html")
-
-    @app.get("/api/health")
-    def health():
-        return {"status": "ok", "version": "0.1.0"}
-
-    @app.get("/api/grid")
-    def get_grid(lang: str = "english"):
-        if lang not in SUPPORTED_LANGUAGES:
-            raise HTTPException(status_code=400, detail=f"Unknown language: {lang}")
-        logger.debug("Fetching grid for language: %s", lang)
-        _, _, num_rows, num_cols = _get_layout(lang)
-        grid = app.state.grids[lang]
-        return {
-            "language": lang,
-            "rows": num_rows,
-            "cols": num_cols,
-            "grid": [list(row) for row in grid],
-        }
-
-    @app.get("/api/time")
-    def get_time(lang: str = "english", h: int | None = None, m: int | None = None):
-        if lang not in SUPPORTED_LANGUAGES:
-            raise HTTPException(status_code=400, detail=f"Unknown language: {lang}")
-        logger.debug("Fetching time for language: %s, h: %s, m: %s", lang, h, m)
-        now = datetime.now()
-        h = h if h is not None else now.hour
-        m = m if m is not None else now.minute
-        if not (0 <= h <= 23):
-            raise HTTPException(status_code=400, detail="h must be 0-23")
-        if not (0 <= m <= 59):
-            raise HTTPException(status_code=400, detail="m must be 0-59")
-        _, get_leds, _, _ = _get_layout(lang)
-        grid = app.state.grids[lang]
-        result = get_leds(h, m, grid=grid)
-        _push_leds(result["led_indices"])
-        return {
-            "language": lang,
-            "hours": result["hours"],
-            "minutes": result["minutes"],
-            "sentence": result["sentence"],
-            "coords": result["coords"],
-            "led_indices": result["led_indices"],
-        }
-
-    @app.post("/api/brightness")
-    def set_brightness(body: BrightnessRequest):
-        if not (0 <= body.brightness <= 255):
-            raise HTTPException(status_code=400, detail="brightness must be an integer 0-255")
-        ctrl = app.state.led_controller
-        if ctrl:
-            ctrl.brightness = body.brightness
-        return {"brightness": body.brightness}
-
+    app.include_router(router)
     return app
 
 
