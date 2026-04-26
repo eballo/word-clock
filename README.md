@@ -1,6 +1,6 @@
 # Word Clock
 
-![Word Clock](assets/wordclock.png)
+![Word Clock](docs/assets/wordclock-sample-ca.png)
 
 > **🚧 Work in progress** — this project is under active development and not yet complete.
 
