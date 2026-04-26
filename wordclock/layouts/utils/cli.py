@@ -1,44 +1,46 @@
-"""CLI entry point for the wordclock-generate command."""
-
 from __future__ import annotations
 
-from argparse import ArgumentParser
+from typing import Annotated
+
+import typer
 
 from wordclock.layouts.utils.layout import Layout, generate_static
 
+app = typer.Typer()
 
-def main() -> None:
-    parser = ArgumentParser(description="Generate and persist a static word-clock layout.")
-    parser.add_argument(
-        "--lang",
-        choices=Layout.available(),
-        help="Language to generate. Prompted interactively if omitted.",
-    )
-    parser.add_argument("--seed", type=int, default=None, help="Random seed (optional).")
-    args = parser.parse_args()
 
+@app.command()
+def main(
+    lang: Annotated[str | None, typer.Option(help="Language to generate")] = None,
+    seed: Annotated[int | None, typer.Option(help="Random seed")] = None,
+) -> None:
     available = Layout.available()
 
-    if args.lang:
-        lang = args.lang
-    else:
-        print("Available languages:")
+    if lang is None:
+        typer.echo("Available languages:")
         for i, name in enumerate(available, start=1):
-            print(f"  {i}. {name}")
-        choice = input("Select language (name or number): ").strip()
+            typer.echo(f"  {i}. {name}")
+        typer.echo("  0. Exit")
+        choice = typer.prompt("Select language (name or number)").strip()
+        if choice in ("0", "q", "exit", "quit", ""):
+            typer.echo("Aborted.")
+            raise typer.Exit(0)
         if choice.isdigit():
             idx = int(choice) - 1
             if not (0 <= idx < len(available)):
-                print(f"Invalid selection: {choice}")
-                raise SystemExit(1)
+                typer.echo(f"Invalid selection: {choice}", err=True)
+                raise typer.Exit(1)
             lang = available[idx]
         elif choice in available:
             lang = choice
         else:
-            print(f"Unknown language: {choice!r}")
-            raise SystemExit(1)
+            typer.echo(f"Unknown language: {choice!r}", err=True)
+            raise typer.Exit(1)
+    elif lang not in available:
+        typer.echo(f"Unknown language: {lang!r}", err=True)
+        raise typer.Exit(1)
 
-    static = generate_static(lang, seed=args.seed)
-    print(f"Generated static layout for '{lang}':")
+    static = generate_static(lang, seed=seed)
+    typer.echo(f"Generated static layout for '{lang}':")
     for row in static:
-        print(f"  {row}")
+        typer.echo(f"  {row}")

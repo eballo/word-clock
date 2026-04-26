@@ -1,60 +1,38 @@
-"""CLI entry points for the wordclock package."""
-
 from __future__ import annotations
 
-from argparse import ArgumentParser
-from logging import DEBUG, INFO, basicConfig, getLogger
+from logging import DEBUG, INFO, basicConfig
+from typing import Annotated
 
-logger = getLogger(__name__)
+import typer
 
+from wordclock.config import API_HOST, API_PORT, CLOCK_INTERVAL, LED_BRIGHTNESS
+from wordclock.layouts.registry import Language
 
-def main() -> None:
-    parser = ArgumentParser(description="Wordclock — LED word clock")
-    parser.add_argument("--lang", default="english", choices=["english"])
-    parser.add_argument("--mock", action="store_true", help="Simulated LEDs")
-    parser.add_argument("--brightness", type=int, default=128)
-    parser.add_argument("--interval", type=int, default=30)
-    parser.add_argument("--debug", action="store_true")
-    args = parser.parse_args()
-
-    basicConfig(
-        level=DEBUG if args.debug else INFO,
-        format="%(asctime)s %(levelname)-8s %(name)s — %(message)s",
-    )
-
-    from wordclock.clock import run_clock
-
-    run_clock(lang=args.lang, mock=args.mock, brightness=args.brightness, interval=args.interval)
+_LOG_FORMAT = "%(asctime)s %(levelname)-8s %(message)s"
 
 
-def main_serve() -> None:
-    parser = ArgumentParser(description="Wordclock — clock loop + API server")
-    parser.add_argument("--lang", default="english", choices=["english"])
-    parser.add_argument("--mock", action="store_true", help="Simulated LEDs")
-    parser.add_argument("--brightness", type=int, default=128)
-    parser.add_argument("--interval", type=int, default=30)
-    parser.add_argument("--host", default="0.0.0.0")
-    parser.add_argument("--port", "-p", type=int, default=5000)
-    parser.add_argument("--debug", action="store_true")
-    args = parser.parse_args()
-
-    basicConfig(
-        level=DEBUG if args.debug else INFO,
-        format="%(asctime)s %(levelname)-8s %(name)s — %(message)s",
-    )
-
-    from wordclock.clock import serve
-
-    serve(
-        lang=args.lang,
-        mock=args.mock,
-        brightness=args.brightness,
-        interval=args.interval,
-        host=args.host,
-        port=args.port,
-        debug=args.debug,
-    )
+app = typer.Typer()
 
 
-if __name__ == "__main__":
-    main()
+@app.command(no_args_is_help=True)
+def main(
+    lang: Language = Language.catalan,
+    mock: Annotated[bool, typer.Option(help="Use mock LED controller")] = False,
+    display: Annotated[bool, typer.Option(help="Print grid to console (mock only)")] = False,
+    brightness: int = LED_BRIGHTNESS,
+    interval: int = CLOCK_INTERVAL,
+    host: str = API_HOST,
+    port: Annotated[int, typer.Option("--port", "-p")] = API_PORT,
+    debug: bool = False,
+) -> None:
+    basicConfig(level=DEBUG if debug else INFO, format=_LOG_FORMAT)
+
+    from wordclock.clock import WordClock
+
+    WordClock(
+        lang=lang.value,
+        mock=mock,
+        display=display,
+        brightness=brightness,
+        interval=interval,
+    ).serve(host=host, port=port, debug=debug)

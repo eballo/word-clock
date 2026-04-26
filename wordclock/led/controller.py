@@ -16,16 +16,17 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from logging import getLogger
 
+from wordclock.config import (
+    LED_BRIGHTNESS,
+    LED_COLOR,
+    LED_COUNT,
+    LED_DMA,
+    LED_FREQ_HZ,
+    LED_PIN,
+)
+
 logger = getLogger(__name__)
 
-DEFAULT_LED_COUNT = 256
-DEFAULT_LED_PIN = 18
-DEFAULT_BRIGHTNESS = 128
-DEFAULT_FREQ_HZ = 800_000
-DEFAULT_DMA = 10
-
-
-_DEFAULT_COLOR = (255, 200, 50)
 _ANSI_BOLD = "\033[1m"
 _ANSI_DIM = "\033[2m"
 _ANSI_RESET = "\033[0m"
@@ -34,8 +35,8 @@ _ANSI_RESET = "\033[0m"
 class BaseLedController(ABC):
     def __init__(
         self,
-        num_leds: int = DEFAULT_LED_COUNT,
-        brightness: int = DEFAULT_BRIGHTNESS,
+        num_leds: int = LED_COUNT,
+        brightness: int = LED_BRIGHTNESS,
         grid: list[str] | None = None,
     ):
         self.num_leds = num_leds
@@ -63,7 +64,7 @@ class BaseLedController(ABC):
     def display_leds(
         self,
         active_indices: list[int],
-        color: tuple[int, int, int] = (255, 200, 50),
+        color: tuple[int, int, int] = LED_COLOR,
     ) -> None:
         self.clear()
         self.set_pixels(active_indices, *color)
@@ -76,11 +77,11 @@ class BaseLedController(ABC):
 class RealLedController(BaseLedController):
     def __init__(
         self,
-        num_leds=DEFAULT_LED_COUNT,
-        brightness=DEFAULT_BRIGHTNESS,
-        pin=DEFAULT_LED_PIN,
-        freq_hz=DEFAULT_FREQ_HZ,
-        dma=DEFAULT_DMA,
+        num_leds: int = LED_COUNT,
+        brightness: int = LED_BRIGHTNESS,
+        pin: int = LED_PIN,
+        freq_hz: int = LED_FREQ_HZ,
+        dma: int = LED_DMA,
     ):
         super().__init__(num_leds, brightness)
         self._pin, self._freq_hz, self._dma = pin, freq_hz, dma
@@ -135,7 +136,7 @@ class MockLedController(BaseLedController):
     def display_leds(
         self,
         indices: list[int],
-        color: tuple[int, int, int] = _DEFAULT_COLOR,
+        color: tuple[int, int, int] = LED_COLOR,
     ) -> None:
         logger.info("LEDs on: %s  color=%s", indices, color)
         if self._grid is not None:
@@ -163,14 +164,19 @@ class MockLedController(BaseLedController):
 
 
 def create_controller(mock: bool = False, **kwargs) -> BaseLedController:
-    safe = {k: v for k, v in kwargs.items() if k in ("num_leds", "brightness", "grid")}
+    mock_kwargs = {k: v for k, v in kwargs.items() if k in ("num_leds", "brightness", "grid")}
+    real_kwargs = {
+        k: v for k, v in kwargs.items() if k in ("num_leds", "brightness", "pin", "freq_hz", "dma")
+    }
     if mock:
-        ctrl: BaseLedController = MockLedController(**safe)
+        ctrl: BaseLedController = MockLedController(**mock_kwargs)
+        ctrl.begin()
     else:
         try:
-            ctrl = RealLedController(**kwargs)
+            ctrl = RealLedController(**real_kwargs)
+            ctrl.begin()
         except RuntimeError:
             logger.warning("LED hardware unavailable — falling back to mock mode.")
-            ctrl = MockLedController(**safe)
-    ctrl.begin()
+            ctrl = MockLedController(**mock_kwargs)
+            ctrl.begin()
     return ctrl

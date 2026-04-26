@@ -1,5 +1,3 @@
-"""Shared types, protocol, and functions for all layout modules."""
-
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -80,6 +78,41 @@ def sentence_to_coords(
                     break
 
     return coords
+
+
+def build_leds_for_time(
+    hours: int,
+    minutes: int,
+    *,
+    grid: list[str],
+    num_rows: int,
+    num_cols: int,
+    time_to_sentence_fn: Callable[[int, int], str],
+    normalize: dict[str, str] | None = None,
+    snake: bool = True,
+) -> LedResult:
+    """
+    Build a :class:`LedResult` for a given time using the provided layout parameters.
+
+    Args:
+        hours: Hour value 0-23.
+        minutes: Minute value 0-59.
+        grid: Display grid to search.
+        num_rows: Number of rows in the grid.
+        num_cols: Number of columns in the grid.
+        time_to_sentence_fn: Language-specific sentence builder.
+        normalize: Optional substitutions passed to :func:`sentence_to_coords`.
+        snake: Apply snake wiring. Default ``True``.
+
+    Returns:
+        :class:`LedResult` dict.
+    """
+    s = time_to_sentence_fn(hours, minutes)
+    coords = sentence_to_coords(s, grid, num_rows, normalize=normalize)
+    led_indices = coords_to_led_indices(coords, num_cols, snake=snake)
+    return LedResult(
+        sentence=s, coords=coords, led_indices=led_indices, hours=hours, minutes=minutes
+    )
 
 
 def coords_to_led_indices(
