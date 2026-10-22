@@ -24,7 +24,7 @@ TILES: dict[str, tuple[int, int, int, int]] = {
 # Top-left 4x4 corner, used to test fit, letters and light bleed.
 TEST_TILE: tuple[int, int, int, int] = (0, 4, 0, 4)
 
-FACE_PARTS: tuple[str, ...] = ("face", "letters", "diffuser")
+FACE_PARTS: tuple[str, ...] = ("face",)
 GRID_PART = "grid"
 PI_PARTS: tuple[str, ...] = ("pibox", "pilid")
 

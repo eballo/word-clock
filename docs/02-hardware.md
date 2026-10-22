@@ -31,7 +31,7 @@ Only the letters that correspond to the current time are lit up, so only those l
 | Panel size | 48,4 × 48,4 cm |
 | LED matrix area | 48,0 × 48,0 cm |
 | Cell size | 3,0 × 3,0 cm |
-| Letter size (cap height) | 18 mm |
+| Letter size (cap height) | 16 mm |
 | Grid | 16 × 16 = 256 LEDs |
 
 See [05 — Enclosure](05-enclosure.md) for the printed parts.
@@ -66,8 +66,9 @@ row 15 ←  LED 240 .. 255   (right → left)
 
 ### 3D-printed front panel and light grid
 
-The front panel is a 1,6 mm opaque black face with letter-shaped holes,
-backed by a 0,6 mm white diffuser. Behind it, a white light grid with 20 mm
+The front panel is a 2,4 mm opaque black face with stencil letter holes
+(Karla Bold Stencil), with a sheet of tracing paper behind it to diffuse
+the light. Behind the paper, a white light grid with 20 mm
 walls isolates each cell so light does not bleed into the neighbouring
 letters.
 
@@ -75,10 +76,11 @@ letters.
 |-----------|-------|
 | Panel size | 48,4 × 48,4 cm |
 | Cell size | 3,0 × 3,0 cm |
-| Letter size | 18 mm cap height |
+| Letter size | 16 mm cap height, Karla Bold Stencil |
 | Grid wall | 1,2 mm |
 | Grid depth | 20 mm + 2 mm back plate |
-| Filament | Black PLA/PETG (face), white PLA (diffuser, grid) |
+| Filament | Black PLA/PETG (face), white PLA (grid) |
+| Diffuser | Tracing paper, 48,4 × 48,4 cm |
 
 > **Note:** Every part is printed in a 2×2 split of 24,2 × 24,2 cm tiles to fit
 > the Bambu Lab A1 bed. Seams fall on the walls between cells.
@@ -136,10 +138,11 @@ With 256 LEDs at a maximum of 60 mA each (full white), the theoretical peak draw
 | 3 | Power supply | 5V 10A (50W) |
 | 4 | Level shifter | 3,3V → 5V (e.g. 74AHCT125) |
 | 5 | Frame | IKEA SANNAHED 50 × 50 cm |
-| 6 | 3D-printed parts | Face, diffuser, light grid, Pi box (see 05 — Enclosure) |
-| 7 | Bolts | 16 × M3 × 8 mm with nuts (grid seams) |
+| 6 | 3D-printed parts | Face, light grid, Pi box (see 05 — Enclosure) |
+| 7 | Bolts | 8 × M3 × 8 mm with nuts (grid seams) |
 | 8 | JST connectors | For joining pixel strings |
 | 9 | Wire | 3-core, 22 AWG |
 | 10 | MicroSD card | For Raspberry Pi OS (16 GB minimum) |
+| 11 | Tracing paper | 90 g/m², 48,4 × 48,4 cm (light diffuser) |
 
 ---

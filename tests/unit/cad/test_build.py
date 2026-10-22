@@ -114,3 +114,21 @@ class TestWritePreview:
         assert f"include <{SCAD_FILE.resolve()}>" in text
         assert 'part = "assembly";' in text
         assert "ÉSÓN" in text
+
+
+class TestStencilFont:
+    def test_font_and_licence_are_bundled(self) -> None:
+        # Given
+        fonts = SCAD_FILE.parent / "fonts"
+        # When
+        font_file = fonts / "KarlaBoldStencil.ttf"
+        licence = fonts / "OFL.txt"
+        # Then
+        assert font_file.is_file()
+        assert "SIL Open Font License" in licence.read_text(encoding="utf-8")
+
+    def test_model_loads_the_bundled_font(self) -> None:
+        # Given
+        scad = SCAD_FILE.read_text(encoding="utf-8")
+        # When / Then
+        assert "use <fonts/KarlaBoldStencil.ttf>" in scad
