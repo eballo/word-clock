@@ -25,7 +25,6 @@ and wiring the strip, printing the enclosure, assembly and the software.
 | Rectifier diode | 1 | Only if the 3,3V data is not read reliably (Freenove kit) |
 | Wire, 22 AWG, three colours | about 1 m | 5 joints between rows, about 6 cm each |
 | M3 × 16 mm bolt and nut | 3 | Join the two grid halves |
-| M3 × 12 mm self-tapping screw | 4 | Fix the stand box to the grid |
 | M2.5 × 6 mm self-tapping screw | 4 | Fix the Raspberry Pi in the stand box |
 | Panel-mount DC jack, 5.5 × 2.1 mm (DC-022, 11 mm hole) | 1 | Power input in the back of the stand box |
 | Lever connectors (Wago 221), 3-way | 2 | 5V and GND joints inside the box |
@@ -58,7 +57,7 @@ and wiring the strip, printing the enclosure, assembly and the software.
 | Face (with its skirt) | 36,1 × 22,8 cm |
 | Depth | about 2,6 cm (2 mm back plate, 22 mm walls, paper, 2 mm face), plus 4,0 cm of stand box |
 | Printed halves | Grid 17,9 × 22,4 cm, face 18,1 × 22,8 cm: each fits the 25,6 cm bed of the Bambu Lab A1 |
-| Stand box | 14,3 × 18,4 × 4,0 cm, centred behind the matrix, down to its bottom edge |
+| Stand box | 14,9 × 18,7 × 4,0 cm, centred behind the matrix, down to its bottom edge |
 | Tilt on the table | 15° backwards |
 | Face windows | 3,03 × 3,03 cm, 3 mm bars |
 
@@ -92,9 +91,27 @@ where the wires that join the rows run.
 The box on the back is also the stand. Its base is cut at 15°, so the
 matrix stands on a table leaning back, on the bottom edge of the grid and
 the base of the box. It hides the Raspberry Pi and the wiring: only the
-power cable comes out, from the back. Four M3 × 12 mm self-tapping screws
-go in from the back of the box, through its corner columns, into four
-bosses on the grid back plate (cell corners, hidden behind the face bars).
+power cable comes out, from the back.
+
+The box clicks onto the grid without screws. Four flexible arms rise from
+its floor and go through four slots in the grid back plate, at cell
+corners hidden behind the face bars. The hook at the tip of each arm
+catches the front face of the back plate. The top hooks point up and the
+bottom hooks point down, so the box cannot slide off in any direction.
+
+```
+   side section through a clip
+
+          hook ◣        cell
+   ═══════════╗ ║╔═════════════  grid back plate (2 mm), with a slot
+              ║ ║
+              ║ ║  arm, 2 × 6 mm, about 40 mm long: it bends while
+              ║ ║  the hook goes through the slot, then springs back
+   ───────────╨─╨──────────────  floor of the stand box
+```
+
+To take the box off, lift the face and the paper, press each hook back
+through its slot with a small screwdriver and pull the box.
 
 ```
    side view, standing on the table (front on the left)
@@ -138,7 +155,7 @@ right in the model, which uses front-view coordinates.
 
 There is no opening for the USB, Ethernet or HDMI ports: use the Pi over
 Wi-Fi and SSH. The microSD card faces into the box, so take the box off
-(four screws) to change it.
+(unclip it) to change it.
 
 To make the matrix stand steeper or flatter, change `tilt`; a deeper box
 (`box_d`) gives a longer base and a steadier stand.
@@ -277,8 +294,8 @@ so the limit can stay at 1,5 A.
    the DC jack in the back.
 4. Pass the strip input wires through the slot in the box rim and wire
    them inside the box (section 4).
-5. Screw the box onto the grid bosses with the four M3 × 12 mm screws,
-   from the back.
+5. Line the four arms up with the slots in the grid back plate and press
+   the box on until the four hooks click.
 6. Run the `wiring` scene (section 8) and check that the cells light in
    order before closing.
 7. Lay the tracing paper over the grid, cut to the outer edge of the walls.
@@ -335,7 +352,7 @@ the same code runs on the 16 × 16 word clock later.
 
 - [ ] Grid halves, face halves and stand box printed (`uv run wordclock-cad --matrix`)
 - [ ] Grid halves bolted together with three M3 × 16 mm bolts
-- [ ] Raspberry Pi and DC jack fitted in the stand box, box screwed on the grid
+- [ ] Raspberry Pi and DC jack fitted in the stand box, box clicked onto the grid
 - [ ] Strip cut into 6 pieces of 10 LEDs, stuck in a snake, arrows checked
 - [ ] Five row joints soldered, input wires through the back plate hole
 - [ ] Quick test powered from the Pi (section 6.4): `wiring` scene with `--max-ma 600`

@@ -67,13 +67,13 @@ fit = 0.2;
 paper_t = 0.3;
 
 /* [Stand box] */
-// The box corners are screwed into bosses of the grid, on the grid line
+// The box clicks onto the grid with four snap clips, next to the grid line
 // crossings [col_start, col_end, row_start, row_end]: 4 x 4 cells in the
 // middle of the matrix, across the seam. The box reaches down to the bottom
 // edge of the panel.
 box_lines = [3, 7, 1, 5];
-// How far the box reaches past the screw centres (sides and top)
-box_overhang = 5;
+// How far the box reaches past those crossings (sides and top)
+box_overhang = 8;
 // The matrix leans back by this angle when it stands on the table
 tilt = 15;
 // Depth from the back plate of the grid to the back of the box. It sets the
@@ -81,18 +81,19 @@ tilt = 15;
 box_d = 40;
 box_wall = 2.4;
 box_floor = 2.4;
-// Corner columns with M3 screws from the back of the box. The screw head
-// sits in a counterbore, so an M3 x 12 mm self-tapping screw goes through
-// the rim and 6 mm into the grid boss.
-box_column_d = 10;
-box_screw_d = 3.4;
-box_head_d = 6.5;
-// Material left under the screw head, at the rim of the box
-box_screw_grip = 6;
-// Bosses on the grid back plate that take the screws (cell corners)
-grid_boss_d = 7;
-grid_boss_h = 5;
-grid_pilot_d = 2.6;
+// Snap clips: a flexible arm rises from the floor of the box, goes through a
+// slot in the grid back plate and hooks onto its front face. The top clips
+// hook upwards and the bottom ones downwards, so the box cannot slide off.
+clip_w = 6;
+clip_t = 2;
+// How far the hook reaches over the edge of the slot
+clip_lip = 1;
+// Height of the ramp that pushes the arm aside on the way in
+clip_ramp = 1.5;
+// Distance from the grid line to the arm, clear of the walls
+clip_gap = 2;
+// Play around the arm in the slot, and above the back plate under the hook
+clip_fit = 0.2;
 // Raspberry Pi 3B / 4B: 85 x 56 mm board, M2.5 holes on 58 x 49 mm,
 // 3.5 mm from the edge with the micro-USB and HDMI ports
 rpi_board = [85, 56];
@@ -183,8 +184,29 @@ module strip_notches(h) {
             cube([2 * wall_t + 2, strip_w, strip_notch_h + 0.01]);
 }
 
-// Screw points of the stand box, on grid line crossings.
-function box_screws() = [for (c = [box_lines[0], box_lines[1]], r = [box_lines[2], box_lines[3]]) [line_x(c), line_y(r)]];
+// Snap clips of the stand box: grid line crossing and the direction the
+// clip points to, inwards along x and outwards (its hook) along y.
+function box_clips() = [for (c = [0, 1], r = [0, 1]) [line_x(box_lines[c]), line_y(box_lines[2 + r]), c == 0 ? 1 : -1, r == 0 ? 1 : -1]];
+
+// Place a clip drawn for the top-left crossing (arm towards +x and +y).
+module at_clip(clip) {
+    translate([clip[0], clip[1], 0]) mirror([clip[2] < 0 ? 1 : 0, 0, 0]) mirror([0, clip[3] < 0 ? 1 : 0, 0]) children();
+}
+
+// Arm with its hook. The catch face sits just above the front face of the
+// back plate; the ramp above it pushes the arm aside on the way in.
+module clip_arm() {
+    catch_z = back_t + clip_fit;
+    translate([clip_gap, clip_gap, -box_d]) cube([clip_w, clip_t, box_d + catch_z + clip_ramp]);
+    translate([clip_gap, 0, 0]) rotate([90, 0, 90]) linear_extrude(clip_w)
+        polygon([[clip_gap + clip_t, catch_z], [clip_gap + clip_t + clip_lip, catch_z], [clip_gap + clip_t, catch_z + clip_ramp]]);
+}
+
+// Slot in the back plate, with room for the arm to bend aside.
+module clip_slot() {
+    translate([clip_gap - clip_fit, clip_gap - clip_lip - clip_fit, -1])
+        cube([clip_w + 2 * clip_fit, clip_t + clip_lip + 2 * clip_fit, back_t + 2]);
+}
 
 module grid(h) {
     difference() {
@@ -193,13 +215,12 @@ module grid(h) {
                 cube([panel_w, panel_h, back_t]);
                 translate([0, 0, back_t]) linear_extrude(grid_h) walls_2d(h);
                 seam_blocks(h);
-                for (p = box_screws()) translate([p[0], p[1], 0]) cylinder(d = grid_boss_d, h = back_t + grid_boss_h);
             }
             translate([0, 0, -1]) linear_extrude(back_t + grid_h + 2) half_rect(h);
         }
         strip_notches(h);
         seam_holes();
-        for (p = box_screws()) translate([p[0], p[1], -1]) cylinder(d = grid_pilot_d, h = back_t + grid_boss_h);
+        for (clip = box_clips()) at_clip(clip) clip_slot();
         if (h == 0)
             translate([(outer_t + line_x(0)) / 2 - cable_hole[0] / 2, cell_y(0) - cable_hole[1] / 2, -1])
                 cube([cable_hole[0], cable_hole[1], back_t + 2]);
@@ -249,10 +270,10 @@ box_x1 = line_x(box_lines[1]) + box_overhang;
 box_y0 = 0;
 box_y1 = line_y(box_lines[2]) + box_overhang;
 
-// Raspberry Pi on the right, above the bottom screws, component side
+// Raspberry Pi on the right, above the bottom clips, component side
 // towards the grid. The space below it takes the power plug and the wiring.
 rpi_x0 = box_x1 - box_wall - 4 - rpi_board[0];
-rpi_y0 = line_y(box_lines[3]) + box_column_d / 2 + 2;
+rpi_y0 = line_y(box_lines[3]) + 3;
 rpi_top = -box_d + box_floor + rpi_standoff_h + 1.6;
 
 assert(rpi_top + rpi_ports_h < -2, "Box too shallow for the Raspberry Pi: raise box_d");
@@ -264,8 +285,10 @@ module box_outline(grow = 0) {
 // Everything above the table plane, raised by `lift` along y.
 module above_table(lift = 0) {
     z0 = -box_d - 1;
+    // High enough to keep the clips that reach into the grid
+    z1 = back_t + 10;
     translate([box_x0 - 1, 0, 0]) rotate([90, 0, 90]) linear_extrude(box_x1 - box_x0 + 2)
-        polygon([[table_y(1) + lift, 1], [table_y(z0) + lift, z0], [panel_h, z0], [panel_h, 1]]);
+        polygon([[table_y(z1) + lift, z1], [table_y(z0) + lift, z0], [panel_h, z0], [panel_h, z1]]);
 }
 
 module box_shell() {
@@ -278,7 +301,7 @@ module box_shell() {
                     above_table(box_wall / cos(tilt));
                 }
             }
-            for (p = box_screws()) translate([p[0], p[1], -box_d]) cylinder(d = box_column_d, h = box_d);
+            for (clip = box_clips()) at_clip(clip) clip_arm();
             for (hole = rpi_holes)
                 translate([rpi_x0 + hole[0], rpi_y0 + hole[1], -box_d]) cylinder(d = rpi_standoff_d, h = box_floor + rpi_standoff_h);
         }
@@ -290,16 +313,11 @@ module box() {
     mid_x = (box_x0 + box_x1) / 2;
     difference() {
         box_shell();
-        // Corner screws, heads sunk from the back
-        for (p = box_screws()) translate([p[0], p[1], -box_d - 1]) {
-            cylinder(d = box_screw_d, h = box_d + 2);
-            cylinder(d = box_head_d, h = box_d + 1 - box_screw_grip);
-        }
         for (hole = rpi_holes) translate([rpi_x0 + hole[0], rpi_y0 + hole[1], -box_d + 1]) cylinder(d = rpi_pilot_d, h = box_d);
         // DC jack in the back, low and left of the Raspberry Pi
-        translate([(box_x0 + rpi_x0) / 2, line_y(box_lines[3]) - box_column_d, -box_d - 1]) cylinder(d = jack_d, h = box_floor + 2);
+        translate([(box_x0 + rpi_x0) / 2, line_y(box_lines[3]) - 15, -box_d - 1]) cylinder(d = jack_d, h = box_floor + 2);
         // Strip wires come in through the rim, next to the top-left corner
-        translate([box_x0 + box_column_d + 2, box_y1 - box_wall - 1, -wire_slot[1]]) cube([wire_slot[0], box_wall + 2, wire_slot[1] + 1]);
+        translate([box_x0 + box_wall + 10, box_y1 - box_wall - 1, -wire_slot[1]]) cube([wire_slot[0], box_wall + 2, wire_slot[1] + 1]);
         // Vents in the back under the Raspberry Pi and in the top wall
         for (i = [0:5])
             translate([rpi_x0 + 12 + i * 10, rpi_y0 + rpi_board[1] / 2 - vent[1] / 2, -box_d - 1]) cube([vent[0], vent[1], box_floor + 2]);
