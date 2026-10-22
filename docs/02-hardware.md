@@ -154,7 +154,7 @@ With 1 024 LEDs at a maximum of 60 mA each (full white), the theoretical peak dr
 | 4 | Level shifter | 3,3V → 5V (e.g. 74AHCT125) |
 | 5 | Frame | IKEA SANNAHED 50 × 50 cm |
 | 6 | 3D-printed parts | Face, light grid, screen module (see 05 — Enclosure) |
-| 7 | Bolts | 24 × M3 × 8 mm with nuts (grid seams), 4 × M3 countersunk self-tapping (screen module) |
+| 7 | Bolts | 24 × M3 × 8 mm with nuts (grid seams); screen module: 4 × M3 countersunk + 4 M3 heat-set inserts (back cover), 4 × M3 countersunk with nuts (hanger), 2 × M3 × 10 mm with washers and nuts (studs) |
 | 8 | Power wire | 2-core, 18 AWG (power injection) |
 | 9 | Wire | 3-core, 22 AWG (row jumpers) |
 | 10 | MicroSD card | For Raspberry Pi OS (16 GB minimum) |

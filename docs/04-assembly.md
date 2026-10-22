@@ -106,9 +106,9 @@ DC jack (−) ──┬───────────────────
 ### 3.3 Raspberry Pi, camera and button
 
 The Raspberry Pi 4B, the Touch Display, the camera, the level shifter and
-the push button go in the screen module, which is bolted under the frame
-with a tab on its back cover. The LED cable enters the frame through its
-bottom rail. See
+the push button go in the screen module. It hooks on a hanger plate bolted
+to the frame and lifts off without tools. The LED cable enters the frame
+through its bottom rail and plugs into the module with a JST connector. See
 [05 — Enclosure](05-enclosure.md) for the details.
 
 ---
@@ -150,7 +150,7 @@ flat against the wall.
 - [ ] Power injection at rows 0, 4, 8 and 12
 - [ ] Level shifter wired and tested
 - [ ] Common ground between PSU and Raspberry Pi
-- [ ] Screen module assembled and bolted under the frame
+- [ ] Hanger bolted to the frame and screen module hooked on it
 - [ ] Camera aligned with the bezel hole
 - [ ] Button fitted in the screen module and wired to GPIO 3
 - [ ] Front panel, paper and grid clamped in the frame

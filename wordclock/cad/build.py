@@ -31,8 +31,8 @@ TEST_TILE: tuple[int, int, int, int] = (0, 4, 0, 4)
 FACE_PARTS: tuple[str, ...] = ("face",)
 GRID_PART = "grid"
 # Single parts that do not depend on the language: the screen module under
-# the clock (Touch Display v1, Raspberry Pi 4B and camera).
-EXTRA_PARTS: tuple[str, ...] = ("screenfront", "screenback")
+# the clock (Touch Display v1, Raspberry Pi 4B and camera) and its hanger.
+EXTRA_PARTS: tuple[str, ...] = ("screenfront", "screenback", "screenhanger")
 
 
 @dataclass(frozen=True)

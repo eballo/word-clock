@@ -80,7 +80,8 @@ same margin on every side.
 | `<lang>/face_rXcY.stl` | 9 | yes | Black face with stencil letter holes |
 | `common/grid_rXcY.stl` | 9 | no | Light grid that isolates each cell and holds the LED strips |
 | `common/screenfront.stl` | 1 | no | Screen module: bezel and walls, camera above the screen |
-| `common/screenback.stl` | 1 | no | Screen module: back cover with wall keyholes |
+| `common/screenback.stl` | 1 | no | Screen module: back cover with keyholes |
+| `common/screenhanger.stl` | 1 | no | Screen module: hanger plate bolted to the frame |
 
 Only the face depends on the language. To change the language of the
 clock, open the back board, lift out the grid, swap the face panel and put
@@ -202,7 +203,8 @@ supports.
 Print the front face down on the textured plate, in black, so the bezel
 matches the clock face. The camera standoffs and the screw bosses grow up
 from the bezel. Print the back cover with its outer face down and the
-columns pointing up. No supports are needed.
+columns pointing up, and the hanger with its wall side down and the stud
+sleeves pointing up. No supports are needed.
 
 ---
 
@@ -297,8 +299,10 @@ the clock, around the official Raspberry Pi Touch Display (v1, 7", 800 ×
 booth preview, games), and the camera sits above it, where people look.
 
 The module hangs from the frame, so the whole clock needs a single wall
-hook: the back cover grows a tab that goes up behind the frame and is
-bolted through the frame back board.
+hook. A hanger plate stays bolted through the frame back board, and the
+module hooks on its two studs through the keyholes of its back cover. It
+lifts off without tools, so the Raspberry Pi and the display are easy to
+reach.
 
 ```
   wall
@@ -306,42 +310,67 @@ bolted through the frame back board.
     │   │                          │  ← SANNAHED frame, on its own hook
     │   │        word clock        │
     │  ┌┤                          │
-    │  │└──────────────────────────┘  ← 4 × M3 bolts through the back board
-    │  │ tab (part of the back cover)
-    │  │   ┌────────────┐
-    │  └───┤     ◉      │  ← camera
-    │      │ ┌────────┐ │
-    │      │ │ screen │ ●  ← push button (right side)
-    │      │ └────────┘ │
-    │      └────────────┘  ← power and USB cables at the bottom
+    │  │└──────────────────────────┘  ← hanger: 4 × M3 bolts through the back board
+    │  │ hanger plate (stays on the frame)
+    │  │ ○      ○   ← 2 studs
+    │  │ ┌────────────┐
+    │  └─┤     ◉      │  ← camera
+    │    │ ┌────────┐ │
+    │    │ │ screen │ ●  ← push button (right side)
+    │    │ └────────┘ │
+    │    └────────────┘  ← power and USB cables at the bottom
 ```
 
 | Feature | Value |
 |---------|-------|
-| Outer size | 199,8 × 155,6 × 44 mm (back cover with tab: 199,8 × 230,6 mm) |
+| Outer size | 199,8 × 155,6 × 44 mm, plus the 5 mm hanger behind it |
 | Display | Raspberry Pi Touch Display v1, glass 192,96 × 110,76 mm |
 | Raspberry Pi | Raspberry Pi 4B on the display's M2,5 standoffs (58 × 49 mm) |
 | Camera | Camera board 25 × 24 mm (Camera Module 1.3/2/3 or OV5647), 4 M2 standoffs, 8 mm lens hole |
 | Display retention | 4 columns on the back cover press the display against the bezel at its M3 holes |
-| Back cover | 4 countersunk M3 self-tapping screws into the corner bosses |
-| Mounting | Tab 140 × 60 mm behind the frame, 4 countersunk M3 bolts with nuts inside the frame; 15 mm gap under the frame |
+| Back cover | 4 countersunk M3 screws into M3 heat-set inserts in the corner bosses |
+| Hanger | 140 × 112 mm, 4 countersunk M3 bolts through the frame back board, nuts inside the frame |
+| Studs | 2 × M3 × 10 mm bolts with washers on printed sleeves, 120 mm apart |
+| Keyholes | 11 mm wide end, 6 mm slot, 10 mm drop |
 | Push button | 12 mm panel-mount momentary button on the right side |
 | Cable exits | 60 × 14 mm at the bottom (power, USB), 18 × 10 mm at the top (LED cable) |
 
-1. Screw the camera onto the standoffs behind the bezel with M2 screws,
+### 9.1 First assembly
+
+1. Press four M3 heat-set inserts into the corner bosses of the front with
+   a soldering iron.
+2. Screw the camera onto the standoffs behind the bezel with M2 screws,
    lens through the hole.
-2. Lay the display face down in the bezel. The stops above and below the
+3. Lay the display face down in the bezel. The stops above and below the
    glass keep it centred.
-3. Mount the Raspberry Pi 4B on the display's standoffs and connect the
+4. Mount the Raspberry Pi 4B on the display's standoffs and connect the
    display cable, the camera cable and the GPIO wires (LED data through the
    74AHCT125, button, buzzer).
-4. Close the back cover with four M3 screws. Its columns hold the display.
-5. Hold the module centred under the frame with the tab against the back
-   board and a 15 mm gap under the frame. Mark and drill the four holes
-   through the back board, and bolt the tab with M3 countersunk bolts from
-   the wall side, nuts inside the frame.
-6. Drill an 8 mm hole up through the bottom rail of the frame, above the
-   top cable exit of the module, and pass the LED cable into the frame.
+5. Close the back cover with four M3 screws. Its columns hold the display.
+6. Put the two stud bolts through the hanger sleeves, with a washer under
+   each head and the nut in the hex pocket on the wall side.
+7. Hold the hanger centred under the frame, 15 mm of gap between the frame
+   and the module top, with its plate against the back board. Drill the
+   four holes through the back board and bolt the hanger from the wall
+   side, nuts inside the frame. The hanger stays there for good.
+8. Drill an 8 mm hole up through the bottom rail of the frame, above the
+   top cable exit of the module. Pass the LED cable into the frame and end
+   it with a JST SM 3-pin connector just outside the module.
+
+### 9.2 Taking the module off
+
+1. Unplug the power cable and the JST connector of the LED cable.
+2. Lift the module 10 mm and pull it towards you: the keyholes slide off
+   the studs.
+3. Lay it face down on a soft cloth and remove the four back cover screws.
+   The Raspberry Pi is now on top, with every port and the SD card in
+   reach. The display stays in the bezel.
+
+To put it back, close the cover, hook the keyholes over the studs, let the
+module drop, and plug the two cables in again.
+
+Software updates do not need any of this: the Raspberry Pi is reachable
+over the network (`ssh wordclock.local`).
 
 The LED cable comes from below, so wire the strip so that data enters at
 the bottom row and set the start corner in the software configuration.
@@ -353,8 +382,8 @@ running next to it.
 > (`cam_board`, `cam_holes`, `cam_lens_top`) before printing.
 
 If the frame back board sits deeper than the frame's back edge, add a
-spacer under the tab so it stays flat. With `screen_hang = false` the back
-cover gets two wall keyholes instead of the tab.
+spacer under the hanger so it stays flat. With `screen_hang = false` there
+is no hanger: the keyholes hang on two screws in the wall, 120 mm apart.
 
 The clock can still hide the camera in its own bottom margin instead: set
 `clock_camera = true` and `bottom_extra = 16` in the model. The face then
@@ -373,6 +402,7 @@ gets a 6 mm pinhole and grid tile `r2c1` a camera bracket.
 - [ ] Screen module printed, display and Raspberry Pi 4B fitted
 - [ ] Camera screwed behind the bezel and aligned with its hole
 - [ ] Button fitted in the side of the screen module
-- [ ] Screen module bolted under the frame, LED cable routed through the bottom rail
+- [ ] Hanger bolted to the frame, module hooked on its studs
+- [ ] LED cable through the bottom rail, with a JST connector at the module
 - [ ] Colour order checked with a test pattern
 - [ ] Stack fits in the frame with the back board closed

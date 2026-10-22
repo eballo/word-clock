@@ -19,7 +19,7 @@
 use <fonts/KarlaBoldStencil.ttf>
 
 /* [Part selection] */
-// face | grid | screenfront | screenback | assembly | pieces | none (library use)
+// face | grid | screenfront | screenback | screenhanger | assembly | pieces | none (library use)
 part = "grid";
 // Cell range [col_start, col_end, row_start, row_end), end exclusive
 tile = [0, 5, 0, 5];
@@ -134,15 +134,22 @@ screen_back_t = 4;
 screen_cam_hole_d = 8;
 // Panel-mount push button on the right side
 screen_button_d = 12;
-// Hang the module from the frame (true): the back cover grows a tab that is
-// bolted through the frame back board, so only the frame needs a wall hook.
-// false: the module hangs on the wall from two keyholes.
+// The module hooks on two studs through the keyholes of its back cover, so it
+// lifts off without tools. true: the studs are on a hanger plate bolted
+// through the frame back board (one wall hook for everything). false: the
+// studs are two screws in the wall.
 screen_hang = true;
 // Gap between the bottom edge of the frame and the top of the module
 screen_gap = 15;
-// Height and width of the tab behind the frame
+// Height and width of the hanger above the module, behind the frame
 screen_tab = 60;
 screen_tab_w = 140;
+screen_hanger_t = 5;
+// Keyholes: the module drops this far onto the studs
+keyhole_drop = 10;
+// Hole in the back cover bosses: 4.0 for M3 heat-set inserts, 2.6 for
+// self-tapping screws. Inserts survive opening the module many times.
+screen_insert_d = 4.0;
 
 /* [Letters] */
 rows = [
@@ -465,7 +472,7 @@ module screen_front_body() {
         for (p = cam_holes_pos)
             translate([p[0], p[1], screen_bezel - 1]) cylinder(d = 1.8, h = cam_lens_h + 2);
         for (p = screen_screws())
-            translate([p[0], p[1], screen_bezel + 2]) cylinder(d = 2.6, h = d);
+            translate([p[0], p[1], d - 8]) cylinder(d = screen_insert_d, h = 9);
         // Cable exits: power and USB at the bottom, LED cable at the top
         translate([o[0] / 2 - 30, -1, d - 16]) cube([60, screen_wall + 2, 14]);
         translate([o[0] / 2 + 40, o[1] - screen_wall - 1, d - 12]) cube([18, screen_wall + 2, 10]);
@@ -478,15 +485,23 @@ module screen_front_body() {
     }
 }
 
-// M3 bolts through the tab and the frame back board, clear of the frame's
-// bottom rail.
+// M3 bolts through the hanger and the frame back board, clear of the
+// frame's bottom rail.
 function screen_tab_bolts() = let(o = screen_outer(), top = o[1] + screen_gap) [
     for (dx = [-50, 50], y = [top + 18, top + screen_tab - 12]) [o[0] / 2 + dx, y]
 ];
 
+// Keyholes in the back cover (centre of the wide end) and the studs they hang
+// on once the module has dropped into place.
+function screen_keyholes() = let(o = screen_outer()) [
+    for (dx = [-60, 60]) [o[0] / 2 + dx, o[1] - 22]
+];
+function screen_studs() = [
+    for (k = screen_keyholes()) [k[0], k[1] + keyhole_drop]
+];
+
 // Back cover with columns that press the display against the bezel, vents
-// over the Raspberry Pi, and either a tab that bolts to the frame or wall
-// keyholes.
+// over the Raspberry Pi, and two keyholes to hang it on its studs.
 module screen_back_body() {
     o = screen_outer();
     d = screen_bezel + screen_depth;
@@ -494,10 +509,6 @@ module screen_back_body() {
     difference() {
         union() {
             translate([0, 0, d]) linear_extrude(screen_back_t) screen_outline(o);
-            if (screen_hang)
-                translate([o[0] / 2 - screen_tab_w / 2, o[1] - 10, d])
-                    linear_extrude(screen_back_t)
-                        offset(4) offset(-4) square([screen_tab_w, screen_gap + screen_tab + 10]);
             for (p = lcd_m3_pos())
                 translate([p[0], p[1], screen_bezel + lcd_t]) cylinder(d = 9, h = column);
         }
@@ -509,23 +520,46 @@ module screen_back_body() {
                 cylinder(d = 3.4, h = screen_back_t + 2);
                 translate([0, 0, screen_back_t + 1 - 1.8]) cylinder(d1 = 3.4, d2 = 7, h = 1.81);
             }
-        // Countersunk on the wall side, nuts inside the frame
-        if (screen_hang)
-            for (p = screen_tab_bolts())
-                translate([p[0], p[1], d - 1]) {
-                    cylinder(d = 3.4, h = screen_back_t + 2);
-                    translate([0, 0, screen_back_t + 1 - 1.8]) cylinder(d1 = 3.4, d2 = 7, h = 1.81);
-                }
-        // Keyholes for two screws in the wall, 120 mm apart
-        if (!screen_hang)
-            for (x = [o[0] / 2 - 60, o[0] / 2 + 60])
-                translate([x, o[1] - 22, d - 1]) {
-                    cylinder(d = 8, h = screen_back_t + 2);
-                    translate([-2, 0, 0]) cube([4, 10, screen_back_t + 2]);
-                }
+        // Keyholes: wide end for the washer, slot for the stud
+        for (k = screen_keyholes())
+            translate([k[0], k[1], d - 1]) {
+                cylinder(d = 11, h = screen_back_t + 2);
+                translate([-3, 0, 0]) cube([6, keyhole_drop, screen_back_t + 2]);
+                translate([0, keyhole_drop, 0]) cylinder(d = 6, h = screen_back_t + 2);
+            }
         // Vents over the Raspberry Pi
         for (i = [0:7])
             translate([o[0] / 2 - 45, glass_origin()[1] + 25 + i * 8, d - 1]) cube([90, 3, screen_back_t + 2]);
+    }
+}
+
+// Hanger plate bolted through the frame back board. Two sleeves carry M3
+// bolts with washers that the module hangs on; the bolt nuts sit in hex
+// pockets on the wall side. Body coordinates, behind the back cover.
+module screen_hanger_body() {
+    o = screen_outer();
+    z = screen_total_depth();
+    y0 = screen_keyholes()[0][1] - 15;
+    y1 = o[1] + screen_gap + screen_tab;
+    sleeve = screen_back_t + 0.6;
+    difference() {
+        union() {
+            translate([o[0] / 2 - screen_tab_w / 2, y0, z])
+                linear_extrude(screen_hanger_t) offset(4) offset(-4) square([screen_tab_w, y1 - y0]);
+            for (p = screen_studs())
+                translate([p[0], p[1], z - sleeve]) cylinder(d = 5.6, h = sleeve);
+        }
+        for (p = screen_studs())
+            translate([p[0], p[1], z - sleeve - 1]) {
+                cylinder(d = 3.4, h = sleeve + screen_hanger_t + 2);
+                translate([0, 0, sleeve + 1 + screen_hanger_t - 2.5]) cylinder(d = 6.4, h = 3, $fn = 6);
+            }
+        // Countersunk on the wall side, nuts inside the frame
+        for (p = screen_tab_bolts())
+            translate([p[0], p[1], z - 1]) {
+                cylinder(d = 3.4, h = screen_hanger_t + 2);
+                translate([0, 0, screen_hanger_t + 1 - 1.8]) cylinder(d1 = 3.4, d2 = 7, h = 1.81);
+            }
     }
 }
 
@@ -540,12 +574,18 @@ module screenback() {
     translate([0, 0, d + screen_back_t]) rotate([0, 180, 0]) mirror([1, 0, 0]) screen_back_body();
 }
 
+// Printed wall side down, sleeves up.
+module screenhanger() {
+    translate([0, 0, screen_total_depth() + screen_hanger_t]) rotate([0, 180, 0]) mirror([1, 0, 0]) screen_hanger_body();
+}
+
 // The module in front-view coordinates (z towards the viewer, front face at
 // z = 0), for the assembly view.
 module screen_module() {
     mirror([0, 0, 1]) {
         color("#1a1a1a") screen_front_body();
         color("dimgray") screen_back_body();
+        if (screen_hang) color("gray") screen_hanger_body();
         color("#0b1a2a") translate([glass_origin()[0], glass_origin()[1], screen_bezel]) cube([lcd_glass[0], lcd_glass[1], 0.7]);
     }
 }
@@ -570,7 +610,7 @@ module assembly() {
     color("ivory") translate([line_x(0), line_y(cells), paper_z]) cube([matrix_size, matrix_size, paper_t]);
     // Screen module centred under the frame, its back against the wall
     translate([panel_size / 2 - screen_outer()[0] / 2, -clearance / 2 - (500 - inner_size) / 2 - screen_gap - screen_outer()[1],
-               -back_gap + screen_total_depth()])
+               -back_gap + screen_total_depth() + (screen_hang ? screen_hanger_t : 0)])
         screen_module();
 
     if (show_frame) {
@@ -630,6 +670,7 @@ if (part == "face") face(tile);
 else if (part == "grid") grid(tile);
 else if (part == "screenfront") screenfront();
 else if (part == "screenback") screenback();
+else if (part == "screenhanger") screenhanger();
 else if (part == "assembly") assembly();
 else if (part == "pieces") pieces();
 else if (part != "none") assert(false, str("Unknown part: ", part));
