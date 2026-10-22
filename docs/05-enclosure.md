@@ -60,9 +60,10 @@ The panel and the light grid fill the inner opening of the frame. With
    ▼    ▼    ▼    ▼    ▼      bullet pixels and wiring
 ┌──────────────────────────┐  SANNAHED back board
 └──────────────────────────┘
-            │
-     Raspberry Pi box (outside, on the back board)
 ```
+
+The Raspberry Pi box hangs under the bottom edge of the frame (see
+section 9), so the frame stays flat against the wall.
 
 | Layer | Thickness | Colour |
 |-------|-----------|--------|
@@ -82,8 +83,8 @@ about 40 mm between the glazing and the back board.
 |------|-----|---------------------|---------|
 | `<lang>/face_rXcY.stl` | 4 | yes | Black face with stencil letter holes |
 | `common/grid_rXcY.stl` | 4 | no | Light grid that isolates each cell and holds the pixels |
-| `common/pibox.stl` | 1 | no | Box for the Raspberry Pi Zero 2 W and the 74AHCT125 |
-| `common/pilid.stl` | 1 | no | Ventilated lid for the box |
+| `common/pibox.stl` | 1 | no | Box that hangs under the frame, with push button and DC jack |
+| `common/pilid.stl` | 1 | no | Bottom lid that carries the Raspberry Pi Zero 2 W |
 
 Only the face depends on the language. To change the language of the
 clock, swap the four face tiles and keep everything else.
@@ -177,8 +178,9 @@ Print each grid tile with the back plate on the bed, in white PLA.
 
 ### 6.3 Raspberry Pi box
 
-Print the box upright and the lid upside down (vents on the bed). No
-supports are needed.
+Print the box on its back: the hanger plate and the back wall lie on the
+bed, and the front wall bridges over the inside. Print the lid flat, outside
+face down. No supports are needed.
 
 ---
 
@@ -240,23 +242,46 @@ sheet.
 
 ## 9. Raspberry Pi
 
-The Raspberry Pi Zero 2 W and the 74AHCT125 board go in the printed box,
-screwed onto the outside of the SANNAHED back board.
+The Raspberry Pi Zero 2 W and the 74AHCT125 board go in a printed box that
+hangs under the bottom edge of the frame. A plate on the back of the box
+rises behind the frame and is bolted to the back board, so the box needs no
+space inside the frame and the clock stays flat against the wall.
+
+```
+        ┌──────────────────────────────┐
+        │                              │
+        │         word clock           │  ← SANNAHED frame
+        │                              │
+        │   ┌──────────────────────┐   │  ← hanger plate (behind the frame,
+        └───┼──────────────────────┼───┘     bolted to the back board)
+            │  ○ DC        ( ● )   │      ← box: DC jack on the left side,
+            └──────────────────────┘        push button on the front
+                 lid underneath           ← Raspberry Pi mounted on the lid
+```
 
 | Feature | Value |
 |---------|-------|
-| Inner size | 72 × 60 × 20 mm |
-| Pi mounting | 4 standoffs, M2.5 self-tapping screws |
-| Box mounting | 2 countersunk M3 screws through the back board |
-| Cable exits | Side slot (5V input), floor slot (LED cable) |
+| Outer size | 94 × 50 × 28 mm (width × depth × height) |
+| Hanger plate | 94 × 3 mm, 45 mm above the box, 2 countersunk M3 holes |
+| Push button | 12 mm panel-mount momentary button, on the front |
+| Power input | 5,5 × 2,1 mm panel-mount DC jack (8 mm hole), on the left side |
+| Pi mounting | On the lid, 4 standoffs, M2.5 self-tapping screws |
+| Lid | 2 countersunk M3 self-tapping screws from underneath |
+| Cable exit | 20 × 8 mm slot in the top, at the back |
 
-Drill a 20 × 10 mm hole in the back board under the floor slot to route the
-3-wire LED cable to row 0. The box adds about 24 mm behind the frame, so
-stick two 24 mm felt pads to the bottom corners of the back board to keep
-the frame hanging straight.
+1. Hold the box under the frame, centred, with the hanger plate against the
+   back of the frame. Mark the two holes on the back board.
+2. Drill the back board and bolt the plate on with M3 bolts, the countersunk
+   heads on the wall side and the nuts inside the frame.
+3. Drill an 8 mm hole through the bottom rail of the frame, right above the
+   cable slot, and pass the 3-wire LED cable up into the frame to row 0.
+4. Mount the Raspberry Pi on the lid, wire the button between a GPIO pin and
+   GND, and close the lid from underneath.
 
-The box is optional: the Pi can also stay outside the frame, with only the
-3-wire cable entering through the back board.
+The SD card and the wiring stay reachable by removing the lid, without
+taking the clock off the wall. The hanger plate adds 3 mm behind the bottom
+of the frame: stick two 3 mm felt pads to the top corners so the frame
+hangs straight.
 
 ---
 
@@ -270,5 +295,5 @@ The box is optional: the Pi can also stay outside the frame, with only the
 - [ ] 256 bullet pixels fitted in snake order
 - [ ] Power injected at row 0 and row 8
 - [ ] Colour order checked with a test pattern
-- [ ] Pi box printed, wired and screwed to the back board
+- [ ] Pi box printed, wired and bolted under the frame
 - [ ] Stack fits in the frame with the back board closed

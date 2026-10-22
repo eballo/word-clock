@@ -8,7 +8,7 @@ The clock is assembled in four main layers, stacked from back to front:
         WALL
          │
     ┌────┴────┐
-    │  Back   │  ← SANNAHED back board + printed Raspberry Pi box
+    │  Back   │  ← SANNAHED back board (Raspberry Pi box hangs below)
     ├─────────┤
     │  LED    │  ← bullet pixels in the 3D-printed light grid
     │  matrix │
@@ -99,7 +99,7 @@ Raspberry Pi GND             ──► GND
 
 ### 3.3 Raspberry Pi placement
 
-Mount the Raspberry Pi Zero 2 W and the level shifter in the printed box on the back of the SANNAHED back board (see [05 — Enclosure](05-enclosure.md)). Route the 3-wire LED cable through a hole in the back board to row 0 (top-left corner).
+Mount the Raspberry Pi Zero 2 W and the level shifter in the printed box that hangs under the frame (see [05 — Enclosure](05-enclosure.md)). Route the 3-wire LED cable through a hole in the bottom rail of the frame to row 0 (top-left corner).
 
 ---
 
@@ -115,7 +115,7 @@ Follow this order when putting the clock together:
    ```
 4. **Check for dead or flickering LEDs** and re-solder any bad joints
 5. **Close the SANNAHED back board** so it clamps the stack
-6. **Screw the Raspberry Pi box** onto the back board
+6. **Bolt the Raspberry Pi box** under the frame through the back board
 7. **Power on the full assembly** and verify the time displays correctly via the web interface at `http://wordclock.local:5000`
 
 ---
@@ -123,10 +123,10 @@ Follow this order when putting the clock together:
 ## 5. Wall mounting
 
 Hang the clock from the SANNAHED hanging fitting, or with two ALFTA adhesive
-hooks. If the Raspberry Pi box is screwed to the back board, stick two
-24 mm felt pads to the bottom corners so the frame hangs straight.
+hooks. The hanger plate of the Raspberry Pi box adds 3 mm behind the bottom
+of the frame, so stick two 3 mm felt pads to the top corners.
 
-> Route the power cable through the bottom of the frame, down the wall, and to a nearby socket. Use a cable raceway for a clean finish.
+> Plug the power cable into the DC jack on the side of the Raspberry Pi box, then run it down the wall to a nearby socket. Use a cable raceway for a clean finish.
 
 ---
 
@@ -138,7 +138,7 @@ hooks. If the Raspberry Pi box is screwed to the back board, stick two
 - [ ] Power injection at row 0 and row 8
 - [ ] Level shifter wired and tested
 - [ ] Common ground between PSU and Raspberry Pi
-- [ ] Raspberry Pi box screwed to the back board
+- [ ] Raspberry Pi box bolted under the frame
 - [ ] Front panel and grid clamped in the frame
 - [ ] Full power-on test passed (all LEDs respond)
 - [ ] systemd service running on boot

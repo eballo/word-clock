@@ -73,8 +73,16 @@ bolt_z = 4;
 // Raspberry Pi Zero 2 W: 65 x 30 mm, holes on a 58 x 23 mm rectangle
 pi_size = [65, 30];
 pi_holes = [58, 23];
-box_inner = [72, 60, 20];
+// Inside of the box that hangs under the frame: width, depth, height
+box_inner = [90, 46, 26];
 box_wall = 2;
+// Plate that rises behind the frame and is bolted to the back board
+hanger_h = 45;
+hanger_t = 3;
+// Panel-mount momentary push button on the front
+button_d = 12;
+// Panel-mount 5.5 x 2.1 mm DC jack on the left side
+dc_jack_d = 8;
 
 /* [Letters] */
 rows = [
@@ -223,31 +231,76 @@ module grid(t) {
 
 // --- Raspberry Pi box -----------------------------------------------------
 
+// The box hangs under the bottom edge of the frame. Box coordinates: x is the
+// width, y the depth (y = 0 at the back, against the wall) and z the height
+// (z = 0 at the open bottom, closed by the lid).
+
 module rounded_box(size, r = 3) {
     linear_extrude(size[2])
         offset(r) offset(-r) square([size[0], size[1]]);
 }
 
-module pibox() {
-    outer = [box_inner[0] + 2 * box_wall, box_inner[1] + 2 * box_wall, box_inner[2] + box_wall];
-    pi_origin = [box_wall + (box_inner[0] - pi_size[0]) / 2, box_wall + box_inner[1] - pi_size[1] - 3];
+function box_outer() = [box_inner[0] + 2 * box_wall, box_inner[1] + 2 * box_wall, box_inner[2] + box_wall];
+
+// Corner bosses for the M3 screws that hold the lid.
+function lid_screws() = [[box_wall + 5, box_wall + box_inner[1] - 5], [box_wall + box_inner[0] - 5, box_wall + box_inner[1] - 5]];
+
+module countersunk_m3(depth) {
+    translate([0, 0, -1]) cylinder(d = 3.4, h = depth + 2);
+    translate([0, 0, depth - 1.6]) cylinder(d1 = 3.4, d2 = 6.6, h = 1.61);
+}
+
+module pibox_body() {
+    outer = box_outer();
+    difference() {
+        union() {
+            rounded_box(outer);
+            // Hanger plate, flush with the back wall
+            translate([0, 0, 0]) cube([outer[0], hanger_t, outer[2] + hanger_h]);
+        }
+        translate([box_wall, box_wall, -1]) rounded_box([box_inner[0], box_inner[1], box_inner[2] + 1], 1);
+        // Push button on the front, towards the right
+        translate([outer[0] - 22, outer[1] - box_wall - 1, outer[2] / 2]) rotate([-90, 0, 0]) cylinder(d = button_d, h = box_wall + 2);
+        // DC jack on the left side
+        translate([-1, outer[1] / 2 + 6, outer[2] / 2]) rotate([0, 90, 0]) cylinder(d = dc_jack_d, h = box_wall + 2);
+        // Cable exit in the top, at the back, up into the frame
+        translate([outer[0] / 2 - 10, hanger_t, outer[2] - box_wall - 1]) cube([20, 8, box_wall + 2]);
+        // Bolt holes in the hanger plate, countersunk on the wall side
+        for (x = [15, outer[0] - 15])
+            translate([x, 0, outer[2] + hanger_h - 12]) rotate([-90, 0, 0]) mirror([0, 0, 1]) translate([0, 0, -hanger_t]) countersunk_m3(hanger_t);
+    }
+    // Bosses for the lid screws (M3 self-tapping)
+    for (p = lid_screws())
+        translate([p[0], p[1], 0])
+            difference() {
+                cylinder(d = 7, h = outer[2] - box_wall);
+                translate([0, 0, -1]) cylinder(d = 2.6, h = 15);
+            }
+}
+
+// Bottom lid that carries the Raspberry Pi. Printed flat, outside face down.
+module pibox_lid() {
+    outer = box_outer();
+    tol = 0.3;
+    lip = 3;
     standoff_h = 4;
+    pi_origin = [box_wall + box_inner[0] - pi_size[0] - 4, hanger_t + 3];
 
     difference() {
-        rounded_box(outer);
-        translate([box_wall, box_wall, box_wall]) rounded_box([box_inner[0], box_inner[1], box_inner[2] + 1], 1);
-        // Cable slot for the 5V input and the 3-wire LED cable
-        translate([-1, box_wall + 6, box_wall + 2]) cube([box_wall + 2, 14, 8]);
-        // Cable slot towards the LED matrix, through the frame back board
-        translate([outer[0] / 2 - 10, box_wall + 4, -1]) cube([20, 10, box_wall + 2]);
-        // Countersunk holes to screw the box onto the frame back board,
-        // below the Raspberry Pi area so the screw heads stay reachable
-        for (x = [8, outer[0] - 8])
-            translate([x, 8, 0]) {
-                translate([0, 0, -1]) cylinder(d = 3.4, h = box_wall + 2);
-                translate([0, 0, box_wall - 1.6]) cylinder(d1 = 3.4, d2 = 6.6, h = 1.61);
-            }
+        rounded_box([outer[0], outer[1], box_wall]);
+        // Ventilation slots under the Raspberry Pi
+        for (i = [0:3])
+            translate([pi_origin[0] + 8, pi_origin[1] + 6 + i * 6, -1]) cube([pi_size[0] - 16, 2.5, box_wall + 2]);
+        for (p = lid_screws())
+            translate([p[0], p[1], 0]) mirror([0, 0, 1]) translate([0, 0, -box_wall]) countersunk_m3(box_wall);
     }
+    // Lip that keeps the lid centred in the box, cut around the bosses
+    translate([0, 0, box_wall])
+        difference() {
+            translate([box_wall + tol, box_wall + tol]) rounded_box([box_inner[0] - 2 * tol, box_inner[1] - 2 * tol, lip], 1);
+            translate([box_wall + tol + 1.2, box_wall + tol + 1.2, -1]) rounded_box([box_inner[0] - 2 * tol - 2.4, box_inner[1] - 2 * tol - 2.4, lip + 2], 1);
+            for (p = lid_screws()) translate([p[0], p[1], -1]) cylinder(d = 8, h = lip + 2);
+        }
     // Standoffs for M2.5 self-tapping screws
     for (dx = [0, pi_holes[0]], dy = [0, pi_holes[1]])
         translate([pi_origin[0] + 3.5 + dx, pi_origin[1] + 3.5 + dy, box_wall])
@@ -257,21 +310,13 @@ module pibox() {
             }
 }
 
+// Printed on its back: the back wall and the hanger plate lie on the bed.
+module pibox() {
+    rotate([90, 0, 0]) mirror([0, 1, 0]) pibox_body();
+}
+
 module pilid() {
-    lip = 3;
-    tol = 0.3;
-    outer = [box_inner[0] + 2 * box_wall, box_inner[1] + 2 * box_wall];
-    difference() {
-        rounded_box([outer[0], outer[1], box_wall]);
-        // Ventilation slots
-        for (i = [0:5])
-            translate([outer[0] / 2 - 25, 14 + i * 7, -1]) cube([50, 2.5, box_wall + 2]);
-    }
-    translate([box_wall + tol, box_wall + tol, box_wall])
-        difference() {
-            rounded_box([box_inner[0] - 2 * tol, box_inner[1] - 2 * tol, lip], 1);
-            translate([1.2, 1.2, -1]) rounded_box([box_inner[0] - 2 * tol - 2.4, box_inner[1] - 2 * tol - 2.4, lip + 2], 1);
-        }
+    pibox_lid();
 }
 
 // --- Assembly view ----------------------------------------------------------
@@ -291,10 +336,15 @@ module assembly() {
     }
     // Back board of the frame, behind the pixel tails
     back_z = -18;
-    color("dimgray")
-        translate([panel_size / 2 + 38, panel_size - 40, back_z - explode]) rotate([180, 0, 0]) pibox();
+    frame_wall = (500 - inner_size) / 2;
+    frame_bottom = -clearance / 2 - frame_wall;
+    // Box coordinates (x, depth, height) to front view (x, height, depth)
+    translate([panel_size / 2 - box_outer()[0] / 2, frame_bottom - box_outer()[2], back_z - hanger_t])
+        multmatrix([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0]]) {
+            color("dimgray") pibox_body();
+            color("gray") translate([0, 0, -explode / 2]) pibox_lid();
+        }
     if (show_frame) {
-        frame_wall = (500 - inner_size) / 2;
         color("burlywood", 0.35)
             translate([-clearance / 2 - frame_wall, -clearance / 2 - frame_wall, back_z])
                 difference() {

@@ -111,6 +111,7 @@ One short paragraph summarising what this doc covers.
 | LED count | 256 (16 × 16) |
 | Front panel | 3D-printed, opaque black PLA/PETG, Karla Bold Stencil letters, dovetail-joined tiles; only part that changes per language |
 | Diffuser | Tracing paper between the face and the light grid |
+| Raspberry Pi | Pi Zero 2 W in a printed box that hangs under the frame, with a push button and a DC jack |
 | Printer | Bambu Lab A1, 2×2 tiles of 24.2 cm |
 | CAD | OpenSCAD model in `wordclock/cad/`, rendered with `wordclock-cad` |
 | Wiring | Snake (even rows L→R, odd rows R→L) |
