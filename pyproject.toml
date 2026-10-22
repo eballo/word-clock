@@ -31,6 +31,7 @@ dev = [
 wordclock          = "wordclock.main:app"
 wordclock-generate = "wordclock.layouts.utils.cli:app"
 wordclock-cad      = "wordclock.cad.cli:app"
+wordclock-matrix   = "wordclock.matrix.cli:app"
 
 [build-system]
 requires = ["hatchling"]

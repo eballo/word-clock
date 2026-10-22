@@ -3,6 +3,9 @@ from __future__ import annotations
 from wordclock.cad.build import (
     EXTRA_PARTS,
     FACE_PARTS,
+    MATRIX_HALVES,
+    MATRIX_PARTS,
+    MATRIX_SCAD_FILE,
     OPTIONAL_PARTS,
     SCAD_FILE,
     TEST_TILE,
@@ -10,15 +13,20 @@ from wordclock.cad.build import (
     TILES,
     RenderJob,
     plan_jobs,
+    plan_matrix_jobs,
     scad_command,
     scad_string_list,
     write_bambu_projects,
+    write_matrix_projects,
     write_preview,
 )
 
 __all__ = [
     "EXTRA_PARTS",
     "FACE_PARTS",
+    "MATRIX_HALVES",
+    "MATRIX_PARTS",
+    "MATRIX_SCAD_FILE",
     "OPTIONAL_PARTS",
     "SCAD_FILE",
     "TEST_TILE",
@@ -26,8 +34,10 @@ __all__ = [
     "TILES",
     "RenderJob",
     "plan_jobs",
+    "plan_matrix_jobs",
     "scad_command",
     "scad_string_list",
     "write_bambu_projects",
+    "write_matrix_projects",
     "write_preview",
 ]

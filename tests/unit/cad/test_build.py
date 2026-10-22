@@ -6,6 +6,9 @@ from pathlib import Path
 from wordclock.cad import (
     EXTRA_PARTS,
     FACE_PARTS,
+    MATRIX_HALVES,
+    MATRIX_PARTS,
+    MATRIX_SCAD_FILE,
     OPTIONAL_PARTS,
     SCAD_FILE,
     TEST_TILE,
@@ -13,9 +16,11 @@ from wordclock.cad import (
     TILES,
     RenderJob,
     plan_jobs,
+    plan_matrix_jobs,
     scad_command,
     scad_string_list,
     write_bambu_projects,
+    write_matrix_projects,
     write_preview,
 )
 
@@ -176,3 +181,57 @@ class TestWriteBambuProjects:
         with zipfile.ZipFile(projects[0]) as zf:
             settings = zf.read("Metadata/model_settings.config").decode()
         assert settings.count("<plate>") == len(TILES) + len(EXTRA_PARTS)
+
+
+class TestMatrix:
+    def test_plans_both_halves_of_grid_and_face(self) -> None:
+        # Given
+        out = Path("build/stl")
+        # When
+        jobs = plan_matrix_jobs(out)
+        # Then
+        assert len(jobs) == len(MATRIX_PARTS) * len(MATRIX_HALVES)
+        assert (
+            RenderJob("face", out / "matrix" / "face_right.stl", half=1, scad=MATRIX_SCAD_FILE)
+            in jobs
+        )
+        assert all(job.scad == MATRIX_SCAD_FILE for job in jobs)
+
+    def test_command_passes_the_half_and_the_matrix_model(self) -> None:
+        # Given
+        job = plan_matrix_jobs(Path("build"))[0]
+        # When
+        cmd = scad_command(job)
+        # Then
+        assert 'part="grid"' in cmd
+        assert "half=0" in cmd
+        assert cmd[-1] == str(MATRIX_SCAD_FILE)
+
+    def test_model_matches_the_strip(self) -> None:
+        # Given
+        scad = MATRIX_SCAD_FILE.read_text(encoding="utf-8")
+        # When / Then: 10 x 6 cells, one LED of a 30 LEDs/metre strip each
+        assert "cols = 10;" in scad
+        assert "rows = 6;" in scad
+        assert "pitch = 1000 / 30;" in scad
+
+    def test_writes_one_project_per_part(self, tmp_path: Path) -> None:
+        # Given: a tiny STL for every half
+        stl = "\n".join(
+            ["solid s", "facet normal 0 0 1", "outer loop", "vertex 0 0 0", "vertex 1 0 0"]
+            + ["vertex 0 1 0", "endloop", "endfacet", "endsolid s", ""]
+        )
+        matrix = tmp_path / "stl" / "matrix"
+        matrix.mkdir(parents=True)
+        for job in plan_matrix_jobs(tmp_path / "stl"):
+            job.output.write_text(stl, encoding="ascii")
+        # When
+        projects = write_matrix_projects(tmp_path / "stl", tmp_path / "bambu")
+        # Then
+        assert projects == [
+            tmp_path / "bambu" / "matrix_grid.3mf",
+            tmp_path / "bambu" / "matrix_face.3mf",
+        ]
+        with zipfile.ZipFile(projects[0]) as zf:
+            settings = zf.read("Metadata/model_settings.config").decode()
+        assert settings.count("<plate>") == 2
