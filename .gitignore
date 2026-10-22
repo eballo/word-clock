@@ -11,3 +11,4 @@ htmlcov/
 .pytest_cache/
 *.log
 .claude/settings.local.json
+build/
