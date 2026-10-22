@@ -10,7 +10,7 @@ The result is a clock that reads like a sentence, turning something functional i
 
 ## The Project
 
-The goal is to build a **50 × 50 cm word clock** in an IKEA SANNAHED frame with a **16 × 16 letter matrix** lit by 1 024 individually addressable LEDs (4 per letter) and driven by a Raspberry Pi 4B with a 7" touch screen under the clock.
+The goal is to build a **50 × 50 cm word clock** in an IKEA SANNAHED frame with a **16 × 16 letter matrix** lit by 1 024 individually addressable LEDs (4 per letter) and driven by a Raspberry Pi 3B with a 7" touch screen under the clock.
 
 One of the key design decisions is that the **front panel is interchangeable**. The panel is a 3D-printed piece with the letters, sitting in front of the LED matrix. Light only escapes through the letter-shaped openings. Swapping the panel changes the language of the clock without touching any hardware underneath.
 

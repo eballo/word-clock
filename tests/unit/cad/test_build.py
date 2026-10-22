@@ -5,6 +5,7 @@ from pathlib import Path
 from wordclock.cad import (
     EXTRA_PARTS,
     FACE_PARTS,
+    OPTIONAL_PARTS,
     SCAD_FILE,
     TEST_TILE,
     TILE_SPLITS,
@@ -84,6 +85,16 @@ class TestPlanJobs:
         # Then
         assert all(job.rows is not None and len(job.rows) == 16 for job in jobs)
         assert all(job.output.parent == out / "english" for job in jobs)
+
+    def test_optional_parts_only_on_request(self) -> None:
+        # Given
+        out = Path("build")
+        # When
+        default = plan_jobs(["catalan"], out)
+        with_optional = plan_jobs(["catalan"], out, optional=True)
+        # Then
+        assert not any(job.part in OPTIONAL_PARTS for job in default)
+        assert RenderJob("pitray", out / "optional" / "pitray.stl") in with_optional
 
     def test_test_build_uses_corner_tile_only(self) -> None:
         # Given

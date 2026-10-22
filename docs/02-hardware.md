@@ -89,11 +89,11 @@ lie on the back plate of the grid.
 
 ### Raspberry Pi
 
-The clock uses a Raspberry Pi 4B in the screen module under the frame, behind the official 7" Touch Display. The LED strip data line connects to **GPIO 18** (PWM), the camera uses the camera connector and the push button uses GPIO 3.
+The clock uses a Raspberry Pi 3B in the screen module under the frame, behind the official 7" Touch Display. A Raspberry Pi 4B fits the same module (same footprint and DSI connector) when more power is needed, for example for face recognition. The LED strip data line connects to **GPIO 18** (PWM), the camera uses the camera connector and the push button uses GPIO 3.
 
 | Parameter | Value |
 |-----------|-------|
-| Model | Raspberry Pi 4B (a Raspberry Pi 3B works for bench tests) |
+| Model | Raspberry Pi 3B (Raspberry Pi 4B as an upgrade) |
 | Display | Raspberry Pi Touch Display v1, 7", 800 × 480, DSI |
 | GPIO pin | GPIO 18 (PWM) |
 | Button | GPIO 3 to GND (also wakes the Pi from halt) |
@@ -112,7 +112,7 @@ With 1 024 LEDs at a maximum of 60 mA each (full white), the theoretical peak dr
 | 35 letters, full white (140 LEDs) | ~8,4 A (limited by software) |
 | 35 letters, one colour | ~2,8 A |
 | Idle LEDs (1 024 × ~0,5–1 mA) | ~0,5–1 A |
-| Raspberry Pi 4B + display + camera | ~1,5–2,5 A |
+| Raspberry Pi 3B/4B + display + camera | ~1,5–2,5 A |
 
 | Parameter | Value |
 |-----------|-------|
@@ -149,7 +149,7 @@ With 1 024 LEDs at a maximum of 60 mA each (full white), the theoretical peak dr
 | # | Component | Specification |
 |---|-----------|---------------|
 | 1 | LED strip | WS2812B, 144 LEDs/metre, 5V, IP30, 8 reels of 1 m |
-| 2 | Raspberry Pi | Raspberry Pi 4B + Touch Display v1 (in the screen module) |
+| 2 | Raspberry Pi | Raspberry Pi 3B (or 4B) + Touch Display v1 (in the screen module) |
 | 3 | Power supply | 5V 10A (50W) |
 | 4 | Level shifter | 3,3V → 5V (e.g. 74AHCT125) |
 | 5 | Frame | IKEA SANNAHED 50 × 50 cm |

@@ -7,7 +7,7 @@ WS2812B strip with 144 LEDs/metre, four LEDs under every letter. Every
 printed part is made on a Bambu Lab A1 (25 × 25 cm bed), split into 3 × 3 tiles,
 and generated from one parametric OpenSCAD model with `uv run wordclock-cad`.
 A screen module under the clock holds the Raspberry Pi Touch Display, the
-Raspberry Pi 4B and the camera. This doc covers the dimensions, the printed parts, how to render and
+Raspberry Pi (3B or 4B) and the camera. This doc covers the dimensions, the printed parts, how to render and
 print them, and how everything stacks inside the frame.
 
 ---
@@ -82,6 +82,7 @@ same margin on every side.
 | `common/screenfront.stl` | 1 | no | Screen module: bezel and walls, camera above the screen |
 | `common/screenback.stl` | 1 | no | Screen module: back cover with keyholes |
 | `common/screenhanger.stl` | 1 | no | Screen module: hanger plate bolted to the frame |
+| `optional/pitray.stl` | — | no | Only with `--optional`: Raspberry Pi Zero 2 W tray for a build without the screen module (section 9.3) |
 
 Only the face depends on the language. To change the language of the
 clock, open the back board, lift out the grid, swap the face panel and put
@@ -293,7 +294,7 @@ row 15                          ←  LEDs  960 .. 1023
 
 ## 9. Screen module
 
-The Raspberry Pi 4B, the camera and the button live in a printed case under
+The Raspberry Pi (3B or 4B), the camera and the button live in a printed case under
 the clock, around the official Raspberry Pi Touch Display (v1, 7", 800 ×
 480). The touch screen controls the clock (settings, reminders, photo
 booth preview, games), and the camera sits above it, where people look.
@@ -325,7 +326,7 @@ reach.
 |---------|-------|
 | Outer size | 199,8 × 155,6 × 44 mm, plus the 5 mm hanger behind it |
 | Display | Raspberry Pi Touch Display v1, glass 192,96 × 110,76 mm |
-| Raspberry Pi | Raspberry Pi 4B on the display's M2,5 standoffs (58 × 49 mm) |
+| Raspberry Pi | Raspberry Pi 3B or 4B on the display's M2,5 standoffs (58 × 49 mm); both have the same footprint and DSI connector |
 | Camera | Camera board 25 × 24 mm (Camera Module 1.3/2/3 or OV5647), 4 M2 standoffs, 8 mm lens hole |
 | Display retention | 4 columns on the back cover press the display against the bezel at its M3 holes |
 | Back cover | 4 countersunk M3 screws into M3 heat-set inserts in the corner bosses |
@@ -343,7 +344,7 @@ reach.
    lens through the hole.
 3. Lay the display face down in the bezel. The stops above and below the
    glass keep it centred.
-4. Mount the Raspberry Pi 4B on the display's standoffs and connect the
+4. Mount the Raspberry Pi 3B or 4B on the display's standoffs and connect the
    display cable, the camera cable and the GPIO wires (LED data through the
    74AHCT125, button, buzzer).
 5. Close the back cover with four M3 screws. Its columns hold the display.
@@ -389,6 +390,21 @@ The clock can still hide the camera in its own bottom margin instead: set
 `clock_camera = true` and `bottom_extra = 16` in the model. The face then
 gets a 6 mm pinhole and grid tile `r2c1` a camera bracket.
 
+### 9.3 Alternative: Raspberry Pi Zero 2 W inside the frame
+
+The clock keeps a 10 mm gap behind the grid, so a Raspberry Pi Zero 2 W can
+live inside the frame instead of the screen module. The Pi Zero 2 W has no
+DSI connector, so this build has no touch display.
+
+| Step | Work |
+|------|------|
+| Remove the module and the hanger | 4 bolts; the holes in the back board stay hidden |
+| Fit the Pi Zero 2 W and the 74AHCT125 | On the optional tray (`uv run wordclock-cad --optional`), bolted to the back board behind the grid |
+| Power input | Panel-mount DC jack through the back board |
+| Button | 12 mm button in a hole drilled through the bottom rail of the frame |
+| Data input | Set the strip's start corner in the software configuration |
+| Camera (optional) | `clock_camera = true` and `bottom_extra = 16`, then reprint the face and grid tiles |
+
 ---
 
 ## 10. Build checklist
@@ -399,7 +415,7 @@ gets a 6 mm pinhole and grid tile `r2c1` a camera bracket.
 - [ ] Tracing paper cut to 45,5 × 45,5 cm
 - [ ] 16 strip rows cut, stuck and connected in snake order
 - [ ] Power injected at rows 0, 4, 8 and 12
-- [ ] Screen module printed, display and Raspberry Pi 4B fitted
+- [ ] Screen module printed, display and Raspberry Pi fitted
 - [ ] Camera screwed behind the bezel and aligned with its hole
 - [ ] Button fitted in the side of the screen module
 - [ ] Hanger bolted to the frame, module hooked on its studs

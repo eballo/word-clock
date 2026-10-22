@@ -19,7 +19,8 @@
 use <fonts/KarlaBoldStencil.ttf>
 
 /* [Part selection] */
-// face | grid | screenfront | screenback | screenhanger | assembly | pieces | none (library use)
+// face | grid | screenfront | screenback | screenhanger | pitray | assembly | pieces |
+// none (library use)
 part = "grid";
 // Cell range [col_start, col_end, row_start, row_end), end exclusive
 tile = [0, 5, 0, 5];
@@ -150,6 +151,15 @@ keyhole_drop = 10;
 // Hole in the back cover bosses: 4.0 for M3 heat-set inserts, 2.6 for
 // self-tapping screws. Inserts survive opening the module many times.
 screen_insert_d = 4.0;
+
+/* [Raspberry Pi Zero tray (optional)] */
+// Only for a build without the screen module: a Raspberry Pi Zero 2 W behind
+// the grid. 65 x 30 mm board, holes on a 58 x 23 mm rectangle.
+pi_size = [65, 30];
+pi_holes = [58, 23];
+tray_size = [110, 42];
+tray_t = 2;
+pi_standoff_h = 3;
 
 /* [Letters] */
 rows = [
@@ -590,6 +600,33 @@ module screen_module() {
     }
 }
 
+// --- Raspberry Pi Zero tray (optional) -------------------------------------
+
+// Tray bolted to the frame back board, behind the grid, for a build without
+// the screen module. The Pi faces the grid; the free area on the right holds
+// the 74AHCT125 board.
+module pitray() {
+    pi_origin = [4, (tray_size[1] - pi_size[1]) / 2];
+    difference() {
+        linear_extrude(tray_t) offset(3) offset(-3) square(tray_size);
+        // Countersunk holes for M3 bolts through the back board
+        for (x = [tray_size[0] - 8, tray_size[0] - 30], y = [8, tray_size[1] - 8])
+            translate([x, y, -1]) {
+                cylinder(d = 3.4, h = tray_t + 2);
+                translate([0, 0, tray_t + 1 - 1.6]) cylinder(d1 = 3.4, d2 = 6.6, h = 1.61);
+            }
+        // Zip-tie slots for the cables
+        for (y = [tray_size[1] / 2 - 8, tray_size[1] / 2 + 5])
+            translate([tray_size[0] - 22, y, -1]) cube([4, 3, tray_t + 2]);
+    }
+    for (dx = [0, pi_holes[0]], dy = [0, pi_holes[1]])
+        translate([pi_origin[0] + 3.5 + dx, pi_origin[1] + 3.5 + dy, tray_t])
+            difference() {
+                cylinder(d = 5.5, h = pi_standoff_h);
+                cylinder(d = 2.2, h = pi_standoff_h + 1);
+            }
+}
+
 // --- Assembly view ----------------------------------------------------------
 
 // Whole clock seen from the front (+z), with the layers pulled apart by
@@ -671,6 +708,7 @@ else if (part == "grid") grid(tile);
 else if (part == "screenfront") screenfront();
 else if (part == "screenback") screenback();
 else if (part == "screenhanger") screenhanger();
+else if (part == "pitray") pitray();
 else if (part == "assembly") assembly();
 else if (part == "pieces") pieces();
 else if (part != "none") assert(false, str("Unknown part: ", part));

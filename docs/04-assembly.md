@@ -105,7 +105,7 @@ DC jack (−) ──┬───────────────────
 
 ### 3.3 Raspberry Pi, camera and button
 
-The Raspberry Pi 4B, the Touch Display, the camera, the level shifter and
+The Raspberry Pi (3B or 4B), the Touch Display, the camera, the level shifter and
 the push button go in the screen module. It hooks on a hanger plate bolted
 to the frame and lifts off without tools. The LED cable enters the frame
 through its bottom rail and plugs into the module with a JST connector. See

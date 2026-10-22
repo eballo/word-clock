@@ -34,6 +34,10 @@ GRID_PART = "grid"
 # the clock (Touch Display v1, Raspberry Pi 4B and camera) and its hanger.
 EXTRA_PARTS: tuple[str, ...] = ("screenfront", "screenback", "screenhanger")
 
+# Parts for other builds, rendered only on request: a Raspberry Pi Zero 2 W
+# tray for a clock without the screen module.
+OPTIONAL_PARTS: tuple[str, ...] = ("pitray",)
+
 
 @dataclass(frozen=True)
 class RenderJob:
@@ -84,6 +88,7 @@ def plan_jobs(
     out_dir: Path,
     grid: bool = True,
     extras: bool = True,
+    optional: bool = False,
     test: bool = False,
 ) -> list[RenderJob]:
     """
@@ -96,6 +101,7 @@ def plan_jobs(
         out_dir: Directory for the STL files.
         grid: Include the light grid tiles.
         extras: Include the screen module parts.
+        optional: Include the optional parts, such as the Pi Zero tray.
         test: Render only the 4x4 test corner instead of the full tiles.
 
     Returns:
@@ -112,6 +118,9 @@ def plan_jobs(
     if grid:
         for name, tile in tiles.items():
             jobs.append(RenderJob(GRID_PART, out_dir / "common" / f"grid_{name}.stl", tile))
+    if optional and not test:
+        for part in OPTIONAL_PARTS:
+            jobs.append(RenderJob(part, out_dir / "optional" / f"{part}.stl"))
     if extras and not test:
         for part in EXTRA_PARTS:
             jobs.append(RenderJob(part, out_dir / "common" / f"{part}.stl"))

@@ -21,6 +21,9 @@ def main(
     out: Annotated[Path, typer.Option(help="Output directory")] = Path("build/stl"),
     grid: Annotated[bool, typer.Option(help="Render the light grid tiles")] = True,
     extras: Annotated[bool, typer.Option(help="Render the screen module")] = True,
+    optional: Annotated[
+        bool, typer.Option(help="Also render optional parts (Pi Zero tray)")
+    ] = False,
     test: Annotated[bool, typer.Option(help="Render only the 4x4 test corner")] = False,
     preview: Annotated[
         bool, typer.Option(help="Write assembly preview files for the OpenSCAD GUI instead")
@@ -45,7 +48,7 @@ def main(
         typer.echo(f"OpenSCAD not found: {openscad!r}", err=True)
         raise typer.Exit(1)
 
-    jobs = plan_jobs(languages, out, grid=grid, extras=extras, test=test)
+    jobs = plan_jobs(languages, out, grid=grid, extras=extras, optional=optional, test=test)
     typer.echo(f"Rendering {len(jobs)} STL files into {out}/ ...")
     try:
         render_all(jobs, openscad=openscad, workers=workers)

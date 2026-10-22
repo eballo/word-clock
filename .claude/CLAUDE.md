@@ -8,7 +8,7 @@ for this project. It captures all conventions agreed during development.
 ## Project overview
 
 A 16×16 word clock lit by a WS2812B strip (144 LEDs/metre, 4 LEDs per letter,
-1 024 LEDs) driven by a Raspberry Pi 4B in a screen module under the frame. Frame: IKEA SANNAHED 50×50 cm
+1 024 LEDs) driven by a Raspberry Pi 3B (4B as an upgrade) in a screen module under the frame. Frame: IKEA SANNAHED 50×50 cm
 (inner opening 48.5 cm, 4 cm depth used), LED matrix: 44.4×44.4 cm, cell:
 2.78 cm. Front panel: 3D-printed on a Bambu Lab A1 (3×3 tiles), opaque black,
 interchangeable per language.
@@ -112,7 +112,7 @@ One short paragraph summarising what this doc covers.
 | LED count | 256 cells (16 × 16), 1 024 LEDs (4 per cell, snake rows of 64) |
 | Front panel | 3D-printed, opaque black PLA/PETG, Karla Bold Stencil letters, dovetail-joined tiles, no glue; only part that changes per language |
 | Diffuser | Tracing paper between the face and the light grid |
-| Raspberry Pi | Pi 4B in a printed screen module under the clock, with the 7" Touch Display v1; the module hooks (keyholes, no tools) on a hanger plate bolted through the frame back board (one wall hook) |
+| Raspberry Pi | Pi 3B (or 4B, same footprint) in a printed screen module under the clock, with the 7" Touch Display v1; the module hooks (keyholes, no tools) on a hanger plate bolted through the frame back board (one wall hook) |
 | Camera | In the screen module, above the display (OV5647 or Camera Module); `clock_camera = true` hides it in the clock instead |
 | Button | 12 mm momentary button on the side of the screen module, GPIO 3 |
 | Audio | None (no speaker or microphone), so GPIO 18 stays free for the LEDs |
