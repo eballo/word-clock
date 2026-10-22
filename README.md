@@ -37,7 +37,7 @@ The `docs/` folder walks through the full build process:
 
 - `01-introduction.md` — project overview and how it works
 - `02-hardware.md` — components, wiring and 3D-printed panel
-- `03-software.md` — setting up the Raspberry Pi and running the code
+- `03-software.md` — setting up the Raspberry Pi, running the code and the planned kiosk
 - `04-assembly.md` — putting it all together
 - `05-enclosure.md` — IKEA SANNAHED frame, 3D-printed parts and STL generation
 - `06-bench-test.md` — lighting a test strip under the printed test corner
