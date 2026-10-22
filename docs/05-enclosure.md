@@ -83,8 +83,9 @@ about 40 mm between the glazing and the back board.
 |------|-----|---------------------|---------|
 | `<lang>/face_rXcY.stl` | 4 | yes | Black face with stencil letter holes |
 | `common/grid_rXcY.stl` | 4 | no | Light grid that isolates each cell and holds the pixels |
-| `common/pibox.stl` | 1 | no | Box that hangs under the frame, with push button and DC jack |
+| `common/pibox.stl` | 1 | no | Box that hangs under the frame, with camera, push button and DC jack |
 | `common/pilid.stl` | 1 | no | Bottom lid that carries the Raspberry Pi Zero 2 W |
+| `common/pihanger.stl` | 1 | no | Plate that bolts the box to the frame back board |
 
 Only the face depends on the language. To change the language of the
 clock, swap the four face tiles and keep everything else.
@@ -178,9 +179,9 @@ Print each grid tile with the back plate on the bed, in white PLA.
 
 ### 6.3 Raspberry Pi box
 
-Print the box on its back: the hanger plate and the back wall lie on the
-bed, and the front wall bridges over the inside. Print the lid flat, outside
-face down. No supports are needed.
+Print the box upside down, with the top on the bed, so the camera
+standoffs grow sideways from the front wall. Print the lid and the hanger
+plate flat. No supports are needed.
 
 ---
 
@@ -242,10 +243,11 @@ sheet.
 
 ## 9. Raspberry Pi
 
-The Raspberry Pi Zero 2 W and the 74AHCT125 board go in a printed box that
-hangs under the bottom edge of the frame. A plate on the back of the box
-rises behind the frame and is bolted to the back board, so the box needs no
-space inside the frame and the clock stays flat against the wall.
+The Raspberry Pi Zero 2 W, the Camera Module 3 and the 74AHCT125 board go in
+a printed box that hangs under the bottom edge of the frame. A separate
+hanger plate is bolted to the back of the box and rises behind the frame,
+where it is bolted to the back board. The box needs no space inside the
+frame and the clock stays flat against the wall.
 
 ```
         ┌──────────────────────────────┐
@@ -254,28 +256,34 @@ space inside the frame and the clock stays flat against the wall.
         │                              │
         │   ┌──────────────────────┐   │  ← hanger plate (behind the frame,
         └───┼──────────────────────┼───┘     bolted to the back board)
-            │  ○ DC        ( ● )   │      ← box: DC jack on the left side,
-            └──────────────────────┘        push button on the front
+          DC│      (◉)     ( ● )   │      ← box: camera in the centre,
+            └──────────────────────┘        push button on the right,
+                                            DC jack on the left side
                  lid underneath           ← Raspberry Pi mounted on the lid
 ```
 
 | Feature | Value |
 |---------|-------|
-| Outer size | 94 × 50 × 28 mm (width × depth × height) |
-| Hanger plate | 94 × 3 mm, 45 mm above the box, 2 countersunk M3 holes |
+| Outer size | 104 × 50 × 32 mm (width × depth × height) |
+| Hanger plate | 104 × 3 mm, 45 mm above the box, 4 countersunk M3 holes |
+| Camera | Raspberry Pi Camera Module 3, 10 mm lens hole, 4 M2 standoffs |
 | Push button | 12 mm panel-mount momentary button, on the front |
-| Power input | 5,5 × 2,1 mm panel-mount DC jack (8 mm hole), on the left side |
+| Power input | Panel-mount DC jack (8 mm hole) rated for 6 A, on the left side |
 | Pi mounting | On the lid, 4 standoffs, M2.5 self-tapping screws |
 | Lid | 2 countersunk M3 self-tapping screws from underneath |
 | Cable exit | 20 × 8 mm slot in the top, at the back |
 
-1. Hold the box under the frame, centred, with the hanger plate against the
-   back of the frame. Mark the two holes on the back board.
-2. Drill the back board and bolt the plate on with M3 bolts, the countersunk
+1. Bolt the hanger plate to the back of the box with two M3 bolts, the
+   countersunk heads on the wall side and the nuts inside the box.
+2. Hold the box under the frame, centred, with the hanger plate against the
+   back of the frame. Mark the two upper holes on the back board.
+3. Drill the back board and bolt the plate on with M3 bolts, the countersunk
    heads on the wall side and the nuts inside the frame.
-3. Drill an 8 mm hole through the bottom rail of the frame, right above the
+4. Drill an 8 mm hole through the bottom rail of the frame, right above the
    cable slot, and pass the 3-wire LED cable up into the frame to row 0.
-4. Mount the Raspberry Pi on the lid, wire the button between a GPIO pin and
+5. Screw the camera onto its standoffs with M2 screws, lens through the
+   front hole, and connect it to the Pi with a Pi Zero camera cable.
+6. Mount the Raspberry Pi on the lid, wire the button between a GPIO pin and
    GND, and close the lid from underneath.
 
 The SD card and the wiring stay reachable by removing the lid, without

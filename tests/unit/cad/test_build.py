@@ -70,8 +70,8 @@ class TestPlanJobs:
         out = Path("build")
         # When
         jobs = plan_jobs(["catalan"], out)
-        # Then: face parts per tile, one grid per tile, Pi box and lid
-        assert len(jobs) == len(TILES) * len(FACE_PARTS) + len(TILES) + 2
+        # Then: face parts per tile, one grid per tile, Pi box, lid and hanger
+        assert len(jobs) == len(TILES) * len(FACE_PARTS) + len(TILES) + 3
         assert RenderJob("pibox", out / "common" / "pibox.stl") in jobs
 
     def test_face_jobs_carry_language_rows(self) -> None:

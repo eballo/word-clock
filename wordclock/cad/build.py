@@ -26,7 +26,7 @@ TEST_TILE: tuple[int, int, int, int] = (0, 4, 0, 4)
 
 FACE_PARTS: tuple[str, ...] = ("face",)
 GRID_PART = "grid"
-PI_PARTS: tuple[str, ...] = ("pibox", "pilid")
+PI_PARTS: tuple[str, ...] = ("pibox", "pilid", "pihanger")
 
 
 @dataclass(frozen=True)

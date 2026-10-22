@@ -144,5 +144,7 @@ With 256 LEDs at a maximum of 60 mA each (full white), the theoretical peak draw
 | 9 | Wire | 3-core, 22 AWG |
 | 10 | MicroSD card | For Raspberry Pi OS (16 GB minimum) |
 | 11 | Tracing paper | 90 g/m², 48,4 × 48,4 cm (light diffuser) |
+| 12 | Camera | Raspberry Pi Camera Module 3 + Pi Zero camera cable |
+| 13 | Push button | 12 mm panel-mount momentary button |
 
 ---
