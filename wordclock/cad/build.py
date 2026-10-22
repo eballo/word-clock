@@ -29,8 +29,9 @@ TEST_TILE: tuple[int, int, int, int] = (0, 4, 0, 4)
 
 FACE_PARTS: tuple[str, ...] = ("face",)
 GRID_PART = "grid"
-# Single parts that do not depend on the language: camera holder, Pi tray.
-EXTRA_PARTS: tuple[str, ...] = ("camholder", "pitray")
+# Single parts that do not depend on the language. The camera bracket is
+# part of the grid, so the face can be swapped without touching the camera.
+EXTRA_PARTS: tuple[str, ...] = ("pitray",)
 
 
 @dataclass(frozen=True)
@@ -93,7 +94,7 @@ def plan_jobs(
         languages: Layout names, e.g. ``["catalan"]``.
         out_dir: Directory for the STL files.
         grid: Include the light grid tiles.
-        extras: Include the camera holder and the Raspberry Pi tray.
+        extras: Include the Raspberry Pi tray.
         test: Render only the 4x4 test corner instead of the full tiles.
 
     Returns:
@@ -116,29 +117,41 @@ def plan_jobs(
     return jobs
 
 
-def write_preview(lang: str, out_dir: Path) -> Path:
-    """
-    Write a SCAD file that shows the assembled clock for one language.
+# Preview views: file prefix and the SCAD part that draws it.
+PREVIEW_VIEWS: dict[str, str] = {
+    "preview": "assembly",
+    "pieces": "pieces",
+}
 
-    The file includes the model and overrides ``part`` and ``rows``, so it
-    opens directly in the OpenSCAD GUI with the Customizer available.
+
+def write_preview(lang: str, out_dir: Path) -> list[Path]:
+    """
+    Write SCAD files that show the clock for one language in the OpenSCAD GUI.
+
+    ``preview_<lang>.scad`` shows the assembled clock and
+    ``pieces_<lang>.scad`` shows every printed tile pulled apart and
+    labelled. Each file includes the model and overrides ``part`` and
+    ``rows``, so the Customizer stays available.
 
     Args:
         lang: Layout name, e.g. ``"catalan"``.
-        out_dir: Directory for the preview file.
+        out_dir: Directory for the preview files.
 
     Returns:
-        Path of the written SCAD file.
+        Paths of the written SCAD files.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / f"preview_{lang}.scad"
     rows = scad_string_list(load_grid(lang))
-    path.write_text(
-        f'include <{SCAD_FILE.resolve()}>\n\npart = "assembly";\nrows = {rows};\n',
-        encoding="utf-8",
-    )
-    logger.info("Wrote %s", path)
-    return path
+    paths = []
+    for prefix, part in PREVIEW_VIEWS.items():
+        path = out_dir / f"{prefix}_{lang}.scad"
+        path.write_text(
+            f'include <{SCAD_FILE.resolve()}>\n\npart = "{part}";\nrows = {rows};\n',
+            encoding="utf-8",
+        )
+        logger.info("Wrote %s", path)
+        paths.append(path)
+    return paths
 
 
 def render(job: RenderJob, openscad: str = "openscad") -> Path:

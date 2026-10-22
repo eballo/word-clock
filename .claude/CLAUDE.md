@@ -110,10 +110,10 @@ One short paragraph summarising what this doc covers.
 | Cell size | 2.78 × 2.78 cm (4 LEDs of a 144 LEDs/metre strip) |
 | LEDs | WS2812B strip, 144 LEDs/metre, stuck on the back plate of the printed light grid |
 | LED count | 256 cells (16 × 16), 1 024 LEDs (4 per cell, snake rows of 64) |
-| Front panel | 3D-printed, opaque black PLA/PETG, Karla Bold Stencil letters, dovetail-joined tiles; only part that changes per language |
+| Front panel | 3D-printed, opaque black PLA/PETG, Karla Bold Stencil letters, dovetail-joined tiles, no glue; only part that changes per language |
 | Diffuser | Tracing paper between the face and the light grid |
 | Raspberry Pi | Pi Zero 2 W on a printed tray inside the frame, behind the grid (10 mm gap) |
-| Camera | Camera Module 3 behind a 6 mm pinhole in the bottom margin of the face |
+| Camera | Camera Module 3 on a bracket in grid tile r2c1, behind a 6 mm pinhole in the bottom margin of the face |
 | Button | Momentary button in the bottom rail of the frame, GPIO 3 |
 | Audio | None (no speaker or microphone), so GPIO 18 stays free for the LEDs |
 | Printer | Bambu Lab A1 (25 cm bed), 3×3 tiles split at lines 5 and 11; dovetails, plus M3 bolts on the grid seams |

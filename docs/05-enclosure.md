@@ -77,13 +77,14 @@ margin is wider than the top one and hides the camera.
 
 | File | Qty | Depends on language | Purpose |
 |------|-----|---------------------|---------|
-| `<lang>/face_rXcY.stl` | 4 | yes | Black face with stencil letter holes and the camera pinhole |
-| `common/grid_rXcY.stl` | 4 | no | Light grid that isolates each cell and holds the LED strips |
-| `common/camholder.stl` | 1 | no | Holder glued behind the face for the Camera Module 3 |
+| `<lang>/face_rXcY.stl` | 9 | yes | Black face with stencil letter holes and the camera pinhole |
+| `common/grid_rXcY.stl` | 9 | no | Light grid that isolates each cell and holds the LED strips; `grid_r2c1` also holds the camera |
 | `common/pitray.stl` | 1 | no | Tray for the Raspberry Pi Zero 2 W and the 74AHCT125 board |
 
 Only the face depends on the language. To change the language of the
-clock, swap the nine face tiles and keep everything else.
+clock, open the back board, lift out the grid, swap the face panel and put
+the grid back. The camera stays on the grid, so nothing is glued to the
+face.
 
 Tiles are named by row and column: `r0c0` is top-left, `r2c2` is
 bottom-right, as seen from the front. The panel is split after columns and
@@ -142,7 +143,8 @@ assemble them.
 
 ```bash
 uv run wordclock-cad --preview --lang catalan
-open -a OpenSCAD build/preview/preview_catalan.scad
+open -a OpenSCAD build/preview/preview_catalan.scad   # assembled clock
+open -a OpenSCAD build/preview/pieces_catalan.scad    # every tile, labelled
 ```
 
 To change a dimension (frame size, grid height, letter size, camera
@@ -178,9 +180,12 @@ supports.
 | Infill | 15% |
 | Supports | none |
 
-### 6.3 Camera holder and Pi tray
+### 6.3 Pi tray
 
-Print both flat, with the standoffs pointing up. No supports are needed.
+Print it flat, with the standoffs pointing up. No supports are needed.
+
+The camera bracket is part of `grid_r2c1`: its plate prints as a short
+bridge between two side walls, with the standoffs growing up from it.
 
 ---
 
@@ -212,18 +217,21 @@ the side, so they cast no shadow on the letters and do not touch the strip.
 2. Push an M3 × 8 mm bolt through each seam hole and tighten a nut on the
    other side (24 bolts in total).
 
-### 7.2 Face: dovetails only
+### 7.2 Face: dovetails only, no glue
 
 Bolts on the face would show from the front, and the grid walls rest right
-behind it, so the face tiles are held by the dovetails alone.
+behind it, so the face tiles are held by the dovetails alone. No glue is
+used, so the face stays interchangeable.
 
 1. Lay the nine face tiles face down on a flat table and press the tabs
    into the sockets, row by row.
-2. Optional: add a drop of CA glue on each joint for a rigid panel. Leave
-   the joints unglued if you want to take the face apart again.
+2. Lift the panel with both hands flat underneath. The dovetails stop the
+   tiles from sliding apart, but they can pop out if the panel bends.
 
 The frame clamps the face against the glazing and the bolted grid presses
-it from behind, so the tiles cannot move once the frame is closed.
+it from behind, so the tiles cannot move once the frame is closed. If the
+joints are too loose or too tight, change `joint_gap` (0,15 mm) and print
+the test corner again.
 
 ---
 
@@ -285,14 +293,14 @@ Everything lives inside the frame. Only the power cable leaves the clock.
 |-----------|-----------|
 | Raspberry Pi Zero 2 W | On the printed tray, bolted to the back board behind the grid |
 | 74AHCT125 board | On the free area of the same tray |
-| Camera Module 3 | On the holder, glued behind the 6 mm pinhole in the bottom margin |
+| Camera Module 3 | On the bracket of grid tile `r2c1`, right behind the 6 mm pinhole in the bottom margin of the face |
 | Push button | 7–12 mm panel-mount momentary button, in a hole drilled through the bottom rail of the frame, under the hollow bottom margin of the grid |
 | Power input | Panel-mount DC jack rated for 10 A, through the back board |
 
-1. Glue the camera holder to the back of the face with the lens hole
-   centred on the pinhole. Screw the camera on with M2 screws.
-2. Route the camera cable (Pi Zero version, 15 cm) through the open back
-   of the bottom margin to the Pi.
+1. Screw the camera onto the bracket of `grid_r2c1` with M2 screws, lens
+   facing the face and the cable edge towards the bottom of the frame.
+2. Route the camera cable (Pi Zero version, 15 cm) through the slot in the
+   bracket and the open back of the bottom margin to the Pi.
 3. Bolt the Pi tray to the back board with M3 countersunk bolts, Pi facing
    the grid. Solder the wires to the Pi directly, without a pin header, to
    keep it under 10 mm.
@@ -313,7 +321,7 @@ frame.
 - [ ] Tracing paper cut to 45,5 × 45,5 cm (covers the matrix, not the camera)
 - [ ] 16 strip rows cut, stuck and connected in snake order
 - [ ] Power injected at rows 0, 4, 8 and 12
-- [ ] Camera holder glued and camera aligned with the pinhole
+- [ ] Camera screwed to the grid bracket and aligned with the pinhole
 - [ ] Pi tray bolted, Pi and 74AHCT125 wired
 - [ ] Button fitted in the bottom rail
 - [ ] Colour order checked with a test pattern

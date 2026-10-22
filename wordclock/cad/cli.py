@@ -40,7 +40,8 @@ def main(
         raise typer.Exit(1)
     if preview:
         for name in languages:
-            typer.echo(f"Open in OpenSCAD: {write_preview(name, out.parent / 'preview')}")
+            for path in write_preview(name, out.parent / "preview"):
+                typer.echo(f"Open in OpenSCAD: {path}")
         return
     if shutil.which(openscad) is None:
         typer.echo(f"OpenSCAD not found: {openscad!r}", err=True)

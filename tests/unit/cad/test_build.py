@@ -113,17 +113,18 @@ class TestPlanJobs:
 
 
 class TestWritePreview:
-    def test_writes_assembly_file_with_language_rows(self, tmp_path: Path) -> None:
+    def test_writes_assembly_and_pieces_files(self, tmp_path: Path) -> None:
         # Given
         out = tmp_path / "preview"
         # When
-        path = write_preview("catalan", out)
+        paths = write_preview("catalan", out)
         # Then
-        text = path.read_text(encoding="utf-8")
-        assert path == out / "preview_catalan.scad"
-        assert f"include <{SCAD_FILE.resolve()}>" in text
-        assert 'part = "assembly";' in text
-        assert "ÉSÓN" in text
+        assert paths == [out / "preview_catalan.scad", out / "pieces_catalan.scad"]
+        assembly, pieces = (path.read_text(encoding="utf-8") for path in paths)
+        assert f"include <{SCAD_FILE.resolve()}>" in assembly
+        assert 'part = "assembly";' in assembly
+        assert 'part = "pieces";' in pieces
+        assert "ÉSÓN" in assembly and "ÉSÓN" in pieces
 
 
 class TestStencilFont:

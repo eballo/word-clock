@@ -152,7 +152,7 @@ With 1 024 LEDs at a maximum of 60 mA each (full white), the theoretical peak dr
 | 3 | Power supply | 5V 10A (50W) |
 | 4 | Level shifter | 3,3V → 5V (e.g. 74AHCT125) |
 | 5 | Frame | IKEA SANNAHED 50 × 50 cm |
-| 6 | 3D-printed parts | Face, light grid, camera holder, Pi tray (see 05 — Enclosure) |
+| 6 | 3D-printed parts | Face, light grid (with camera bracket), Pi tray (see 05 — Enclosure) |
 | 7 | Bolts | 24 × M3 × 8 mm with nuts (grid seams), 4 × M3 countersunk with nuts (Pi tray) |
 | 8 | Power wire | 2-core, 18 AWG (power injection) |
 | 9 | Wire | 3-core, 22 AWG (row jumpers) |

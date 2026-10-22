@@ -19,7 +19,7 @@
 use <fonts/KarlaBoldStencil.ttf>
 
 /* [Part selection] */
-// face | grid | camholder | pitray | assembly | none (library use)
+// face | grid | pitray | assembly | pieces | none (library use)
 part = "grid";
 // Cell range [col_start, col_end, row_start, row_end), end exclusive
 tile = [0, 5, 0, 5];
@@ -29,7 +29,7 @@ splits = [0, 5, 11, 16];
 
 /* [Assembly view] */
 // Gap between layers in the assembly view (0 = assembled)
-explode = 40;
+explode = 0;
 // Show the SANNAHED frame around the panel
 show_frame = true;
 
@@ -99,7 +99,9 @@ cam_lens_d = 10;
 cam_lens_h = 6.5;
 // Hole in the face in front of the lens
 cam_hole_d = 6;
+// Bracket in the grid that holds the camera behind the pinhole
 holder_t = 1.5;
+cam_standoff_h = 4;
 
 /* [Raspberry Pi tray] */
 // Raspberry Pi Zero 2 W: 65 x 30 mm, holes on a 58 x 23 mm rectangle
@@ -317,6 +319,7 @@ module grid(t) {
                 border_walls_2d(t);
             }
             ribs(t);
+            cam_bracket(t);
         }
         strip_notches(t);
         seam_bolts(t);
@@ -325,27 +328,41 @@ module grid(t) {
     }
 }
 
-// --- Camera holder ------------------------------------------------------------
+// --- Camera bracket ---------------------------------------------------------
 
-// Plate glued to the back of the face, centred on the pinhole. The camera
-// board screws onto the standoffs with the lens through the plate.
-// Holder coordinates: the lens is at the origin, the face side is z = 0 and
-// the standoffs point to +z.
-module camholder() {
-    w = cam_board[0] + 6;
-    h = cam_board[1];
-    standoff = cam_lens_h - holder_t;
+// The camera belongs to the grid, not to the face, so the face can be
+// swapped without touching it. The bracket sits in the bottom margin of the
+// grid tile under the pinhole: two side walls and a plate (printed as a
+// bridge) with standoffs pointing to the face. The camera board screws on
+// with the lens facing the face, just behind the pinhole.
+function cam_bracket_w() = cam_board[0] + 6;
+
+module cam_bracket(t) {
+    w = cam_bracket_w();
+    y0 = wall_t;
+    y1 = line_y(cells) - wall_t / 2;
+    lens_top = back_t + grid_h - 0.5;
+    board_back = lens_top - cam_lens_h - 1;
+    plate_top = board_back - cam_standoff_h;
     holes = [
         for (dx = [-cam_holes[0] / 2, cam_holes[0] / 2], dy = [0, -cam_holes[1]])
-            [dx, cam_lens_top - cam_hole_top + dy]
+            [cam_x + dx, cam_lens_y + cam_lens_top - cam_hole_top + dy]
     ];
-    difference() {
-        union() {
-            translate([-w / 2, cam_lens_top - h, 0]) cube([w, h, holder_t]);
-            for (p = holes) translate([p[0], p[1], 0]) cylinder(d = 4.5, h = holder_t + standoff);
+    if (t[3] == cells && cam_x > tile_x0(t) + w && cam_x < tile_x1(t) - w) {
+        // Side walls
+        for (x = [cam_x - w / 2 - wall_t, cam_x + w / 2])
+            translate([x, y0, 0]) cube([wall_t, y1 - y0, back_t + grid_h]);
+        difference() {
+            translate([cam_x - w / 2, y0, plate_top - holder_t]) cube([w, y1 - y0, holder_t]);
+            // Slot for the camera ribbon cable, at the bottom edge of the board
+            translate([cam_x - 9, y0 - 1, plate_top - holder_t - 1]) cube([18, 6, holder_t + 2]);
         }
-        translate([0, 0, -1]) cylinder(d = cam_lens_d, h = holder_t + 2);
-        for (p = holes) translate([p[0], p[1], -1]) cylinder(d = 1.8, h = holder_t + standoff + 2);
+        for (p = holes)
+            translate([p[0], p[1], plate_top])
+                difference() {
+                    cylinder(d = 4.5, h = cam_standoff_h);
+                    translate([0, 0, -1]) cylinder(d = 1.8, h = cam_standoff_h + 2);
+                }
     }
 }
 
@@ -393,7 +410,6 @@ module assembly() {
     for (r = [0:cells - 1])
         color("seagreen") translate([line_x(0), cell_y(r) - 5, back_t]) cube([matrix_size, 10, 1.5]);
     color("ivory") translate([line_x(0), line_y(cells), paper_z]) cube([matrix_size, matrix_size, paper_t]);
-    color("dimgray") translate([cam_x, cam_lens_y, face_z]) mirror([0, 0, 1]) camholder();
     color("gray") translate([cam_x - tray_size[0] / 2, line_y(cells) + 20, -back_gap - explode / 2]) pitray();
 
     if (show_frame) {
@@ -407,11 +423,46 @@ module assembly() {
     }
 }
 
+// --- Pieces view ------------------------------------------------------------
+
+// Every printed tile, pulled apart in place and labelled, as seen from the
+// front: the face on the left, the light grid on the right and the Pi tray
+// below. For viewing only: the STL files are the parts to print.
+module pieces() {
+    gap = 20;
+    n = len(splits) - 1;
+    spread = panel_size + (n - 1) * gap;
+    tiles = [for (i = [0:n - 1], j = [0:n - 1]) [i, j, [splits[j], splits[j + 1], splits[i], splits[i + 1]]]];
+    module label(txt, x, y, z) {
+        color("crimson") translate([x, y, z]) linear_extrude(0.6) text(txt, size = 12, halign = "center", valign = "center");
+    }
+    for (p = tiles) {
+        i = p[0];
+        j = p[1];
+        t = p[2];
+        name = str("r", i, "c", j);
+        cx = (tile_x0(t) + tile_x1(t)) / 2;
+        cy = (tile_y0(t) + tile_y1(t)) / 2;
+        translate([j * gap, -i * gap, 0]) {
+            color("#1a1a1a") linear_extrude(face_t) face_2d(t);
+            label(name, cx, tile_y0(t) - gap / 2, 0);
+        }
+        translate([spread + 3 * gap + j * gap, -i * gap, 0]) {
+            color("white") grid(t);
+            label(name, cx, cy, back_t + grid_h + 1);
+        }
+    }
+    label("FACE (changes per language)", spread / 2, panel_size + 25, 0);
+    label("LIGHT GRID (common)", 1.5 * spread + 3 * gap, panel_size + 25, 0);
+    color("gray") translate([spread + 3 * gap + spread / 2 - tray_size[0] / 2, -spread + panel_size - 2 * gap - tray_size[1] - 40, 0]) pitray();
+    label("Pi tray", spread + 3 * gap + spread / 2, -spread + panel_size - 2 * gap - tray_size[1] - 55, 0);
+}
+
 // --- Part selector ----------------------------------------------------------
 
 if (part == "face") face(tile);
 else if (part == "grid") grid(tile);
-else if (part == "camholder") camholder();
 else if (part == "pitray") pitray();
 else if (part == "assembly") assembly();
+else if (part == "pieces") pieces();
 else if (part != "none") assert(false, str("Unknown part: ", part));

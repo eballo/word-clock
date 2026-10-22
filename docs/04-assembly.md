@@ -24,8 +24,8 @@ stacked from back to front:
 
 ## 1. 3D printing
 
-All printed parts — front panel, light grid, camera holder and Raspberry Pi
-tray — are described in [05 — Enclosure](05-enclosure.md), together with the
+All printed parts — front panel, light grid (with the camera bracket) and
+Raspberry Pi tray — are described in [05 — Enclosure](05-enclosure.md), together with the
 render commands and the Bambu Lab A1 print settings. Print the 4 × 4 test
 corner first to check fit, letters and light bleed.
 
@@ -106,9 +106,9 @@ DC jack (−) ──┬───────────────────
 ### 3.3 Raspberry Pi, camera and button
 
 Mount the Raspberry Pi Zero 2 W and the level shifter on the printed tray,
-and bolt the tray to the back board behind the grid. Glue the camera holder
-behind the pinhole in the bottom margin of the face and connect the camera
-with a Pi Zero camera cable. Fit the push button in the bottom rail of the
+and bolt the tray to the back board behind the grid. Screw the camera onto
+the bracket in the bottom margin of the grid, behind the pinhole of the
+face, and connect it with a Pi Zero camera cable. Fit the push button in the bottom rail of the
 frame and wire it between GPIO 3 and GND. See
 [05 — Enclosure](05-enclosure.md) for the details.
 
