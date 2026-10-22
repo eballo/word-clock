@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/eballo/word-clock/actions/workflows/ci.yml/badge.svg)](https://github.com/eballo/word-clock/actions/workflows/ci.yml) [![Version](https://img.shields.io/badge/version-0.7.0-blue.svg)](#) [![Python](https://img.shields.io/badge/python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/) [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![Typer](https://img.shields.io/badge/Typer-000000?logo=python&logoColor=white)](https://typer.tiangolo.com/) [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](LICENSE)
 
-A 65 × 65 cm word clock with a 16 × 16 LED matrix (256 LEDs) driven by a Raspberry Pi.
+A 50 × 50 cm word clock (IKEA SANNAHED frame) with a 16 × 16 LED matrix (256 LEDs) driven by a Raspberry Pi.
 The front panel is 3D-printed and interchangeable, allowing the clock to display time
 in different languages without any hardware changes.
 
@@ -25,7 +25,7 @@ in any of these areas, so things will change as I experiment and learn.
 ```
 word-clock/
 ├── prototype/    # Browser-based JavaScript simulator to validate the grid layout
-├── wordclock/    # Python package — LED control, time logic, FastAPI + Typer CLI and web UI
+├── wordclock/    # Python package — LED control, time logic, FastAPI + Typer CLI, web UI and OpenSCAD model
 ├── tests/        # Unit and integration tests
 ├── docs/         # Step-by-step build documentation
 └── README.md
@@ -39,6 +39,7 @@ The `docs/` folder walks through the full build process:
 - `02-hardware.md` — components, wiring and 3D-printed panel
 - `03-software.md` — setting up the Raspberry Pi and running the code
 - `04-assembly.md` — putting it all together
+- `05-enclosure.md` — IKEA SANNAHED frame, 3D-printed parts and STL generation
 
 ## Ideas & Notes
 

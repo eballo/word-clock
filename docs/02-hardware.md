@@ -2,8 +2,8 @@
 
 ## Overview
 
-The clock is built around a 16×16 matrix of individually addressable WS2812B LEDs mounted inside a 65×65 cm frame.
-A 3D-printed front panel with letter-shaped through-holes sits in front of the matrix.
+The clock is built around a 16×16 matrix of individually addressable WS2812B LEDs mounted inside an IKEA SANNAHED 50×50 cm frame.
+A 3D-printed front panel with letter-shaped holes sits in front of a 3D-printed light grid that holds one pixel per cell.
 Only the letters that correspond to the current time are lit up, so only those letters are visible through the panel.
 
 ---
@@ -11,44 +11,50 @@ Only the letters that correspond to the current time are lit up, so only those l
 ## Dimensions
 
 ```
-┌─────────────────────────────────────────────────┐
-│                   65 cm                         │
-│   ┌─────────────────────────────────────────┐   │
-│   │                                         │   │
-│   │           LED matrix                    │   │ 65 cm
-│   │           53,3 × 53,3 cm                │   │
-│   │           16 × 16 = 256 LEDs            │   │
-│   │                                         │   │
-│   └─────────────────────────────────────────┘   │
-│          ~5,85 cm margin on each side           │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│              SANNAHED 50 cm                 │
+│ ┌─────────────────────────────────────────┐ │
+│ │                                         │ │
+│ │           LED matrix                    │ │ 50 cm
+│ │           48,0 × 48,0 cm                │ │
+│ │           16 × 16 = 256 LEDs            │ │
+│ │                                         │ │
+│ └─────────────────────────────────────────┘ │
+│       inner opening 48,5 × 48,5 cm          │
+└─────────────────────────────────────────────┘
 ```
 
 | Measurement | Value |
 |-------------|-------|
-| Frame (total) | 65 × 65 cm |
-| LED matrix area | 53,3 × 53,3 cm |
-| Margin (each side) | ~5,85 cm |
-| Cell size | 3,33 × 3,33 cm |
-| Letter size (approx.) | ~23 mm |
+| Frame (total) | 50 × 50 cm (IKEA SANNAHED) |
+| Frame inner opening | 48,5 × 48,5 cm |
+| Panel size | 48,4 × 48,4 cm |
+| LED matrix area | 48,0 × 48,0 cm |
+| Cell size | 3,0 × 3,0 cm |
+| Letter size (cap height) | 18 mm |
 | Grid | 16 × 16 = 256 LEDs |
+
+See [05 — Enclosure](05-enclosure.md) for the printed parts.
 
 ---
 
 ## Components
 
-### LED strip
+### LED pixels
+
+A 30 LEDs/metre strip has a fixed 3,33 cm pitch: 16 LEDs need 53,3 cm and do
+not fit in the frame. The clock uses individual 12 mm bullet pixels instead,
+pushed into the back plate of the light grid at a 3,0 cm pitch.
 
 | Parameter | Value |
 |-----------|-------|
-| Model | WS2812B |
-| Density | 30 LEDs/metre |
-| Pitch | 3,33 cm between LEDs |
+| Model | 12 mm bullet pixel, WS2811 or WS2812B |
 | Voltage | 5V DC |
-| LEDs needed | 256 (16 × 16) |
-| Strip length needed | ~9 metres (16 rows × 53,3 cm + connectors) |
+| Pitch | 3,0 cm (set by the light grid) |
+| Pixels needed | 256 (16 × 16), e.g. 6 strings of 50 |
+| Wire between pixels | 5–10 cm (spare wire folds behind the grid) |
 
-The strip is cut into 16 rows of 16 LEDs each and wired in a snake pattern — left to right on even rows, right to left on odd rows.
+The pixels are wired in a snake pattern — left to right on even rows, right to left on odd rows.
 
 ```
 row  0 →  LED   0 ..  15   (left → right)
@@ -58,20 +64,24 @@ row  2 →  LED  32 ..  47   (left → right)
 row 15 ←  LED 240 .. 255   (right → left)
 ```
 
-### 3D-printed front panel
+### 3D-printed front panel and light grid
 
-The front panel is printed in opaque black filament (PLA or PETG). Each cell is 3,33 × 3,33 cm with a letter-shaped through-hole. The panel depth should be at least 15 mm to prevent light from bleeding between adjacent cells.
+The front panel is a 1,6 mm opaque black face with letter-shaped holes,
+backed by a 0,6 mm white diffuser. Behind it, a white light grid with 20 mm
+walls isolates each cell so light does not bleed into the neighbouring
+letters.
 
 | Parameter | Value |
 |-----------|-------|
-| Panel size | 53,3 × 53,3 cm |
-| Cell size | 3,33 × 3,33 cm |
-| Letter size | ~23 mm |
-| Wall between cells | ~5 mm |
-| Minimum depth | 15 mm |
-| Filament | PLA or PETG, opaque black |
+| Panel size | 48,4 × 48,4 cm |
+| Cell size | 3,0 × 3,0 cm |
+| Letter size | 18 mm cap height |
+| Grid wall | 1,2 mm |
+| Grid depth | 20 mm + 2 mm back plate |
+| Filament | Black PLA/PETG (face), white PLA (diffuser, grid) |
 
-> **Note:** Because the panel is large (53×53 cm), it will likely need to be printed in sections and assembled. Plan the section joints to fall on the walls between cells, not through a letter opening.
+> **Note:** Every part is printed in a 2×2 split of 24,2 × 24,2 cm tiles to fit
+> the Bambu Lab A1 bed. Seams fall on the walls between cells.
 
 ### Raspberry Pi
 
@@ -121,19 +131,15 @@ With 256 LEDs at a maximum of 60 mA each (full white), the theoretical peak draw
 
 | # | Component | Specification |
 |---|-----------|---------------|
-| 1 | WS2812B LED strip | 30 LEDs/metre, ~9 metres |
-| 2 | Raspberry Pi | Any model with GPIO (Pi 3B+ or Pi 4 recommended) |
+| 1 | Bullet pixels | 12 mm, WS2811/WS2812B, 5V, 256 units |
+| 2 | Raspberry Pi | Pi Zero 2 W (fits the printed box) or any model with GPIO |
 | 3 | Power supply | 5V 10A (50W) |
 | 4 | Level shifter | 3,3V → 5V (e.g. 74AHCT125) |
-| 5 | Frame | 65 × 65 cm, minimum 4 cm depth |
-| 6 | 3D-printed front panel | 53,3 × 53,3 cm, opaque black PLA/PETG |
-| 7 | Diffuser (optional) | Frosted acrylic sheet, 53,3 × 53,3 cm |
-| 8 | JST connectors | For joining strip rows |
+| 5 | Frame | IKEA SANNAHED 50 × 50 cm |
+| 6 | 3D-printed parts | Face, diffuser, light grid, Pi box (see 05 — Enclosure) |
+| 7 | Bolts | 16 × M3 × 8 mm with nuts (grid seams) |
+| 8 | JST connectors | For joining pixel strings |
 | 9 | Wire | 3-core, 22 AWG |
 | 10 | MicroSD card | For Raspberry Pi OS (16 GB minimum) |
 
 ---
-
-## Optional: diffuser
-
-A frosted acrylic sheet placed between the LED strip and the front panel softens the light and makes each lit letter glow more evenly. Without it, the individual LED point may be visible through the letter opening at close range.

@@ -7,9 +7,10 @@ for this project. It captures all conventions agreed during development.
 
 ## Project overview
 
-A 16×16 LED word clock (256 WS2812B LEDs, 30 LEDs/metre) built on a
-Raspberry Pi. Frame: 65×65 cm, LED matrix: 53.3×53.3 cm, cell: 3.33 cm.
-Front panel: 3D-printed, opaque black, interchangeable per language.
+A 16×16 LED word clock (256 WS2812B/WS2811 12 mm bullet pixels) built on a
+Raspberry Pi. Frame: IKEA SANNAHED 50×50 cm (inner opening 48.5 cm),
+LED matrix: 48×48 cm, cell: 3.0 cm. Front panel: 3D-printed on a Bambu Lab A1
+(2×2 tiles), opaque black, interchangeable per language.
 Supported languages: English, Catalan, Spanish.
 
 **Stack:**
@@ -48,6 +49,7 @@ word-clock/
 │   ├── web/                # Templates + static (CSS, JS)
 │   │   ├── templates/index.html
 │   │   └── static/{css,js}/wordclock.*
+│   ├── cad/                # OpenSCAD enclosure model + wordclock-cad CLI
 │   ├── clock.py            # run_clock() and serve() logic
 │   └── main.py             # Thin CLI entry points only
 ├── tests/
@@ -102,11 +104,14 @@ One short paragraph summarising what this doc covers.
 ### Decisions already made (do not re-discuss)
 | Topic | Decision |
 |-------|----------|
-| Frame size | 65 × 65 cm |
-| LED matrix | 53.3 × 53.3 cm |
-| Cell size | 3.33 × 3.33 cm (30 LEDs/metre) |
+| Frame | IKEA SANNAHED 50 × 50 cm, inner opening 48.5 × 48.5 cm |
+| LED matrix | 48 × 48 cm |
+| Cell size | 3.0 × 3.0 cm |
+| LEDs | 12 mm bullet pixels in a printed light grid (30 LEDs/metre strip does not fit) |
 | LED count | 256 (16 × 16) |
-| Front panel | 3D-printed, opaque black PLA/PETG |
+| Front panel | 3D-printed, opaque black PLA/PETG face + white diffuser |
+| Printer | Bambu Lab A1, 2×2 tiles of 24.2 cm |
+| CAD | OpenSCAD model in `wordclock/cad/`, rendered with `wordclock-cad` |
 | Wiring | Snake (even rows L→R, odd rows R→L) |
 | Power | 5V 10A PSU, inject at row 0 and row 8 |
 | GPIO | GPIO 18 (PWM), level shifter 74AHCT125 |
@@ -306,6 +311,7 @@ uv run wordclock --mock --debug        # run clock loop with grid display
 uv run wordclock-api --mock            # run FastAPI + web simulator
 uv run wordclock-serve --mock          # run clock loop + API together
 uv run wordclock-generate --lang ca    # generate static grid for a language
+uv run wordclock-cad --lang catalan    # render enclosure STLs into build/stl/
 uv run pytest                          # run tests
 uv run ruff check .                    # lint
 uv run ruff format .                   # format
