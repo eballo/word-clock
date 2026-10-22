@@ -7,7 +7,7 @@ from typing import Annotated
 
 import typer
 
-from wordclock.cad.build import plan_jobs, render_all
+from wordclock.cad.build import plan_jobs, render_all, write_preview
 from wordclock.layouts.utils.layout import Layout
 
 app = typer.Typer()
@@ -22,6 +22,9 @@ def main(
     grid: Annotated[bool, typer.Option(help="Render the light grid tiles")] = True,
     pi: Annotated[bool, typer.Option(help="Render the Raspberry Pi box")] = True,
     test: Annotated[bool, typer.Option(help="Render only the 4x4 test corner")] = False,
+    preview: Annotated[
+        bool, typer.Option(help="Write assembly preview files for the OpenSCAD GUI instead")
+    ] = False,
     openscad: Annotated[str, typer.Option(help="OpenSCAD binary")] = "openscad",
     workers: Annotated[int, typer.Option(help="Parallel OpenSCAD processes")] = 4,
 ) -> None:
@@ -33,6 +36,10 @@ def main(
     if unknown:
         typer.echo(f"Unknown language(s): {', '.join(unknown)}", err=True)
         raise typer.Exit(1)
+    if preview:
+        for name in languages:
+            typer.echo(f"Open in OpenSCAD: {write_preview(name, out.parent / 'preview')}")
+        return
     if shutil.which(openscad) is None:
         typer.echo(f"OpenSCAD not found: {openscad!r}", err=True)
         raise typer.Exit(1)

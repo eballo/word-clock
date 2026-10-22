@@ -115,7 +115,18 @@ uv run wordclock-cad --lang catalan      # one language
 uv run wordclock-cad --test --lang catalan   # 4 × 4 test corner only
 ```
 
-Files are written to `build/stl/`. To change a dimension (pitch, frame size,
+Files are written to `build/stl/`.
+
+To see the whole clock in 3D, write a preview file and open it in the
+OpenSCAD GUI. Press `F5` to preview, drag to rotate, and use the Customizer
+(`explode`, `show_frame`) to pull the layers apart or assemble them.
+
+```bash
+uv run wordclock-cad --preview --lang catalan
+open -a OpenSCAD build/preview/preview_catalan.scad
+```
+
+To change a dimension (pitch, frame size,
 grid height, letter size), edit the parameters at the top of
 `wordclock/cad/wordclock.scad` and render again.
 

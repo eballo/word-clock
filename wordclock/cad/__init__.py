@@ -9,6 +9,7 @@ from wordclock.cad.build import (
     plan_jobs,
     scad_command,
     scad_string_list,
+    write_preview,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "plan_jobs",
     "scad_command",
     "scad_string_list",
+    "write_preview",
 ]

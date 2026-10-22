@@ -11,6 +11,7 @@ from wordclock.cad import (
     plan_jobs,
     scad_command,
     scad_string_list,
+    write_preview,
 )
 
 
@@ -99,3 +100,17 @@ class TestPlanJobs:
             covered += [(r, c) for r in range(r0, r1) for c in range(c0, c1)]
         # Then
         assert sorted(covered) == [(r, c) for r in range(16) for c in range(16)]
+
+
+class TestWritePreview:
+    def test_writes_assembly_file_with_language_rows(self, tmp_path: Path) -> None:
+        # Given
+        out = tmp_path / "preview"
+        # When
+        path = write_preview("catalan", out)
+        # Then
+        text = path.read_text(encoding="utf-8")
+        assert path == out / "preview_catalan.scad"
+        assert f"include <{SCAD_FILE.resolve()}>" in text
+        assert 'part = "assembly";' in text
+        assert "ÉSÓN" in text

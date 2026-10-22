@@ -11,10 +11,16 @@
 // Prefer `uv run wordclock-cad`, which renders every part and tile.
 
 /* [Part selection] */
-// face | letters | diffuser | grid | pibox | pilid
+// face | letters | diffuser | grid | pibox | pilid | assembly
 part = "grid";
 // Cell range [col_start, col_end, row_start, row_end), end exclusive
 tile = [0, 8, 0, 8];
+
+/* [Assembly view] */
+// Gap between layers in the assembly view (0 = assembled)
+explode = 40;
+// Show the SANNAHED frame around the panel
+show_frame = true;
 
 /* [Frame] */
 // Inner opening of the frame, where the panel sits
@@ -102,20 +108,26 @@ module face_down() {
     mirror([1, 0, 0]) children();
 }
 
+module face_2d(t) {
+    difference() {
+        tile_rect(t);
+        letters_2d(t);
+    }
+}
+
+module letter_fill_2d(t) {
+    intersection() {
+        tile_rect(t);
+        letters_2d(t);
+    }
+}
+
 module face(t) {
-    face_down() linear_extrude(face_t)
-        difference() {
-            tile_rect(t);
-            letters_2d(t);
-        }
+    face_down() linear_extrude(face_t) face_2d(t);
 }
 
 module letter_fill(t) {
-    face_down() linear_extrude(face_t)
-        intersection() {
-            tile_rect(t);
-            letters_2d(t);
-        }
+    face_down() linear_extrude(face_t) letter_fill_2d(t);
 }
 
 module diffuser(t) {
@@ -237,6 +249,39 @@ module pilid() {
         }
 }
 
+// --- Assembly view ----------------------------------------------------------
+
+// Whole clock seen from the front (+z), with the layers pulled apart by
+// `explode`. For viewing only: use the individual parts for printing.
+module assembly() {
+    tiles = [[0, 8, 0, 8], [8, 16, 0, 8], [0, 8, 8, 16], [8, 16, 8, 16]];
+    grid_top = back_t + grid_h;
+    diffuser_z = grid_top + explode;
+    face_z = diffuser_z + diffuser_t + explode / 2;
+
+    for (t = tiles) {
+        color("white") grid(t);
+        color("ivory") translate([0, 0, diffuser_z]) linear_extrude(diffuser_t) tile_rect(t);
+        translate([0, 0, face_z]) {
+            color("#1a1a1a") linear_extrude(face_t) face_2d(t);
+            color("gold") linear_extrude(face_t) letter_fill_2d(t);
+        }
+    }
+    // Back board of the frame, behind the pixel tails
+    back_z = -18;
+    color("dimgray")
+        translate([panel_size / 2 + 38, panel_size - 40, back_z - explode]) rotate([180, 0, 0]) pibox();
+    if (show_frame) {
+        frame_wall = (500 - inner_size) / 2;
+        color("burlywood", 0.35)
+            translate([-clearance / 2 - frame_wall, -clearance / 2 - frame_wall, back_z])
+                difference() {
+                    cube([500, 500, 60]);
+                    translate([frame_wall, frame_wall, -1]) cube([inner_size, inner_size, 62]);
+                }
+    }
+}
+
 // --- Part selector ----------------------------------------------------------
 
 if (part == "face") face(tile);
@@ -245,4 +290,5 @@ else if (part == "diffuser") diffuser(tile);
 else if (part == "grid") grid(tile);
 else if (part == "pibox") pibox();
 else if (part == "pilid") pilid();
+else if (part == "assembly") assembly();
 else assert(false, str("Unknown part: ", part));

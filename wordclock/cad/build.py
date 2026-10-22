@@ -112,6 +112,31 @@ def plan_jobs(
     return jobs
 
 
+def write_preview(lang: str, out_dir: Path) -> Path:
+    """
+    Write a SCAD file that shows the assembled clock for one language.
+
+    The file includes the model and overrides ``part`` and ``rows``, so it
+    opens directly in the OpenSCAD GUI with the Customizer available.
+
+    Args:
+        lang: Layout name, e.g. ``"catalan"``.
+        out_dir: Directory for the preview file.
+
+    Returns:
+        Path of the written SCAD file.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"preview_{lang}.scad"
+    rows = scad_string_list(load_grid(lang))
+    path.write_text(
+        f'include <{SCAD_FILE.resolve()}>\n\npart = "assembly";\nrows = {rows};\n',
+        encoding="utf-8",
+    )
+    logger.info("Wrote %s", path)
+    return path
+
+
 def render(job: RenderJob, openscad: str = "openscad") -> Path:
     """
     Render one job to STL.
