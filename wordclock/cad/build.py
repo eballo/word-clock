@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from logging import getLogger
 from pathlib import Path
 
+from wordclock.cad.bambu import write_project
 from wordclock.layouts.utils.layout import load_grid
 
 logger = getLogger(__name__)
@@ -115,6 +116,44 @@ def plan_jobs(
         for part in EXTRA_PARTS:
             jobs.append(RenderJob(part, out_dir / "common" / f"{part}.stl"))
     return jobs
+
+
+# Per-object print settings in the Bambu Studio projects.
+FACE_SETTINGS: dict[str, str] = {"sparse_infill_density": "100%"}
+GRID_SETTINGS: dict[str, str] = {"wall_loops": "3", "sparse_infill_density": "15%"}
+
+
+def write_bambu_projects(languages: list[str], stl_dir: Path, out_dir: Path) -> list[Path]:
+    """
+    Group rendered STL files into Bambu Studio projects, one part per plate.
+
+    Writes ``face_<lang>.3mf`` for every language and ``grid.3mf`` with the
+    grid tiles and the extra parts. The 4x4 test corner, when rendered, goes
+    into ``test_<lang>.3mf`` together with its grid tile.
+
+    Args:
+        languages: Layout names, e.g. ``["catalan"]``.
+        stl_dir: Directory with the rendered STL files.
+        out_dir: Directory for the projects.
+
+    Returns:
+        Paths of the written projects.
+    """
+    projects = []
+    grid_test = stl_dir / "common" / "grid_test.stl"
+    for lang in languages:
+        faces = [stl_dir / lang / f"face_{name}.stl" for name in TILES]
+        if all(path.exists() for path in faces):
+            projects.append(write_project(faces, out_dir / f"face_{lang}.3mf", FACE_SETTINGS))
+        face_test = stl_dir / lang / "face_test.stl"
+        if face_test.exists() and grid_test.exists():
+            projects.append(write_project([face_test, grid_test], out_dir / f"test_{lang}.3mf"))
+    grids = [stl_dir / "common" / f"grid_{name}.stl" for name in TILES]
+    extras = [stl_dir / "common" / f"{part}.stl" for part in EXTRA_PARTS]
+    if all(path.exists() for path in grids):
+        parts = grids + [path for path in extras if path.exists()]
+        projects.append(write_project(parts, out_dir / "grid.3mf", GRID_SETTINGS))
+    return projects
 
 
 # Preview views: file prefix and the SCAD part that draws it.

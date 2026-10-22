@@ -7,7 +7,7 @@ from typing import Annotated
 
 import typer
 
-from wordclock.cad.build import plan_jobs, render_all, write_preview
+from wordclock.cad.build import plan_jobs, render_all, write_bambu_projects, write_preview
 from wordclock.layouts.utils.layout import Layout
 
 app = typer.Typer()
@@ -54,4 +54,6 @@ def main(
     except RuntimeError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1) from exc
+    for project in write_bambu_projects(languages, out, out.parent / "bambu"):
+        typer.echo(f"Bambu Studio project: {project}")
     typer.echo("Done.")

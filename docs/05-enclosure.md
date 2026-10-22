@@ -134,7 +134,25 @@ uv run wordclock-cad --lang catalan          # one language
 uv run wordclock-cad --test --lang catalan   # 4 × 4 test corner only
 ```
 
-Files are written to `build/stl/`.
+STL files are written to `build/stl/`, and Bambu Studio projects for the
+Bambu Lab A1 to `build/bambu/`, with one part per plate:
+
+| Project | Plates | Settings per part |
+|---------|--------|-------------------|
+| `face_<lang>.3mf` | 9 face tiles of one language | 100% infill |
+| `grid.3mf` | 9 grid tiles + Pi tray | 3 walls, 15% infill |
+| `test_<lang>.3mf` | Face and grid test corner (with `--test`) | default |
+
+Open a project in Bambu Studio, pick the filament for each plate and print
+plate by plate:
+
+```bash
+open -a BambuStudio build/bambu/face_catalan.3mf
+```
+
+The projects use the printer settings in
+`wordclock/cad/bambu_a1_project_settings.config` (Bambu Lab A1, 0,4 mm
+nozzle, 0,20 mm Standard, Bambu PLA Basic), exported by Bambu Studio.
 
 To see the whole clock in 3D, write a preview file and open it in the
 OpenSCAD GUI. Press `F6` to render, drag to rotate, and use the Customizer

@@ -317,7 +317,7 @@ uv run wordclock --mock --debug        # run clock loop with grid display
 uv run wordclock-api --mock            # run FastAPI + web simulator
 uv run wordclock-serve --mock          # run clock loop + API together
 uv run wordclock-generate --lang ca    # generate static grid for a language
-uv run wordclock-cad --lang catalan    # render enclosure STLs into build/stl/
+uv run wordclock-cad --lang catalan    # render STLs (build/stl/) and Bambu projects (build/bambu/)
 uv run pytest                          # run tests
 uv run ruff check .                    # lint
 uv run ruff format .                   # format
