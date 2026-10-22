@@ -83,8 +83,9 @@ lie on the back plate of the grid.
 | Filament | Black PLA/PETG (face), white PLA (grid) |
 | Diffuser | Tracing paper, 45,5 × 45,5 cm |
 
-> **Note:** The face and the grid are printed in a 2×2 split of tiles to fit
-> the Bambu Lab A1 bed. Seams fall on the walls between cells.
+> **Note:** The face and the grid are printed in a 3×3 split of tiles (at
+> most 17,1 × 17,1 cm) to fit the 25 × 25 cm bed of the Bambu Lab A1. Seams
+> fall on the walls between cells.
 
 ### Raspberry Pi
 
@@ -152,7 +153,7 @@ With 1 024 LEDs at a maximum of 60 mA each (full white), the theoretical peak dr
 | 4 | Level shifter | 3,3V → 5V (e.g. 74AHCT125) |
 | 5 | Frame | IKEA SANNAHED 50 × 50 cm |
 | 6 | 3D-printed parts | Face, light grid, camera holder, Pi tray (see 05 — Enclosure) |
-| 7 | Bolts | 4 × M3 countersunk with nuts (Pi tray) |
+| 7 | Bolts | 24 × M3 × 8 mm with nuts (grid seams), 4 × M3 countersunk with nuts (Pi tray) |
 | 8 | Power wire | 2-core, 18 AWG (power injection) |
 | 9 | Wire | 3-core, 22 AWG (row jumpers) |
 | 10 | MicroSD card | For Raspberry Pi OS (16 GB minimum) |

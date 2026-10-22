@@ -12,13 +12,16 @@ logger = getLogger(__name__)
 
 SCAD_FILE: Path = Path(__file__).parent / "wordclock.scad"
 
+# Grid lines where the panel is split, matching `splits` in the SCAD model.
+# A 3x3 split keeps every tile under 17.5 cm, well inside the 25 cm bed of
+# the Bambu Lab A1.
+TILE_SPLITS: tuple[int, ...] = (0, 5, 11, 16)
+
 # Cell ranges (col_start, col_end, row_start, row_end), end exclusive.
-# A 2x2 split keeps every tile under 256 mm, the Bambu Lab A1 bed size.
 TILES: dict[str, tuple[int, int, int, int]] = {
-    "r0c0": (0, 8, 0, 8),
-    "r0c1": (8, 16, 0, 8),
-    "r1c0": (0, 8, 8, 16),
-    "r1c1": (8, 16, 8, 16),
+    f"r{i}c{j}": (TILE_SPLITS[j], TILE_SPLITS[j + 1], TILE_SPLITS[i], TILE_SPLITS[i + 1])
+    for i in range(len(TILE_SPLITS) - 1)
+    for j in range(len(TILE_SPLITS) - 1)
 }
 
 # Top-left 4x4 corner, used to test fit, letters and light bleed.

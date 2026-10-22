@@ -4,7 +4,7 @@
 
 The clock is built inside an IKEA SANNAHED 50 × 50 cm frame. The LEDs are a
 WS2812B strip with 144 LEDs/metre, four LEDs under every letter. Every
-printed part is made on a Bambu Lab A1 (256 × 256 mm bed), split into tiles,
+printed part is made on a Bambu Lab A1 (25 × 25 cm bed), split into 3 × 3 tiles,
 and generated from one parametric OpenSCAD model with `uv run wordclock-cad`.
 The Raspberry Pi Zero 2 W, the camera and the wiring all fit inside the
 frame. This doc covers the dimensions, the printed parts, how to render and
@@ -83,18 +83,22 @@ margin is wider than the top one and hides the camera.
 | `common/pitray.stl` | 1 | no | Tray for the Raspberry Pi Zero 2 W and the 74AHCT125 board |
 
 Only the face depends on the language. To change the language of the
-clock, swap the four face tiles and keep everything else.
+clock, swap the nine face tiles and keep everything else.
 
-Tiles are named by row and column: `r0c0` is top-left, `r1c1` is
-bottom-right, as seen from the front. All seams fall on a cell wall, never
-through a letter.
+Tiles are named by row and column: `r0c0` is top-left, `r2c2` is
+bottom-right, as seen from the front. The panel is split after columns and
+rows 5 and 11 (5 + 6 + 5 cells). All seams fall on a cell wall, never
+through a letter, and the camera sits in the middle of `r2c1`, away from
+any seam.
 
 ```
-┌──────────┬──────────┐
-│   r0c0   │   r0c1   │   top tiles     24,6 × 23,8 cm (with tabs)
-├──────────┼──────────┤
-│   r1c0   │   r1c1   │   bottom tiles  24,6 × 25,0 cm (with tabs)
-└──────────┴──────────┘
+┌────────┬──────────┬────────┐
+│  r0c0  │   r0c1   │  r0c2  │   largest tile 17,1 × 17,1 cm
+├────────┼──────────┼────────┤   (with tabs)
+│  r1c0  │   r1c1   │  r1c2  │
+├────────┼──────────┼────────┤
+│  r2c0  │   r2c1 ◉ │  r2c2  │
+└────────┴──────────┴────────┘
 ```
 
 ---
@@ -185,24 +189,41 @@ Print both flat, with the standoffs pointing up. No supports are needed.
 The face and the grid tiles both lock together with dovetail tabs. Tiles
 have tabs on their right and bottom edges and sockets on their left and top
 edges. The joints sit where four cells meet, so they never touch a letter
-or a strip. No bolts are needed.
+or a strip.
 
 ```
-┌──────────┬──────────┐
-│   r0c0   ▶   r0c1   │   ▶ / ▼  dovetail tab into the
-├────▼─────┼────▼─────┤          neighbour's socket
-│   r1c0   ▶   r1c1   │
-└──────────┴──────────┘
+┌────────┬──────────┬────────┐
+│  r0c0  ▶   r0c1   ▶  r0c2  │   ▶ / ▼  dovetail tab into the
+├───▼────┼────▼─────┼───▼────┤          neighbour's socket
+│  r1c0  ▶   r1c1   ▶  r1c2  │
+├───▼────┼────▼─────┼───▼────┤
+│  r2c0  ▶   r2c1   ▶  r2c2  │
+└────────┴──────────┴────────┘
 ```
 
-1. Lay the four tiles on a flat table (face tiles face down, grid tiles
-   open side up).
-2. Press the tabs into the sockets, starting with `r0c0` and `r0c1`.
-3. Optional: add a drop of CA glue on each face joint for a rigid panel.
-   Leave the joints unglued if you want to take the face apart again.
+### 7.1 Light grid: dovetails and M3 bolts
 
-The frame clamps the face and the grid between the glazing and the back
-board, so the tiles cannot move once the frame is closed.
+Every seam of the grid is a double wall with M3 holes 4 mm above the back
+plate, two per tile edge, in the corners of the cells. They sit low and to
+the side, so they cast no shadow on the letters and do not touch the strip.
+
+1. Lay the nine grid tiles open side up and press the tabs into the
+   sockets, row by row.
+2. Push an M3 × 8 mm bolt through each seam hole and tighten a nut on the
+   other side (24 bolts in total).
+
+### 7.2 Face: dovetails only
+
+Bolts on the face would show from the front, and the grid walls rest right
+behind it, so the face tiles are held by the dovetails alone.
+
+1. Lay the nine face tiles face down on a flat table and press the tabs
+   into the sockets, row by row.
+2. Optional: add a drop of CA glue on each joint for a rigid panel. Leave
+   the joints unglued if you want to take the face apart again.
+
+The frame clamps the face against the glazing and the bolted grid presses
+it from behind, so the tiles cannot move once the frame is closed.
 
 ---
 
@@ -287,8 +308,8 @@ frame.
 ## 10. Build checklist
 
 - [ ] 4 × 4 test corner printed and checked for fit, letters and light bleed
-- [ ] Four face tiles printed for each language and fitted together
-- [ ] Four grid tiles printed in white and fitted together
+- [ ] Nine face tiles printed for each language and fitted together
+- [ ] Nine grid tiles printed in white, fitted together and bolted (24 × M3)
 - [ ] Tracing paper cut to 45,5 × 45,5 cm (covers the matrix, not the camera)
 - [ ] 16 strip rows cut, stuck and connected in snake order
 - [ ] Power injected at rows 0, 4, 8 and 12

@@ -22,7 +22,10 @@ use <fonts/KarlaBoldStencil.ttf>
 // face | grid | camholder | pitray | assembly | none (library use)
 part = "grid";
 // Cell range [col_start, col_end, row_start, row_end), end exclusive
-tile = [0, 8, 0, 8];
+tile = [0, 5, 0, 5];
+// Grid lines where the panel is split into tiles (same for rows and columns).
+// 3 x 3 tiles keep every part under 17.5 cm for a 25 cm printer bed.
+splits = [0, 5, 11, 16];
 
 /* [Assembly view] */
 // Gap between layers in the assembly view (0 = assembled)
@@ -70,6 +73,11 @@ paper_t = 0.3;
 
 /* [Light grid] */
 wall_t = 1.2;
+// M3 bolts through the seam walls, low in the cell corners
+bolt_d = 3.4;
+bolt_z = 4;
+// Distance from the grid line, along the seam
+bolt_offset = 5;
 // Height of the walls between the back plate and the face
 grid_h = 25;
 back_t = 2;
@@ -274,6 +282,21 @@ module ribs(t) {
         for (k = cols_k) if (!in_cam_zone(line_x(k))) translate([line_x(k) - wall_t / 2, 0, 0]) rib([wall_t, cells_y0(t)], false);
 }
 
+// Two M3 bolts per seam segment, next to the first and last grid line,
+// clear of the strip and away from the letters.
+function bolt_lines(start, end) = [start + 1, end - 1];
+
+module seam_bolts(t) {
+    z = back_t + bolt_z;
+    len = 2 * wall_t + 2;
+    for (seam = [t[0], t[1]]) if (seam != 0 && seam != cells)
+        for (k = bolt_lines(t[2], t[3]))
+            translate([line_x(seam), line_y(k) - bolt_offset, z]) rotate([0, 90, 0]) cylinder(d = bolt_d, h = len, center = true);
+    for (seam = [t[2], t[3]]) if (seam != 0 && seam != cells)
+        for (k = bolt_lines(t[0], t[1]))
+            translate([line_x(k) + bolt_offset, line_y(seam), z]) rotate([90, 0, 0]) cylinder(d = bolt_d, h = len, center = true);
+}
+
 // Notches where the strips pass under the vertical walls.
 module strip_notches(t) {
     for (k = [t[0]:t[1]], r = [t[2]:t[3] - 1])
@@ -296,6 +319,7 @@ module grid(t) {
             ribs(t);
         }
         strip_notches(t);
+        seam_bolts(t);
         // Sockets go through the plate and the bottom of the walls above them
         translate([0, 0, -1]) linear_extrude(back_t + 1.2) joints(t, joint_gap, tabs = false);
     }
@@ -356,7 +380,7 @@ module pitray() {
 // Whole clock seen from the front (+z), with the layers pulled apart by
 // `explode`. For viewing only: use the individual parts for printing.
 module assembly() {
-    tiles = [[0, 8, 0, 8], [8, 16, 0, 8], [0, 8, 8, 16], [8, 16, 8, 16]];
+    tiles = [for (i = [0:len(splits) - 2], j = [0:len(splits) - 2]) [splits[j], splits[j + 1], splits[i], splits[i + 1]]];
     grid_top = back_t + grid_h;
     paper_z = grid_top + explode / 2;
     face_z = grid_top + explode;

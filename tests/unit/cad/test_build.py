@@ -7,6 +7,7 @@ from wordclock.cad import (
     FACE_PARTS,
     SCAD_FILE,
     TEST_TILE,
+    TILE_SPLITS,
     TILES,
     RenderJob,
     plan_jobs,
@@ -92,6 +93,14 @@ class TestPlanJobs:
         # Then: no extra parts, every job uses the 4x4 corner
         assert len(jobs) == len(FACE_PARTS) + 1
         assert all(job.tile == TEST_TILE for job in jobs)
+
+    def test_splits_match_the_scad_model(self) -> None:
+        # Given
+        scad = SCAD_FILE.read_text(encoding="utf-8")
+        # When
+        literal = "splits = [{}];".format(", ".join(str(k) for k in TILE_SPLITS))
+        # Then
+        assert literal in scad
 
     def test_tiles_cover_the_whole_grid_once(self) -> None:
         # Given

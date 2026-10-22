@@ -35,8 +35,9 @@ corner first to check fit, letters and light bleed.
 
 ### 2.1 Join the light grid
 
-Press the dovetail tabs of the four grid tiles into their sockets. The
-result is one 48,4 × 48,4 cm grid with 256 cells.
+Press the dovetail tabs of the nine grid tiles into their sockets, then
+bolt every seam with M3 × 8 mm bolts and nuts (24 in total). The result is
+one 48,4 × 48,4 cm grid with 256 cells.
 
 ### 2.2 Cut and stick the strips
 
@@ -143,7 +144,7 @@ hooks. Everything is inside the frame, so it hangs flat against the wall.
 
 ## 6. Assembly checklist
 
-- [ ] Light grid tiles fitted together
+- [ ] Light grid tiles fitted together and bolted
 - [ ] 16 strip rows cut, labelled and stuck in snake order
 - [ ] All row jumpers done and tested
 - [ ] Power injection at rows 0, 4, 8 and 12

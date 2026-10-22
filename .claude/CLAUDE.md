@@ -10,7 +10,7 @@ for this project. It captures all conventions agreed during development.
 A 16×16 word clock lit by a WS2812B strip (144 LEDs/metre, 4 LEDs per letter,
 1 024 LEDs) built on a Raspberry Pi Zero 2 W. Frame: IKEA SANNAHED 50×50 cm
 (inner opening 48.5 cm, 4 cm depth used), LED matrix: 44.4×44.4 cm, cell:
-2.78 cm. Front panel: 3D-printed on a Bambu Lab A1 (2×2 tiles), opaque black,
+2.78 cm. Front panel: 3D-printed on a Bambu Lab A1 (3×3 tiles), opaque black,
 interchangeable per language.
 Supported languages: English, Catalan, Spanish.
 
@@ -116,7 +116,7 @@ One short paragraph summarising what this doc covers.
 | Camera | Camera Module 3 behind a 6 mm pinhole in the bottom margin of the face |
 | Button | Momentary button in the bottom rail of the frame, GPIO 3 |
 | Audio | None (no speaker or microphone), so GPIO 18 stays free for the LEDs |
-| Printer | Bambu Lab A1, 2×2 tiles, joined with dovetails |
+| Printer | Bambu Lab A1 (25 cm bed), 3×3 tiles split at lines 5 and 11; dovetails, plus M3 bolts on the grid seams |
 | CAD | OpenSCAD model in `wordclock/cad/`, rendered with `wordclock-cad` |
 | Wiring | Snake (even rows L→R, odd rows R→L) |
 | Power | 5V 10A PSU, inject at rows 0, 4, 8 and 12, software LED limit ~6 A |
