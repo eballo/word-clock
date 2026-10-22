@@ -73,6 +73,18 @@ joint_gap = 0.15;
 // Paper diffuser between the face and the grid (assembly view only)
 paper_t = 0.3;
 
+/* [Magnets] */
+// Neodymium disc magnets that hold the face on the grid, in the margins of
+// the outer tiles: one on the back of the face, one on a post of the grid.
+magnets = true;
+magnet_d = 5;
+magnet_h = 2;
+// Extra diameter of the pocket, for a press fit
+magnet_fit = 0.2;
+// Boss on the back of the face that keeps the magnet hidden from the front
+magnet_boss_h = 2;
+magnet_post_d = 9;
+
 /* [Light grid] */
 wall_t = 1.2;
 // M3 bolts through the seam walls, low in the cell corners
@@ -254,10 +266,40 @@ module face_2d(t) {
     }
 }
 
+// Middle cell of a tile range, for magnets that keep clear of the ribs.
+function mid_cell(a, b) = floor((a + b - 1) / 2);
+
+// Magnet positions in the margins along the outer edges of a tile.
+function magnet_positions(t) = !magnets ? [] : concat(
+    t[2] == 0 ? [[cell_x(mid_cell(t[0], t[1])), panel_size - border_top / 2]] : [],
+    t[3] == cells && !in_cam_zone(cell_x(mid_cell(t[0], t[1])))
+        ? [[cell_x(mid_cell(t[0], t[1])), border_bottom / 2]] : [],
+    t[0] == 0 ? [[border_x / 2, cell_y(mid_cell(t[2], t[3]))]] : [],
+    t[1] == cells ? [[panel_size - border_x / 2, cell_y(mid_cell(t[2], t[3]))]] : []
+);
+
+module magnet_pocket(top) {
+    translate([0, 0, top - magnet_h - 0.1]) cylinder(d = magnet_d + magnet_fit, h = magnet_h + 1);
+}
+
+// Face in body coordinates (front at z = 0), with the magnet bosses on its
+// back.
+module face_body(t) {
+    difference() {
+        union() {
+            linear_extrude(face_t) face_2d(t);
+            for (p = magnet_positions(t))
+                translate([p[0], p[1], face_t]) cylinder(d = magnet_post_d, h = magnet_boss_h);
+        }
+        for (p = magnet_positions(t))
+            translate([p[0], p[1], 0]) magnet_pocket(face_t + magnet_boss_h);
+    }
+}
+
 // Parts printed face-down are mirrored so that the text reads correctly
 // once the printed tile is flipped over.
 module face(t) {
-    mirror([1, 0, 0]) linear_extrude(face_t) face_2d(t);
+    mirror([1, 0, 0]) face_body(t);
 }
 
 // --- Light grid -----------------------------------------------------------
@@ -371,7 +413,12 @@ module grid(t) {
             }
             ribs(t);
             cam_bracket(t);
+            // Magnet posts, their tops leave room for the face bosses
+            for (p = magnet_positions(t))
+                translate([p[0], p[1], 0]) cylinder(d = magnet_post_d, h = back_t + grid_h - magnet_boss_h);
         }
+        for (p = magnet_positions(t))
+            translate([p[0], p[1], 0]) magnet_pocket(back_t + grid_h - magnet_boss_h);
         strip_notches(t);
         seam_bolts(t);
         // Sockets go through the plate and the bottom of the walls above them
@@ -639,7 +686,7 @@ module assembly() {
 
     for (t = tiles) {
         color("white") grid(t);
-        color("#1a1a1a") translate([0, 0, face_z]) linear_extrude(face_t) face_2d(t);
+        color("#1a1a1a") translate([0, 0, face_z + face_t]) mirror([0, 0, 1]) face_body(t);
     }
     // LED strips, one per row
     for (r = [0:cells - 1])
@@ -682,7 +729,7 @@ module pieces() {
         cx = (tile_x0(t) + tile_x1(t)) / 2;
         cy = (tile_y0(t) + tile_y1(t)) / 2;
         translate([j * gap, -i * gap, 0]) {
-            color("#1a1a1a") linear_extrude(face_t) face_2d(t);
+            color("#1a1a1a") face_body(t);
             label(name, cx, tile_y0(t) - gap / 2, 0);
         }
         translate([spread + 3 * gap + j * gap, -i * gap, 0]) {

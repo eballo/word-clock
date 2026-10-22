@@ -53,7 +53,7 @@ same margin on every side.
    viewer
      │
      ▼
-┌──────────────────────────┐  SANNAHED front glazing
+┌──────────────────────────┐  SANNAHED front lip (+ optional plastic sheet)
 ├──────────────────────────┤  face        2,4 mm  black, stencil letter holes
 ├──────────────────────────┤  paper       tracing paper, diffuses the light
 │ │    │    │    │    │    │  light grid  25 mm walls, white
@@ -248,10 +248,32 @@ used, so the face stays interchangeable.
 2. Lift the panel with both hands flat underneath. The dovetails stop the
    tiles from sliding apart, but they can pop out if the panel bends.
 
-The frame clamps the face against the glazing and the bolted grid presses
+The frame clamps the face against its front lip and the bolted grid presses
 it from behind, so the tiles cannot move once the frame is closed. If the
 joints are too loose or too tight, change `joint_gap` (0,15 mm) and print
 the test corner again.
+
+---
+
+### 7.3 Magnets between the face and the grid
+
+The face and the grid hold together with neodymium disc magnets, 5 × 2 mm,
+so the face stays aligned while you handle the clock and comes off in one
+move to change the language. Each outer tile has one magnet pair per outer
+edge, in the margin: a boss on the back of the face (so the magnet is
+hidden from the front) and a post in the hollow margin of the grid. The
+centre tile has no margin and is held by its dovetails.
+
+| Item | Value |
+|------|-------|
+| Magnets | 5 × 2 mm neodymium discs, 12 per face set + 12 in the grid |
+| Pockets | 5,2 mm, press fit; a drop of CA glue inside the pocket is fine |
+| Positions | Middle cell of each outer tile edge, clear of the ribs |
+
+Set the polarity once: put a magnet on every grid post, stick a second
+magnet on top of each one, then press the face onto them so each face
+pocket takes the magnet with the right pole. Mark the outer side of the
+spare face sets the same way, so every language face attracts the grid.
 
 ---
 
@@ -412,6 +434,7 @@ DSI connector, so this build has no touch display.
 - [ ] 4 × 4 test corner printed and checked for fit, letters and light bleed
 - [ ] Nine face tiles printed for each language and fitted together
 - [ ] Nine grid tiles printed in white, fitted together and bolted (24 × M3)
+- [ ] Magnets pressed into the grid posts and the face bosses, polarity checked
 - [ ] Tracing paper cut to 45,5 × 45,5 cm
 - [ ] 16 strip rows cut, stuck and connected in snake order
 - [ ] Power injected at rows 0, 4, 8 and 12

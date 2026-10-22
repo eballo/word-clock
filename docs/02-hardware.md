@@ -162,5 +162,6 @@ With 1 024 LEDs at a maximum of 60 mA each (full white), the theoretical peak dr
 | 12 | Camera | 5 MP OV5647 board or Raspberry Pi Camera Module |
 | 13 | Push button | 7–12 mm panel-mount momentary button |
 | 14 | DC jack | Panel-mount, rated for 10 A |
+| 15 | Magnets | Neodymium discs 5 × 2 mm, 24 (+12 per extra language face) |
 
 ---
