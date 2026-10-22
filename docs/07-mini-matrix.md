@@ -232,6 +232,40 @@ would draw more than 1,5 A (`MATRIX_MAX_MA` in `wordclock/config.py`); with
 the Pi 3B (up to about 1,2 A) that needs a 3 A supply at least. If the
 colours flicker, use the diode trick from the bench test.
 
+### 6.4 Quick test powered from the Raspberry Pi
+
+To try the strip before the 5V supply arrives, power it from the Pi's own
+5V pin, with only the Pi's power cable plugged in.
+
+```
+ Raspberry Pi 3B
+   pin 2  (5V) ─────────────────────► strip 5V (red)
+   pin 6  (GND) ────────────────────► strip GND (white)
+   pin 12 (GPIO 18) ──[220 Ω]───────► strip DIN (green)
+```
+
+The Pi 3B supply gives 2,5 A, the Pi uses 0,5–1 A of it, and the
+micro-USB input has a fuse of about 2,5 A. That leaves about 1 A for the
+LEDs, so keep the software limit low:
+
+```bash
+sudo .venv/bin/wordclock-matrix wiring --brightness 30 --max-ma 600
+sudo .venv/bin/wordclock-matrix rainbow --brightness 30 --max-ma 600
+```
+
+| Symptom | Fix |
+|---------|-----|
+| The Pi reboots, or shows the under-voltage warning | Lower `--max-ma`; `vcgencmd get_throttled` must print `throttled=0x0` |
+| Random colours or flicker | Put the rectifier diode between pin 2 and the strip 5V, stripe towards the strip |
+
+> ⚠️ Never run without `--max-ma`: 60 LEDs in full white draw 3,6 A and
+> would reset the Pi. Do not connect or disconnect the strip while the Pi
+> is on.
+
+For the finished matrix, use the DC jack of the stand box (section 4): it
+powers the strip and the Pi together without going through the Pi's fuse,
+so the limit can stay at 1,5 A.
+
 ---
 
 ## 7. Assemble
@@ -304,6 +338,7 @@ the same code runs on the 16 × 16 word clock later.
 - [ ] Raspberry Pi and DC jack fitted in the stand box, box screwed on the grid
 - [ ] Strip cut into 6 pieces of 10 LEDs, stuck in a snake, arrows checked
 - [ ] Five row joints soldered, input wires through the back plate hole
+- [ ] Quick test powered from the Pi (section 6.4): `wiring` scene with `--max-ma 600`
 - [ ] Safety check of [06 — Bench Test](06-bench-test.md) done before powering up
 - [ ] `wiring` scene lights the 60 cells in order
 - [ ] `rainbow` scene shows the right colours
