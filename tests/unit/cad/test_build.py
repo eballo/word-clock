@@ -6,6 +6,7 @@ from pathlib import Path
 from wordclock.cad import (
     EXTRA_PARTS,
     FACE_PARTS,
+    MATRIX_BOX_PART,
     MATRIX_HALVES,
     MATRIX_PARTS,
     MATRIX_SCAD_FILE,
@@ -184,13 +185,14 @@ class TestWriteBambuProjects:
 
 
 class TestMatrix:
-    def test_plans_both_halves_of_grid_and_face(self) -> None:
+    def test_plans_both_halves_of_grid_and_face_and_the_box(self) -> None:
         # Given
         out = Path("build/stl")
         # When
         jobs = plan_matrix_jobs(out)
         # Then
-        assert len(jobs) == len(MATRIX_PARTS) * len(MATRIX_HALVES)
+        assert len(jobs) == len(MATRIX_PARTS) * len(MATRIX_HALVES) + 1
+        assert RenderJob(MATRIX_BOX_PART, out / "matrix" / "box.stl", scad=MATRIX_SCAD_FILE) in jobs
         assert (
             RenderJob("face", out / "matrix" / "face_right.stl", half=1, scad=MATRIX_SCAD_FILE)
             in jobs
@@ -207,6 +209,15 @@ class TestMatrix:
         assert "half=0" in cmd
         assert cmd[-1] == str(MATRIX_SCAD_FILE)
 
+    def test_box_command_has_no_half(self) -> None:
+        # Given
+        job = plan_matrix_jobs(Path("build"))[-1]
+        # When
+        cmd = scad_command(job)
+        # Then
+        assert 'part="box"' in cmd
+        assert not any(arg.startswith("half=") for arg in cmd)
+
     def test_model_matches_the_strip(self) -> None:
         # Given
         scad = MATRIX_SCAD_FILE.read_text(encoding="utf-8")
@@ -216,7 +227,7 @@ class TestMatrix:
         assert "pitch = 1000 / 30;" in scad
 
     def test_writes_one_project_per_part(self, tmp_path: Path) -> None:
-        # Given: a tiny STL for every half
+        # Given: a tiny STL for every half and the box
         stl = "\n".join(
             ["solid s", "facet normal 0 0 1", "outer loop", "vertex 0 0 0", "vertex 1 0 0"]
             + ["vertex 0 1 0", "endloop", "endfacet", "endsolid s", ""]
@@ -231,6 +242,7 @@ class TestMatrix:
         assert projects == [
             tmp_path / "bambu" / "matrix_grid.3mf",
             tmp_path / "bambu" / "matrix_face.3mf",
+            tmp_path / "bambu" / "matrix_box.3mf",
         ]
         with zipfile.ZipFile(projects[0]) as zf:
             settings = zf.read("Metadata/model_settings.config").decode()

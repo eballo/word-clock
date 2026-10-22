@@ -24,9 +24,13 @@ and wiring the strip, printing the enclosure, assembly and the software.
 | Rectifier diode | 1 | Only if the 3,3V data is not read reliably (Freenove kit) |
 | Wire, 22 AWG, three colours | about 1 m | 5 joints between rows, about 6 cm each |
 | M3 × 16 mm bolt and nut | 3 | Join the two grid halves |
+| M3 × 12 mm self-tapping screw | 4 | Fix the back box to the grid |
+| M2.5 × 6 mm self-tapping screw | 4 | Fix the Raspberry Pi in the back box |
+| Panel-mount DC jack, 5.5 × 2.1 mm (DC-022, 11 mm hole) | 1 | LED supply input on the back box |
+| 12 mm momentary push button | 1 | Optional, for a later phase (GPIO 3) |
 | Tracing paper | 1 A3 sheet | Diffuser between the face and the grid |
 | PLA, white | about 150 g | Light grid |
-| PLA, black | about 120 g | Front face |
+| PLA, black | about 200 g | Front face and back box |
 
 ---
 
@@ -51,8 +55,9 @@ and wiring the strip, printing the enclosure, assembly and the software.
 | Matrix | 33,3 × 20,0 cm |
 | Grid panel | 35,7 × 22,4 cm |
 | Face (with its skirt) | 36,1 × 22,8 cm |
-| Depth | about 2,6 cm (2 mm back plate, 22 mm walls, paper, 2 mm face) |
+| Depth | about 2,6 cm (2 mm back plate, 22 mm walls, paper, 2 mm face), plus 3,2 cm of back box |
 | Printed halves | Grid 17,9 × 22,4 cm, face 18,1 × 22,8 cm: each fits the 25,6 cm bed of the Bambu Lab A1 |
+| Back box | 14,3 × 14,3 × 3,2 cm, centred behind the matrix |
 | Face windows | 3,03 × 3,03 cm, 3 mm bars |
 
 ---
@@ -69,6 +74,12 @@ and wiring the strip, printing the enclosure, assembly and the software.
 │ │    │    │    │    │    │   │  light grid, white PLA, 22 mm walls
 │ │ ●  │ ●  │ ●  │ ●  │ ●  │ ● │  one WS2812B LED per cell
 └──────────────────────────────┘  back plate 2 mm, strip stuck on it
+        ┌──────────────┐          back box, 32 mm: Raspberry Pi, DC jack,
+        │  Pi   ▣ jack │          wiring; keyholes in its floor
+        └──────────────┘
+     ▲
+     │
+   wall
 ```
 
 The strip runs along the centre of every row, under the column walls
@@ -77,28 +88,85 @@ where the wires that join the rows run.
 
 ---
 
-## 4. Print the enclosure
+## 4. Back box
+
+The box is screwed on the back of the grid and hangs the whole matrix on
+the wall. Four M3 × 12 mm self-tapping screws go in from the floor of the
+box, through its corner columns, into four bosses on the grid back plate
+(cell corners, hidden behind the face bars).
+
+```
+          seen from the back (as it hangs, floor towards you)
+
+                 strip wires (slot in the rim)
+   ┌─────────────────┬┬─────────────────────┐
+   │ ◉            ║║║║║║║  vents        ◉   │
+   │      ⚲  keyhole           keyhole  ⚲   │
+   │                                        │
+ ◯ │ button                                 │
+   │                   ┌──────────────────┐ │
+   │                   │  Raspberry Pi 3B │ ├─ USB / Ethernet
+   │ ◉                 └──────────────────┘◉│
+   └───────── ◯ ───────────── ▭ ────────────┘
+           DC jack       Pi power
+```
+
+The view is from the back, so the Pi sits on the left here and on the
+right in the model, which uses front-view coordinates.
+
+| Opening | Where | For |
+|---------|-------|-----|
+| Pi power | Bottom wall | The Pi's own micro-USB supply (USB-C on a 4B) |
+| DC jack, 11 mm | Bottom wall | 5V supply of the LED strip |
+| USB / Ethernet | Side wall | Keyboard or network cable when needed |
+| Button, 12 mm | Other side wall | Push button for a later phase |
+| Wire slot | Top rim | Strip input wires from the hole next to row 0 |
+| Keyholes | Floor | Two wall screws, 90 mm apart; the matrix drops 10 mm onto them |
+| Vents | Floor under the Pi and top wall | Air for the Raspberry Pi |
+
+The microSD card faces into the box: take the box off (four screws) to
+change it.
+
+Inside the box:
+
+```
+ DC jack + ──┬────────────────────────────► strip 5V (red)
+             └─[1000 µF]─┐
+ DC jack − ──────────────┴───┬────────────► strip GND (white)
+                             │
+ Pi GND (pin 6) ─────────────┘
+ Pi GPIO 18 (pin 12) ──[220 Ω]────────────► strip DIN (green)
+```
+
+Use lever connectors (Wago 221) or a small piece of perfboard for the
+joints, held with double-sided tape.
+
+---
+
+## 5. Print the enclosure
 
 ```bash
 uv run wordclock-cad --matrix    # STL files in build/stl/matrix/
 ```
 
-It writes two Bambu Studio projects, one half per plate:
+It writes three Bambu Studio projects, one part per plate:
 
 | Project | Parts | Filament | Orientation |
 |---------|-------|----------|-------------|
 | `build/bambu/matrix_grid.3mf` | `grid_left`, `grid_right` | White PLA, 3 walls, 15 % infill | Back plate on the bed |
 | `build/bambu/matrix_face.3mf` | `face_left`, `face_right` | Black PLA, 100 % infill | Front on the bed, skirt up |
+| `build/bambu/matrix_box.3mf` | `box` | Black PLA, 3 walls, 15 % infill | Floor on the bed |
 
 To change a size, edit the parameters at the top of
-`wordclock/cad/matrix.scad` (wall height, margin, notch width) and render
+`wordclock/cad/matrix.scad` (wall height, margin, notch width, box depth,
+jack hole) and render
 again. Open the file in the OpenSCAD GUI to see the assembly.
 
 ---
 
-## 5. Cut and wire the strip
+## 6. Cut and wire the strip
 
-### 5.1 Snake layout
+### 6.1 Snake layout
 
 LED 0 is in the top-left cell. Even rows run left to right, odd rows right
 to left, so each row joins the next at alternating ends.
@@ -112,7 +180,7 @@ to left, so each row joins the next at alternating ends.
          [59 58 57 56 55 54 53 52 51 50] ◄┘   row 5
 ```
 
-### 5.2 Steps
+### 6.2 Steps
 
 1. Check the arrows printed on the strip: they point away from DIN. Start
    from the DIN end.
@@ -129,7 +197,7 @@ to left, so each row joins the next at alternating ends.
 > ⚠️ Data goes from DOUT to DIN only. A row stuck the wrong way round stays
 > dark, and so does every row after it.
 
-### 5.3 Connection to the Raspberry Pi
+### 6.3 Connection to the Raspberry Pi
 
 The wiring is the same as the bench test ([06 — Bench Test](06-bench-test.md), section 2):
 
@@ -148,19 +216,27 @@ diode trick from the bench test.
 
 ---
 
-## 6. Assemble
+## 7. Assemble
 
 1. Bolt the two grid halves together with the three M3 bolts: one in the
    top margin, one in the bottom margin and one on the middle row wall.
-2. Stick the strip rows and solder the joints (section 5).
-3. Run the `wiring` scene (section 7) and check that the cells light in
+2. Stick the strip rows and solder the joints (section 6).
+3. Screw the Raspberry Pi into the back box (four M2.5 screws) and fit the
+   DC jack in the bottom wall.
+4. Pass the strip input wires through the slot in the box rim and wire
+   them inside the box (section 4).
+5. Screw the box onto the grid bosses with the four M3 × 12 mm screws,
+   from the floor side.
+6. Run the `wiring` scene (section 8) and check that the cells light in
    order before closing.
-4. Lay the tracing paper over the grid, cut to the outer edge of the walls.
-5. Press the two face halves onto the grid: the skirt hugs the outer wall.
+7. Lay the tracing paper over the grid, cut to the outer edge of the walls.
+8. Press the two face halves onto the grid: the skirt hugs the outer wall.
+9. Hang the matrix on two wall screws, 90 mm apart and level, through the
+   keyholes in the box floor.
 
 ---
 
-## 7. Software
+## 8. Software
 
 The matrix uses the `wordclock-matrix` command. On the Mac, `--mock` draws
 the matrix in the terminal instead of lighting LEDs:
@@ -204,10 +280,11 @@ the same code runs on the 16 × 16 word clock later.
 
 ---
 
-## 8. Build checklist
+## 9. Build checklist
 
-- [ ] Grid halves and face halves printed (`uv run wordclock-cad --matrix`)
+- [ ] Grid halves, face halves and back box printed (`uv run wordclock-cad --matrix`)
 - [ ] Grid halves bolted together with three M3 × 16 mm bolts
+- [ ] Raspberry Pi and DC jack fitted in the back box, box screwed on the grid
 - [ ] Strip cut into 6 pieces of 10 LEDs, stuck in a snake, arrows checked
 - [ ] Five row joints soldered, input wires through the back plate hole
 - [ ] Safety check of [06 — Bench Test](06-bench-test.md) done before powering up
@@ -215,3 +292,4 @@ the same code runs on the 16 × 16 word clock later.
 - [ ] `rainbow` scene shows the right colours
 - [ ] Tracing paper and face fitted
 - [ ] `text`, `clock`, `ip` and `rain` scenes running
+- [ ] Matrix hanging on the wall by the box keyholes

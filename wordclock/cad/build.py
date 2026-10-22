@@ -40,9 +40,11 @@ EXTRA_PARTS: tuple[str, ...] = ("screenfront", "screenback", "screenhanger")
 # Raspberry Pi Zero 2 W tray for a clock without the screen module.
 OPTIONAL_PARTS: tuple[str, ...] = ("spacer", "recess", "pitray")
 
-# Mini 10x6 matrix for the 30 LEDs/metre strip: every part in two halves.
+# Mini 10x6 matrix for the 30 LEDs/metre strip: the grid and the face in two
+# halves, and one back box for the Raspberry Pi and the wiring.
 MATRIX_PARTS: tuple[str, ...] = ("grid", "face")
 MATRIX_HALVES: dict[str, int] = {"left": 0, "right": 1}
+MATRIX_BOX_PART = "box"
 
 
 @dataclass(frozen=True)
@@ -145,13 +147,16 @@ def plan_matrix_jobs(out_dir: Path) -> list[RenderJob]:
         out_dir: Directory for the STL files; they go into ``matrix/``.
 
     Returns:
-        Render jobs for the left and right halves of the grid and the face.
+        Render jobs for the left and right halves of the grid and the face,
+        and for the back box.
     """
-    return [
+    jobs = [
         RenderJob(part, out_dir / "matrix" / f"{part}_{name}.stl", half=half, scad=MATRIX_SCAD_FILE)
         for part in MATRIX_PARTS
         for name, half in MATRIX_HALVES.items()
     ]
+    box = out_dir / "matrix" / f"{MATRIX_BOX_PART}.stl"
+    return jobs + [RenderJob(MATRIX_BOX_PART, box, scad=MATRIX_SCAD_FILE)]
 
 
 # Per-object print settings in the Bambu Studio projects.
@@ -197,7 +202,8 @@ def write_matrix_projects(stl_dir: Path, out_dir: Path) -> list[Path]:
     Group the mini matrix STL files into Bambu Studio projects.
 
     Writes ``matrix_grid.3mf`` and ``matrix_face.3mf``, one half per plate,
-    so each project carries the print settings of its part.
+    and ``matrix_box.3mf``, so each project carries the print settings of its
+    part.
 
     Args:
         stl_dir: Directory with the rendered STL files.
@@ -213,6 +219,9 @@ def write_matrix_projects(stl_dir: Path, out_dir: Path) -> list[Path]:
         if all(path.exists() for path in halves):
             output = out_dir / f"matrix_{part}.3mf"
             projects.append(write_project(halves, output, settings[part]))
+    box = stl_dir / "matrix" / f"{MATRIX_BOX_PART}.stl"
+    if box.exists():
+        projects.append(write_project([box], out_dir / "matrix_box.3mf", GRID_SETTINGS))
     return projects
 
 

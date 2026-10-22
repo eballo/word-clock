@@ -8,10 +8,13 @@
 //
 //   openscad -o grid_left.stl -D 'part="grid"' -D 'half=0' matrix.scad
 //
+// A box screwed on the back holds the Raspberry Pi, the DC jack of the LED
+// supply and the wiring, and hangs the matrix on the wall.
+//
 // Prefer `uv run wordclock-cad --matrix`, which renders every part.
 
 /* [Part selection] */
-// grid | face | assembly | none (library use)
+// grid | face | box | assembly | none (library use)
 part = "assembly";
 // 0 = left half, 1 = right half
 half = 0;
@@ -61,6 +64,55 @@ skirt_h = 6;
 fit = 0.2;
 // Paper diffuser between the face and the grid (assembly view only)
 paper_t = 0.3;
+
+/* [Back box] */
+// The box corners are screwed into bosses of the grid, on the grid line
+// crossings [col_start, col_end, row_start, row_end]: 4 x 4 cells in the
+// middle of the matrix, across the seam.
+box_lines = [3, 7, 1, 5];
+// How far the box reaches past the screw centres
+box_overhang = 5;
+// Depth from the back plate of the grid to the wall
+box_d = 32;
+box_wall = 2.4;
+box_floor = 2.4;
+// Corner columns with M3 screws from the outside of the floor. The screw
+// head sits in a counterbore, so an M3 x 12 mm self-tapping screw goes
+// through the rim and 6 mm into the grid boss.
+box_column_d = 10;
+box_screw_d = 3.4;
+box_head_d = 6.5;
+// Material left under the screw head, at the rim of the box
+box_screw_grip = 6;
+// Bosses on the grid back plate that take the screws (cell corners)
+grid_boss_d = 7;
+grid_boss_h = 5;
+grid_pilot_d = 2.6;
+// Raspberry Pi 3B / 4B: 85 x 56 mm board, M2.5 holes on 58 x 49 mm,
+// 3.5 mm from the edge with the micro-USB and HDMI ports
+rpi_board = [85, 56];
+rpi_holes = [[3.5, 3.5], [61.5, 3.5], [3.5, 52.5], [61.5, 52.5]];
+rpi_standoff_h = 5;
+rpi_standoff_d = 6;
+rpi_pilot_d = 2.2;
+// Power port on the bottom edge of the board, from its left end: micro-USB
+// on the 3B, USB-C on the 4B
+rpi_power_x = 10.6;
+// Height of the USB and Ethernet stack above the board
+rpi_ports_h = 17;
+// Panel-mount 5.5 x 2.1 mm DC jack for the LED supply (DC-022: 11 mm hole)
+jack_d = 11;
+// Hole for the 12 mm push button (GPIO 3), for a later phase (0 = none)
+button_d = 12;
+// Slot in the rim for the strip wires coming from the hole next to row 0
+wire_slot = [12, 8];
+// Keyholes in the floor to hang the matrix on two wall screws
+keyhole_head_d = 8.5;
+keyhole_slot_w = 4.2;
+keyhole_drop = 10;
+keyhole_spacing = 90;
+// Ventilation slots in the floor and the top wall
+vent = [3, 30];
 
 $fn = 32;
 
@@ -135,6 +187,9 @@ module strip_notches(h) {
             cube([2 * wall_t + 2, strip_w, strip_notch_h + 0.01]);
 }
 
+// Screw points of the back box, on grid line crossings.
+function box_screws() = [for (c = [box_lines[0], box_lines[1]], r = [box_lines[2], box_lines[3]]) [line_x(c), line_y(r)]];
+
 module grid(h) {
     difference() {
         intersection() {
@@ -142,11 +197,13 @@ module grid(h) {
                 cube([panel_w, panel_h, back_t]);
                 translate([0, 0, back_t]) linear_extrude(grid_h) walls_2d(h);
                 seam_blocks(h);
+                for (p = box_screws()) translate([p[0], p[1], 0]) cylinder(d = grid_boss_d, h = back_t + grid_boss_h);
             }
             translate([0, 0, -1]) linear_extrude(back_t + grid_h + 2) half_rect(h);
         }
         strip_notches(h);
         seam_holes();
+        for (p = box_screws()) translate([p[0], p[1], -1]) cylinder(d = grid_pilot_d, h = back_t + grid_boss_h);
         if (h == 0)
             translate([(outer_t + line_x(0)) / 2 - cable_hole[0] / 2, cell_y(0) - cable_hole[1] / 2, -1])
                 cube([cable_hole[0], cable_hole[1], back_t + 2]);
@@ -183,6 +240,76 @@ module face(h) {
     mirror([1, 0, 0]) face_body(h);
 }
 
+// --- Back box ---------------------------------------------------------------
+
+// Box outline in front-view coordinates. The box sits behind the grid, from
+// z = -box_d (the floor, against the wall) to z = 0 (the back plate).
+box_x0 = line_x(box_lines[0]) - box_overhang;
+box_x1 = line_x(box_lines[1]) + box_overhang;
+box_y0 = line_y(box_lines[3]) - box_overhang;
+box_y1 = line_y(box_lines[2]) + box_overhang;
+
+// Raspberry Pi in the bottom-right corner, component side towards the grid,
+// power port through the bottom wall, USB and Ethernet through the right wall.
+rpi_x0 = box_x1 - box_wall - 3 - rpi_board[0];
+rpi_y0 = box_y0 + box_wall + 1.5;
+rpi_top = -box_d + box_floor + rpi_standoff_h + 1.6;
+
+assert(rpi_top + rpi_ports_h < -2, "Box too shallow for the Raspberry Pi: raise box_d");
+
+module box_outline(grow = 0) {
+    translate([box_x0 - grow, box_y0 - grow]) square([box_x1 - box_x0 + 2 * grow, box_y1 - box_y0 + 2 * grow]);
+}
+
+module keyhole() {
+    circle(d = keyhole_head_d);
+    translate([-keyhole_slot_w / 2, 0]) square([keyhole_slot_w, keyhole_drop]);
+    translate([0, keyhole_drop]) circle(d = keyhole_slot_w);
+}
+
+module box_shell() {
+    translate([0, 0, -box_d]) difference() {
+        linear_extrude(box_d) box_outline();
+        translate([0, 0, box_floor]) linear_extrude(box_d) box_outline(-box_wall);
+    }
+    for (p = box_screws()) translate([p[0], p[1], -box_d]) cylinder(d = box_column_d, h = box_d);
+    for (hole = rpi_holes)
+        translate([rpi_x0 + hole[0], rpi_y0 + hole[1], -box_d]) cylinder(d = rpi_standoff_d, h = box_floor + rpi_standoff_h);
+}
+
+module box() {
+    mid_x = (box_x0 + box_x1) / 2;
+    mid_y = (box_y0 + box_y1) / 2;
+    difference() {
+        box_shell();
+        // Corner screws, heads sunk from the floor side
+        for (p = box_screws()) translate([p[0], p[1], -box_d - 1]) {
+            cylinder(d = box_screw_d, h = box_d + 2);
+            cylinder(d = box_head_d, h = box_d + 1 - box_screw_grip);
+        }
+        for (hole = rpi_holes) translate([rpi_x0 + hole[0], rpi_y0 + hole[1], -box_d + 1]) cylinder(d = rpi_pilot_d, h = box_d);
+        // Raspberry Pi power plug, and the USB and Ethernet ports
+        translate([rpi_x0 + rpi_power_x - 6, box_y0 - 1, rpi_top - 1.5]) cube([12, box_wall + 2, 9]);
+        translate([box_x1 - box_wall - 1, rpi_y0 + 1, rpi_top]) cube([box_wall + 2, rpi_board[1] - 2, rpi_ports_h]);
+        // DC jack in the bottom wall, left of the Raspberry Pi
+        translate([(box_x0 + rpi_x0) / 2, box_y0 - 1, -box_d / 2]) rotate([-90, 0, 0]) cylinder(d = jack_d, h = box_wall + 2);
+        if (button_d > 0) translate([box_x0 - 1, mid_y, -box_d / 2]) rotate([0, 90, 0]) cylinder(d = button_d, h = box_wall + 2);
+        // Strip wires come in through the rim, next to the top-left corner
+        translate([box_x0 + box_column_d + 2, box_y1 - box_wall - 1, -wire_slot[1]]) cube([wire_slot[0], box_wall + 2, wire_slot[1] + 1]);
+        // Keyholes near the top, and vents under the Raspberry Pi and in the top wall
+        translate([0, 0, -box_d - 1]) linear_extrude(box_floor + 2) {
+            for (dx = [-keyhole_spacing / 2, keyhole_spacing / 2]) translate([mid_x + dx, box_y1 - 2 * box_column_d - keyhole_drop]) keyhole();
+            for (i = [0:5]) translate([rpi_x0 + 12 + i * 10, rpi_y0 + rpi_board[1] / 2 - vent[1] / 2]) square(vent);
+        }
+        for (i = [-3:3]) translate([mid_x + i * 10 - vent[0] / 2, box_y1 - box_wall - 1, -box_d + box_floor + 4]) cube([vent[0], box_wall + 2, 14]);
+    }
+}
+
+// Printed floor down.
+module box_print() {
+    translate([0, 0, box_d]) box();
+}
+
 // --- Assembly ---------------------------------------------------------------
 
 module assembly() {
@@ -193,8 +320,10 @@ module assembly() {
         // The face body has its front at z = 0: flip it onto the grid.
         color("#222") translate([0, 0, top + paper_t + face_t + explode]) mirror([0, 0, 1]) face_body(h);
     }
+    color("#333") translate([0, 0, -explode]) box();
 }
 
 if (part == "grid") grid(half);
 else if (part == "face") face(half);
+else if (part == "box") box_print();
 else if (part == "assembly") assembly();
