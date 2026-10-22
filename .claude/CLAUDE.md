@@ -112,7 +112,7 @@ One short paragraph summarising what this doc covers.
 | LED count | 256 cells (16 × 16), 1 024 LEDs (4 per cell, snake rows of 64) |
 | Front panel | 3D-printed, opaque black PLA/PETG, Karla Bold Stencil letters, dovetail-joined tiles, no glue; only part that changes per language |
 | Diffuser | Tracing paper between the face and the light grid |
-| Raspberry Pi | Pi 4B in a printed screen module under the clock, with the 7" Touch Display v1 |
+| Raspberry Pi | Pi 4B in a printed screen module under the clock, with the 7" Touch Display v1; the module hangs from the frame by a tab bolted through the back board (one wall hook) |
 | Camera | In the screen module, above the display (OV5647 or Camera Module); `clock_camera = true` hides it in the clock instead |
 | Button | 12 mm momentary button on the side of the screen module, GPIO 3 |
 | Audio | None (no speaker or microphone), so GPIO 18 stays free for the LEDs |

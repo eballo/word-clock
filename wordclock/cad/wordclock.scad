@@ -129,11 +129,20 @@ screen_top_zone = 28;
 screen_bottom_zone = 10;
 // Depth behind the bezel: display, Raspberry Pi 4B on its standoffs, cables
 screen_depth = 38;
-screen_back_t = 3;
+screen_back_t = 4;
 // Hole in the bezel in front of the camera lens
 screen_cam_hole_d = 8;
 // Panel-mount push button on the right side
 screen_button_d = 12;
+// Hang the module from the frame (true): the back cover grows a tab that is
+// bolted through the frame back board, so only the frame needs a wall hook.
+// false: the module hangs on the wall from two keyholes.
+screen_hang = true;
+// Gap between the bottom edge of the frame and the top of the module
+screen_gap = 15;
+// Height and width of the tab behind the frame
+screen_tab = 60;
+screen_tab_w = 140;
 
 /* [Letters] */
 rows = [
@@ -469,8 +478,15 @@ module screen_front_body() {
     }
 }
 
-// Back cover with columns that press the display against the bezel, wall
-// keyholes and vents over the Raspberry Pi.
+// M3 bolts through the tab and the frame back board, clear of the frame's
+// bottom rail.
+function screen_tab_bolts() = let(o = screen_outer(), top = o[1] + screen_gap) [
+    for (dx = [-50, 50], y = [top + 18, top + screen_tab - 12]) [o[0] / 2 + dx, y]
+];
+
+// Back cover with columns that press the display against the bezel, vents
+// over the Raspberry Pi, and either a tab that bolts to the frame or wall
+// keyholes.
 module screen_back_body() {
     o = screen_outer();
     d = screen_bezel + screen_depth;
@@ -478,6 +494,10 @@ module screen_back_body() {
     difference() {
         union() {
             translate([0, 0, d]) linear_extrude(screen_back_t) screen_outline(o);
+            if (screen_hang)
+                translate([o[0] / 2 - screen_tab_w / 2, o[1] - 10, d])
+                    linear_extrude(screen_back_t)
+                        offset(4) offset(-4) square([screen_tab_w, screen_gap + screen_tab + 10]);
             for (p = lcd_m3_pos())
                 translate([p[0], p[1], screen_bezel + lcd_t]) cylinder(d = 9, h = column);
         }
@@ -489,12 +509,20 @@ module screen_back_body() {
                 cylinder(d = 3.4, h = screen_back_t + 2);
                 translate([0, 0, screen_back_t + 1 - 1.8]) cylinder(d1 = 3.4, d2 = 7, h = 1.81);
             }
+        // Countersunk on the wall side, nuts inside the frame
+        if (screen_hang)
+            for (p = screen_tab_bolts())
+                translate([p[0], p[1], d - 1]) {
+                    cylinder(d = 3.4, h = screen_back_t + 2);
+                    translate([0, 0, screen_back_t + 1 - 1.8]) cylinder(d1 = 3.4, d2 = 7, h = 1.81);
+                }
         // Keyholes for two screws in the wall, 120 mm apart
-        for (x = [o[0] / 2 - 60, o[0] / 2 + 60])
-            translate([x, o[1] - 22, d - 1]) {
-                cylinder(d = 8, h = screen_back_t + 2);
-                translate([-2, 0, 0]) cube([4, 10, screen_back_t + 2]);
-            }
+        if (!screen_hang)
+            for (x = [o[0] / 2 - 60, o[0] / 2 + 60])
+                translate([x, o[1] - 22, d - 1]) {
+                    cylinder(d = 8, h = screen_back_t + 2);
+                    translate([-2, 0, 0]) cube([4, 10, screen_back_t + 2]);
+                }
         // Vents over the Raspberry Pi
         for (i = [0:7])
             translate([o[0] / 2 - 45, glass_origin()[1] + 25 + i * 8, d - 1]) cube([90, 3, screen_back_t + 2]);
@@ -541,7 +569,7 @@ module assembly() {
         color("seagreen") translate([line_x(0), cell_y(r) - 5, back_t]) cube([matrix_size, 10, 1.5]);
     color("ivory") translate([line_x(0), line_y(cells), paper_z]) cube([matrix_size, matrix_size, paper_t]);
     // Screen module centred under the frame, its back against the wall
-    translate([panel_size / 2 - screen_outer()[0] / 2, -clearance / 2 - (500 - inner_size) / 2 - 30 - screen_outer()[1],
+    translate([panel_size / 2 - screen_outer()[0] / 2, -clearance / 2 - (500 - inner_size) / 2 - screen_gap - screen_outer()[1],
                -back_gap + screen_total_depth()])
         screen_module();
 

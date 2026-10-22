@@ -296,30 +296,35 @@ the clock, around the official Raspberry Pi Touch Display (v1, 7", 800 ×
 480). The touch screen controls the clock (settings, reminders, photo
 booth preview, games), and the camera sits above it, where people look.
 
+The module hangs from the frame, so the whole clock needs a single wall
+hook: the back cover grows a tab that goes up behind the frame and is
+bolted through the frame back board.
+
 ```
-┌──────────────────────────────┐
-│                              │
-│         word clock           │  ← SANNAHED frame
-│                              │
-└──────────────────────────────┘
-          │ LED cable, up behind the frame
-       ┌──┴─────────┐
-       │     ◉      │  ← camera
-       │ ┌────────┐ │
-       │ │ screen │ ●  ← push button (right side)
-       │ └────────┘ │
-       └────────────┘  ← power and USB cables at the bottom
+  wall
+    │   ┌──────────────────────────┐
+    │   │                          │  ← SANNAHED frame, on its own hook
+    │   │        word clock        │
+    │  ┌┤                          │
+    │  │└──────────────────────────┘  ← 4 × M3 bolts through the back board
+    │  │ tab (part of the back cover)
+    │  │   ┌────────────┐
+    │  └───┤     ◉      │  ← camera
+    │      │ ┌────────┐ │
+    │      │ │ screen │ ●  ← push button (right side)
+    │      │ └────────┘ │
+    │      └────────────┘  ← power and USB cables at the bottom
 ```
 
 | Feature | Value |
 |---------|-------|
-| Outer size | 199,8 × 155,6 × 43 mm |
+| Outer size | 199,8 × 155,6 × 44 mm (back cover with tab: 199,8 × 230,6 mm) |
 | Display | Raspberry Pi Touch Display v1, glass 192,96 × 110,76 mm |
 | Raspberry Pi | Raspberry Pi 4B on the display's M2,5 standoffs (58 × 49 mm) |
 | Camera | Camera board 25 × 24 mm (Camera Module 1.3/2/3 or OV5647), 4 M2 standoffs, 8 mm lens hole |
 | Display retention | 4 columns on the back cover press the display against the bezel at its M3 holes |
 | Back cover | 4 countersunk M3 self-tapping screws into the corner bosses |
-| Wall mount | 2 keyholes, 120 mm apart |
+| Mounting | Tab 140 × 60 mm behind the frame, 4 countersunk M3 bolts with nuts inside the frame; 15 mm gap under the frame |
 | Push button | 12 mm panel-mount momentary button on the right side |
 | Cable exits | 60 × 14 mm at the bottom (power, USB), 18 × 10 mm at the top (LED cable) |
 
@@ -331,8 +336,12 @@ booth preview, games), and the camera sits above it, where people look.
    display cable, the camera cable and the GPIO wires (LED data through the
    74AHCT125, button, buzzer).
 4. Close the back cover with four M3 screws. Its columns hold the display.
-5. Hang the module on two wall screws, centred under the clock, and route
-   the LED cable up behind the frame to the first row of the strip.
+5. Hold the module centred under the frame with the tab against the back
+   board and a 15 mm gap under the frame. Mark and drill the four holes
+   through the back board, and bolt the tab with M3 countersunk bolts from
+   the wall side, nuts inside the frame.
+6. Drill an 8 mm hole up through the bottom rail of the frame, above the
+   top cable exit of the module, and pass the LED cable into the frame.
 
 The LED cable comes from below, so wire the strip so that data enters at
 the bottom row and set the start corner in the software configuration.
@@ -342,6 +351,10 @@ running next to it.
 > **Note:** The camera hole and standoffs follow the official camera boards.
 > Other 5 MP (OV5647) boards can differ: check yours against the model
 > (`cam_board`, `cam_holes`, `cam_lens_top`) before printing.
+
+If the frame back board sits deeper than the frame's back edge, add a
+spacer under the tab so it stays flat. With `screen_hang = false` the back
+cover gets two wall keyholes instead of the tab.
 
 The clock can still hide the camera in its own bottom margin instead: set
 `clock_camera = true` and `bottom_extra = 16` in the model. The face then
@@ -360,6 +373,6 @@ gets a 6 mm pinhole and grid tile `r2c1` a camera bracket.
 - [ ] Screen module printed, display and Raspberry Pi 4B fitted
 - [ ] Camera screwed behind the bezel and aligned with its hole
 - [ ] Button fitted in the side of the screen module
-- [ ] Screen module hung on the wall under the clock, LED cable routed up
+- [ ] Screen module bolted under the frame, LED cable routed through the bottom rail
 - [ ] Colour order checked with a test pattern
 - [ ] Stack fits in the frame with the back board closed

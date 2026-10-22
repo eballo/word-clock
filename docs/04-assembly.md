@@ -106,8 +106,9 @@ DC jack (−) ──┬───────────────────
 ### 3.3 Raspberry Pi, camera and button
 
 The Raspberry Pi 4B, the Touch Display, the camera, the level shifter and
-the push button go in the screen module that hangs under the clock. The
-LED cable runs up behind the frame to the strip. See
+the push button go in the screen module, which is bolted under the frame
+with a tab on its back cover. The LED cable enters the frame through its
+bottom rail. See
 [05 — Enclosure](05-enclosure.md) for the details.
 
 ---
@@ -133,8 +134,9 @@ Follow this order when putting the clock together:
 
 ## 5. Wall mounting
 
-Hang the clock from the SANNAHED hanging fitting, or with two ALFTA adhesive
-hooks. Everything is inside the frame, so it hangs flat against the wall.
+Hang the clock from the SANNAHED hanging fitting. The screen module is
+bolted to the frame, so the whole clock needs a single wall hook and hangs
+flat against the wall.
 
 > Plug the power cable into the DC jack on the back board, then run it down the wall to a nearby socket. Use a cable raceway for a clean finish.
 
@@ -148,7 +150,7 @@ hooks. Everything is inside the frame, so it hangs flat against the wall.
 - [ ] Power injection at rows 0, 4, 8 and 12
 - [ ] Level shifter wired and tested
 - [ ] Common ground between PSU and Raspberry Pi
-- [ ] Screen module assembled and hung under the clock
+- [ ] Screen module assembled and bolted under the frame
 - [ ] Camera aligned with the bezel hole
 - [ ] Button fitted in the screen module and wired to GPIO 3
 - [ ] Front panel, paper and grid clamped in the frame
