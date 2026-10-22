@@ -105,7 +105,7 @@ One short paragraph summarising what this doc covers.
 ### Decisions already made (do not re-discuss)
 | Topic | Decision |
 |-------|----------|
-| Frame | IKEA SANNAHED 50 × 50 cm: inside 49 × 49 cm and 45 mm deep (50 × 50 back board behind a 5 mm inner border), front opening ~46.8 cm; plastic front sheet not used; face recessed 5 mm behind the front lip by a black ring |
+| Frame | IKEA SANNAHED 50 × 50 cm: inside 49 × 49 cm and 45 mm deep (50 × 50 back board behind a 5 mm inner border, small front lip holds the panel); plastic front sheet not used; face recessed 5 mm behind the front lip by a black ring |
 | Rings | 4 identical printed L pieces each: a 25 mm spacer ring behind the grid (frame_depth − recess − face − paper − grid) and an 8 mm black recess ring in front of the face |
 | LED matrix | 44.4 × 44.4 cm, 2.23 cm margin on every side (panel 48.9 cm) |
 | Cell size | 2.78 × 2.78 cm (4 LEDs of a 144 LEDs/metre strip) |

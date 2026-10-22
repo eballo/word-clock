@@ -37,13 +37,12 @@ same margin on every side.
 | Measurement | Value |
 |-------------|-------|
 | Frame (outer) | 50 × 50 cm |
-| Frame inside | 49 × 49 cm, 45 mm deep from the back board to the front lip; the 50 × 50 cm back board sits behind a 5 mm inner border |
-| Front opening | ~46,8 cm (1,6 cm front border): about 1,2 cm of black margin shows around the letters |
+| Frame inside | 49 × 49 cm, 45 mm deep from the back board to the front lip; the 50 × 50 cm back board sits behind a 5 mm inner border, and the small front lip stops the panel from falling out |
 | Face recess | 5 mm behind the front lip, held by a black ring |
 | Panel size | 48,9 × 48,9 cm |
 | Cell pitch | 2,78 cm (4 LEDs of a 144 LEDs/metre strip) |
 | LED matrix | 44,4 × 44,4 cm |
-| Margins | 2,23 cm on every side (about 1,1 cm hidden behind the front border) |
+| Margins | 2,23 cm on every side |
 | Letter cap height | 15 mm (Karla Bold Stencil) |
 
 ---
