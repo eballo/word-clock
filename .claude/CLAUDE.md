@@ -105,7 +105,8 @@ One short paragraph summarising what this doc covers.
 ### Decisions already made (do not re-discuss)
 | Topic | Decision |
 |-------|----------|
-| Frame | IKEA SANNAHED 50 × 50 cm, inner opening 48.5 × 48.5 cm |
+| Frame | IKEA SANNAHED 50 × 50 cm, inner opening 48.5 × 48.5 cm, 40 mm inside depth with its back board; plastic front sheet not used |
+| Spacer | 4 identical printed L pieces form a 25 mm ring behind the grid, thickness = frame_depth − face − paper − grid |
 | LED matrix | 44.4 × 44.4 cm, 1.98 cm margin on every side |
 | Cell size | 2.78 × 2.78 cm (4 LEDs of a 144 LEDs/metre strip) |
 | LEDs | WS2812B strip, 144 LEDs/metre, stuck on the back plate of the printed light grid |

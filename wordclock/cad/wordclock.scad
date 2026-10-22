@@ -19,7 +19,7 @@
 use <fonts/KarlaBoldStencil.ttf>
 
 /* [Part selection] */
-// face | grid | screenfront | screenback | screenhanger | pitray | assembly | pieces |
+// face | grid | spacer | screenfront | screenback | screenhanger | pitray | assembly | pieces |
 // none (library use)
 part = "grid";
 // Cell range [col_start, col_end, row_start, row_end), end exclusive
@@ -39,9 +39,11 @@ show_frame = true;
 inner_size = 485;
 // Total play between the panel and the frame (both sides together)
 clearance = 1.0;
-// Space between the back of the grid and the frame back board, for the
-// wiring
-back_gap = 10;
+// Inside depth of the frame with its back board in place, from the back
+// board to the front lip
+frame_depth = 40;
+// The frame's plastic front sheet, behind the front lip (0 = not used)
+front_sheet_t = 0;
 
 /* [Matrix] */
 cells = 16;
@@ -72,6 +74,15 @@ tab_head = 8;
 joint_gap = 0.15;
 // Paper diffuser between the face and the grid (assembly view only)
 paper_t = 0.3;
+
+/* [Spacer] */
+// Ring between the grid and the frame back board. It leaves room for the
+// wiring and keeps the whole stack pressed against the front lip.
+spacer_w = 25;
+// Play so the back board still closes
+spacer_fit = 0.2;
+// Cable grooves across the ring, on the grid side
+spacer_groove = [14, 5];
 
 /* [Magnets] */
 // Neodymium disc magnets that hold the face on the grid, in the margins of
@@ -155,7 +166,7 @@ screen_hang = true;
 // Gap between the bottom edge of the frame and the top of the module
 screen_gap = 15;
 // Height and width of the hanger above the module, behind the frame
-screen_tab = 60;
+screen_tab = 70;
 screen_tab_w = 140;
 screen_hanger_t = 5;
 // Keyholes: the module drops this far onto the studs
@@ -181,6 +192,10 @@ rows = [
 $fn = 48;
 
 panel_size = inner_size - clearance;
+// Space between the back of the grid and the frame back board, for the
+// wiring and the spacer
+back_gap = frame_depth - front_sheet_t - face_t - paper_t - back_t - grid_h;
+assert(back_gap >= 8, "Not enough depth behind the grid for the wiring: lower grid_h");
 pitch = led_pitch * leds_per_cell;
 matrix_size = cells * pitch;
 border_x = (panel_size - matrix_size) / 2;
@@ -444,6 +459,43 @@ module grid(t) {
     }
 }
 
+// --- Spacer ---------------------------------------------------------------
+
+// One quarter of the spacer ring: an L along two edges of the panel, from a
+// corner to the middle of each edge. Four identical pieces make the ring;
+// each one's tab locks into the next one's socket.
+module spacer_2d() {
+    c = panel_size / 2;
+    difference() {
+        union() {
+            square([c, spacer_w]);
+            square([spacer_w, c]);
+            translate([c, spacer_w / 2]) dovetail(0);
+        }
+        translate([spacer_w / 2, c]) rotate(-90) dovetail(joint_gap);
+    }
+}
+
+// Printed flat, back board side down, cable grooves on top.
+module spacer() {
+    h = back_gap - spacer_fit;
+    c = panel_size / 2;
+    difference() {
+        linear_extrude(h) spacer_2d();
+        for (pos = [c / 3, 2 * c / 3]) {
+            translate([pos - spacer_groove[0] / 2, -1, h - spacer_groove[1]]) cube([spacer_groove[0], spacer_w + 2, spacer_groove[1] + 1]);
+            translate([-1, pos - spacer_groove[0] / 2, h - spacer_groove[1]]) cube([spacer_w + 2, spacer_groove[0], spacer_groove[1] + 1]);
+        }
+    }
+}
+
+// The four pieces around the panel, behind the grid (assembly view).
+module spacer_ring() {
+    c = panel_size / 2;
+    for (a = [0, 90, 180, 270])
+        translate([c, c, -back_gap]) rotate(a) translate([-c, -c, 0]) spacer();
+}
+
 // --- Camera bracket ---------------------------------------------------------
 
 // The camera belongs to the grid, not to the face, so the face can be
@@ -563,7 +615,7 @@ module screen_front_body() {
 // M3 bolts through the hanger and the frame back board, clear of the
 // frame's bottom rail.
 function screen_tab_bolts() = let(o = screen_outer(), top = o[1] + screen_gap) [
-    for (dx = [-50, 50], y = [top + 18, top + screen_tab - 12]) [o[0] / 2 + dx, y]
+    for (dx = [-50, 50], y = [top + 35, top + screen_tab - 10]) [o[0] / 2 + dx, y]
 ];
 
 // Keyholes in the back cover (centre of the wide end) and the studs they hang
@@ -710,6 +762,7 @@ module assembly() {
     for (r = [0:cells - 1])
         color("seagreen") translate([line_x(0), cell_y(r) - 5, back_t]) cube([matrix_size, 10, 1.5]);
     color("ivory") translate([line_x(0), line_y(cells), paper_z]) cube([matrix_size, matrix_size, paper_t]);
+    color("gray") translate([0, 0, -explode / 2]) spacer_ring();
     // Screen module centred under the frame, its back against the wall
     translate([panel_size / 2 - screen_outer()[0] / 2, -clearance / 2 - (500 - inner_size) / 2 - screen_gap - screen_outer()[1],
                -back_gap + screen_total_depth() + (screen_hang ? screen_hanger_t : 0)])
@@ -770,6 +823,7 @@ module pieces() {
 
 if (part == "face") face(tile);
 else if (part == "grid") grid(tile);
+else if (part == "spacer") spacer();
 else if (part == "screenfront") screenfront();
 else if (part == "screenback") screenback();
 else if (part == "screenhanger") screenhanger();

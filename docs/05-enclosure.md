@@ -36,9 +36,9 @@ same margin on every side.
 
 | Measurement | Value |
 |-------------|-------|
-| Frame (outer) | 50 × 50 cm, 5 cm deep |
+| Frame (outer) | 50 × 50 cm |
+| Frame inside depth | 40 mm, from the back board to the front lip |
 | Frame inner opening | 48,5 × 48,5 cm |
-| Depth used | 4 cm |
 | Panel size | 48,4 × 48,4 cm |
 | Cell pitch | 2,78 cm (4 LEDs of a 144 LEDs/metre strip) |
 | LED matrix | 44,4 × 44,4 cm |
@@ -53,14 +53,14 @@ same margin on every side.
    viewer
      │
      ▼
-┌──────────────────────────┐  SANNAHED front lip (+ optional plastic sheet)
+┌──────────────────────────┐  SANNAHED front lip (plastic sheet not used)
 ├──────────────────────────┤  face        2,4 mm  black, stencil letter holes
 ├──────────────────────────┤  paper       tracing paper, diffuses the light
 │ │    │    │    │    │    │  light grid  25 mm walls, white
 │▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬│  LED strip on the back plate (2 mm)
-├──────────────────────────┤
-│          wiring          │  back gap    10 mm
-└──────────────────────────┘  SANNAHED back board
+├──┬────────────────────┬──┤
+│▓▓│       wiring       │▓▓│  spacer ring 10,1 mm (▓), wiring in the middle
+└──┴────────────────────┴──┘  SANNAHED back board
 ```
 
 | Layer | Thickness | Colour / material |
@@ -68,8 +68,14 @@ same margin on every side.
 | Face | 2,4 mm | Opaque black PLA/PETG |
 | Paper diffuser | ~0,1 mm | Tracing paper, 90 g/m² |
 | Light grid + back plate | 27 mm | White PLA (reflects light) |
-| Back gap (Pi, wiring) | 10 mm | — |
-| **Total** | **~40 mm** | |
+| Spacer ring (wiring inside) | 10,1 mm | White or black PLA |
+| **Total** | **40 mm** | |
+
+The spacer ring fills the depth that is left, so the back board presses
+the whole stack against the front lip and nothing rattles. Its thickness
+comes from `frame_depth` (40 mm) and `front_sheet_t` (0 mm: the frame's
+plastic sheet is not used). If you add the sheet, set its thickness and
+render again.
 
 ---
 
@@ -79,6 +85,7 @@ same margin on every side.
 |------|-----|---------------------|---------|
 | `<lang>/face_rXcY.stl` | 9 | yes | Black face with stencil letter holes |
 | `common/grid_rXcY.stl` | 9 | no | Light grid that isolates each cell and holds the LED strips |
+| `common/spacer.stl` | 4 | no | Quarter of the spacer ring behind the grid (print it four times) |
 | `common/screenfront.stl` | 1 | no | Screen module: bezel and walls, camera above the screen |
 | `common/screenback.stl` | 1 | no | Screen module: back cover with keyholes |
 | `common/screenhanger.stl` | 1 | no | Screen module: hanger plate bolted to the frame |
@@ -144,7 +151,7 @@ Bambu Lab A1 to `build/bambu/`, with one part per plate:
 | Project | Plates | Settings per part |
 |---------|--------|-------------------|
 | `face_<lang>.3mf` | 9 face tiles of one language | 100% infill |
-| `grid.3mf` | 9 grid tiles + screen module | 3 walls, 15% infill |
+| `grid.3mf` | 9 grid tiles + 4 spacer pieces + screen module | 3 walls, 15% infill |
 | `test_<lang>.3mf` | Face and grid test corner (with `--test`) | default |
 
 Open a project in Bambu Studio, pick the filament for each plate and print
@@ -258,6 +265,17 @@ the test corner again.
 
 ---
 
+### 7.3 Spacer ring
+
+Four identical L-shaped pieces make a 25 mm wide ring along the edges,
+behind the grid. Each piece runs from a corner to the middle of two edges,
+and its dovetail tab locks into the next piece's socket. Grooves across
+the ring, on the grid side, let cables pass from the margins to the middle.
+
+1. Lay the four pieces on the back board, grooves up, and press the
+   dovetails together.
+2. Put the grid on top, then the paper, then the face, and close the frame.
+
 ### 7.3 Magnets between the face and the grid
 
 The face and the grid hold together with neodymium disc magnets, 5 × 2 mm,
@@ -356,7 +374,7 @@ reach.
 | Camera | Camera board 25 × 24 mm (Camera Module 1.3/2/3 or OV5647), 4 M2 standoffs, 8 mm lens hole |
 | Display retention | 4 columns on the back cover press the display against the bezel at its M3 holes |
 | Back cover | 4 countersunk M3 screws into M3 heat-set inserts in the corner bosses |
-| Hanger | 140 × 112 mm, 4 countersunk M3 bolts through the frame back board, nuts inside the frame |
+| Hanger | 140 × 122 mm, 4 countersunk M3 bolts through the frame back board, nuts inside the frame clear of the spacer ring |
 | Studs | 2 × M3 × 10 mm bolts with washers on printed sleeves, 120 mm apart |
 | Keyholes | 11 mm wide end, 6 mm slot, 10 mm drop |
 | Push button | 12 mm panel-mount momentary button on the right side |
@@ -395,6 +413,10 @@ reach.
 
 To put it back, close the cover, hook the keyholes over the studs, let the
 module drop, and plug the two cables in again.
+
+The hanger sits between the back board and the wall, so the bottom of the
+frame stands 5 mm off the wall. Stick two 5 mm felt pads to the top
+corners of the back board so the frame hangs straight.
 
 Software updates do not need any of this: the Raspberry Pi is reachable
 over the network (`ssh wordclock.local`).
@@ -437,6 +459,7 @@ DSI connector, so this build has no touch display.
 
 - [ ] 4 × 4 test corner printed and checked for fit, letters and light bleed
 - [ ] Nine face tiles printed for each language and fitted together
+- [ ] Four spacer pieces printed and fitted into a ring on the back board
 - [ ] Nine grid tiles printed in white, fitted together and bolted (24 × M3)
 - [ ] Magnets pressed into the grid posts and the face bosses, polarity checked
 - [ ] Tracing paper cut to 45,5 × 45,5 cm

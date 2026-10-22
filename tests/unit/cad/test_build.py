@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import zipfile
 from pathlib import Path
 
 from wordclock.cad import (
@@ -14,6 +15,7 @@ from wordclock.cad import (
     plan_jobs,
     scad_command,
     scad_string_list,
+    write_bambu_projects,
     write_preview,
 )
 
@@ -154,3 +156,23 @@ class TestStencilFont:
         scad = SCAD_FILE.read_text(encoding="utf-8")
         # When / Then
         assert "use <fonts/KarlaBoldStencil.ttf>" in scad
+
+
+class TestWriteBambuProjects:
+    def test_grid_project_prints_the_spacer_four_times(self, tmp_path: Path) -> None:
+        # Given: a tiny STL for every grid tile and extra part
+        stl = "\n".join(
+            ["solid s", "facet normal 0 0 1", "outer loop", "vertex 0 0 0", "vertex 1 0 0"]
+            + ["vertex 0 1 0", "endloop", "endfacet", "endsolid s", ""]
+        )
+        common = tmp_path / "stl" / "common"
+        common.mkdir(parents=True)
+        for name in [f"grid_{tile}" for tile in TILES] + list(EXTRA_PARTS):
+            (common / f"{name}.stl").write_text(stl, encoding="ascii")
+        # When
+        projects = write_bambu_projects([], tmp_path / "stl", tmp_path / "bambu")
+        # Then: one plate per grid tile, four spacers, the other extra parts
+        with zipfile.ZipFile(projects[0]) as zf:
+            settings = zf.read("Metadata/model_settings.config").decode()
+        assert settings.count("<plate>") == len(TILES) + 4 + len(EXTRA_PARTS) - 1
+        assert settings.count('key="plater_name" value="spacer"') == 4

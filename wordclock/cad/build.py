@@ -30,9 +30,13 @@ TEST_TILE: tuple[int, int, int, int] = (0, 4, 0, 4)
 
 FACE_PARTS: tuple[str, ...] = ("face",)
 GRID_PART = "grid"
-# Single parts that do not depend on the language: the screen module under
-# the clock (Touch Display v1, Raspberry Pi 4B and camera) and its hanger.
-EXTRA_PARTS: tuple[str, ...] = ("screenfront", "screenback", "screenhanger")
+# Single parts that do not depend on the language: the spacer ring behind the
+# grid (printed four times) and the screen module under the clock (Touch
+# Display v1, Raspberry Pi and camera) with its hanger.
+EXTRA_PARTS: tuple[str, ...] = ("spacer", "screenfront", "screenback", "screenhanger")
+
+# The spacer ring is four identical pieces, one per plate.
+SPACER_COUNT = 4
 
 # Parts for other builds, rendered only on request: a Raspberry Pi Zero 2 W
 # tray for a clock without the screen module.
@@ -160,7 +164,10 @@ def write_bambu_projects(languages: list[str], stl_dir: Path, out_dir: Path) -> 
     grids = [stl_dir / "common" / f"grid_{name}.stl" for name in TILES]
     extras = [stl_dir / "common" / f"{part}.stl" for part in EXTRA_PARTS]
     if all(path.exists() for path in grids):
-        parts = grids + [path for path in extras if path.exists()]
+        parts = grids
+        for path in extras:
+            if path.exists():
+                parts += [path] * SPACER_COUNT if path.stem == "spacer" else [path]
         projects.append(write_project(parts, out_dir / "grid.3mf", GRID_SETTINGS))
     return projects
 
