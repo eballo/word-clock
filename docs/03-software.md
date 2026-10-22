@@ -16,46 +16,17 @@ consists of:
 
 ## 1. Flash the SD card
 
-Use a new 16–32 GB microSD card if the old one has seen a lot of use:
-worn cards are the most common cause of hangs.
+### 1.1 Create an SSH key for the Pi
 
-Install **Raspberry Pi Imager** from
-[raspberrypi.com/software](https://www.raspberrypi.com/software/) and
-choose:
-
-| Setting | Value |
-|---------|-------|
-| Device | Raspberry Pi 3 (or 4) |
-| Operating system | Raspberry Pi OS Lite (64-bit) |
-| Hostname | `wordclock` |
-| Username and password | `pi` (or your choice) and a password |
-| Wi-Fi | your network, country `ES` |
-| Time zone | `Europe/Madrid` |
-| SSH | enabled, public-key authentication only (see section 2 for a dedicated key) |
-
-Write the card, put it in the Pi and power it on with its own supply
-(micro-USB, 5V 2,5 A for the Pi 3B).
-
----
-
-## 2. First connection and update
-
-After a minute or two, from your computer:
-
-```bash
-ssh pi@wordclock.local
-```
-
-> If `wordclock.local` does not resolve, find the Pi's IP address on your
-> router and use `ssh pi@<ip>`.
-
-The examples use the user `pi`: replace it with the user you chose in the
-Imager. A dedicated key and a host entry in `~/.ssh/config` shorten the
-command to `ssh wordclock`:
+On your computer, create a key used only for the clock and a host entry,
+so that `ssh wordclock` is enough to connect. Use the same user name you
+will set in the Imager (here `pi`).
 
 ```bash
 ssh-keygen -t ed25519 -f ~/.ssh/wordclock -C "wordclock-pi"
 ```
+
+Add to `~/.ssh/config`:
 
 ```
 Host wordclock
@@ -63,10 +34,74 @@ Host wordclock
     User pi
     IdentityFile ~/.ssh/wordclock
     IdentitiesOnly yes
+    ServerAliveInterval 60
 ```
 
-Paste `~/.ssh/wordclock.pub` into the Imager's SSH settings (public-key
-authentication only) before writing the card.
+Copy the public key to paste it in the Imager later:
+
+```bash
+pbcopy < ~/.ssh/wordclock.pub    # macOS
+```
+
+### 1.2 Write the card with Raspberry Pi Imager
+
+Install **Raspberry Pi Imager** from
+[raspberrypi.com/software](https://www.raspberrypi.com/software/). Use a
+new 16–32 GB microSD card if the old one has seen a lot of use: worn cards
+are the most common cause of hangs.
+
+1. **Device:** Raspberry Pi 3 (or 4). Pick it first: the 64-bit systems
+   only appear for models that support them.
+2. **Operating system:** open **Raspberry Pi OS (other)** and choose
+   **Raspberry Pi OS Lite (64-bit)**. It is not in the first list.
+3. **Storage:** the microSD card. Check the size so you do not pick another
+   disk. There is no need to erase the card first: the Imager overwrites
+   everything on it, partitions included.
+4. **Customise the system** when the Imager asks (answer yes):
+
+| Setting | Value |
+|---------|-------|
+| Hostname | `wordclock` |
+| Username and password | the user from 1.1 and a password |
+| Wi-Fi | your network, country `ES` |
+| Time zone | `Europe/Madrid` |
+| SSH | enabled, **public-key authentication only**, with `~/.ssh/wordclock.pub` pasted in |
+| Raspberry Pi Connect | off (see below) |
+
+5. Write the card. The Imager verifies it and ejects it.
+
+If writing fails, use **Operating system → Erase** to format the card
+completely and try again. If it still fails, replace the card.
+
+> **Raspberry Pi Connect** gives remote access to the Pi from a browser at
+> [connect.raspberrypi.com](https://connect.raspberrypi.com), through
+> Raspberry Pi's servers and with a Raspberry Pi account. At home `ssh
+> wordclock` is enough. To reach the Pi from outside later, install the
+> shell-only version: `sudo apt install rpi-connect-lite` and
+> `rpi-connect signin`.
+
+### 1.3 First boot
+
+Put the card in the Pi and power it on with its own supply (micro-USB, 5V
+2,5 A for the Pi 3B). The first boot takes a minute or two while it
+applies the settings.
+
+---
+
+## 2. First connection and update
+
+From your computer:
+
+```bash
+ssh wordclock
+```
+
+> If `wordclock.local` does not resolve, find the Pi's IP address on your
+> router, change `HostName` in `~/.ssh/config` to that address, and try
+> again.
+
+The rest of this guide uses the user `pi` in paths such as `/home/pi`:
+replace it with your user if you chose another one.
 
 Update the system and install the build tools for the LED library:
 
@@ -223,7 +258,9 @@ saved), and settings (brightness, colour, language).
 
 ## 10. Setup checklist
 
-- [ ] Raspberry Pi OS Lite (64-bit) flashed with hostname, Wi-Fi and SSH key
+- [ ] SSH key `~/.ssh/wordclock` created and `wordclock` host added to `~/.ssh/config`
+- [ ] Raspberry Pi OS Lite (64-bit) flashed with hostname, Wi-Fi and SSH key, Raspberry Pi Connect off
+- [ ] `ssh wordclock` connects
 - [ ] System updated, build tools installed
 - [ ] `uv` installed, repository cloned, `uv sync --extra rpi --extra dev` done
 - [ ] Tests pass and the web simulator opens on port 5000
