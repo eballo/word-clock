@@ -28,7 +28,7 @@ def main(
     grid: Annotated[bool, typer.Option(help="Render the light grid tiles")] = True,
     extras: Annotated[bool, typer.Option(help="Render the screen module")] = True,
     optional: Annotated[
-        bool, typer.Option(help="Also render optional parts (Pi Zero tray)")
+        bool, typer.Option(help="Also render optional parts (frame rings, Pi Zero tray)")
     ] = False,
     test: Annotated[bool, typer.Option(help="Render only the 4x4 test corner")] = False,
     preview: Annotated[

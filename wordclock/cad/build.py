@@ -30,25 +30,14 @@ TEST_TILE: tuple[int, int, int, int] = (0, 4, 0, 4)
 
 FACE_PARTS: tuple[str, ...] = ("face",)
 GRID_PART = "grid"
-# Single parts that do not depend on the language: the spacer ring behind the
-# grid and the black recess ring in front of the face (each printed four
-# times), and the screen module under the clock (Touch Display v1, Raspberry
-# Pi and camera) with its hanger.
-EXTRA_PARTS: tuple[str, ...] = (
-    "spacer",
-    "recess",
-    "screenfront",
-    "screenback",
-    "screenhanger",
-)
+# Single parts that do not depend on the language: the screen module under
+# the clock (Touch Display v1, Raspberry Pi and camera) with its hanger.
+EXTRA_PARTS: tuple[str, ...] = ("screenfront", "screenback", "screenhanger")
 
-# The rings are four identical pieces each, one per plate.
-RING_PARTS: tuple[str, ...] = ("spacer", "recess")
-RING_COUNT = 4
-
-# Parts for other builds, rendered only on request: a Raspberry Pi Zero 2 W
-# tray for a clock without the screen module.
-OPTIONAL_PARTS: tuple[str, ...] = ("pitray",)
+# Parts rendered only on request: the spacer ring and the black recess ring
+# that can hold the panel in the frame (four identical pieces each), and a
+# Raspberry Pi Zero 2 W tray for a clock without the screen module.
+OPTIONAL_PARTS: tuple[str, ...] = ("spacer", "recess", "pitray")
 
 
 @dataclass(frozen=True)
@@ -172,10 +161,7 @@ def write_bambu_projects(languages: list[str], stl_dir: Path, out_dir: Path) -> 
     grids = [stl_dir / "common" / f"grid_{name}.stl" for name in TILES]
     extras = [stl_dir / "common" / f"{part}.stl" for part in EXTRA_PARTS]
     if all(path.exists() for path in grids):
-        parts = grids
-        for path in extras:
-            if path.exists():
-                parts += [path] * RING_COUNT if path.stem in RING_PARTS else [path]
+        parts = grids + [path for path in extras if path.exists()]
         projects.append(write_project(parts, out_dir / "grid.3mf", GRID_SETTINGS))
     return projects
 

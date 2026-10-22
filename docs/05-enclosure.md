@@ -49,36 +49,34 @@ same margin on every side.
 
 ## 2. Layer stack
 
+The face and the grid make one 48,9 × 48,9 cm panel, about 30 mm thick,
+that goes into the 49 × 49 cm inside of the frame. The small front lip
+stops it from falling out; how it is held at the back is up to the build.
+
 ```
    viewer
      │
      ▼
 ┌──────────────────────────┐  SANNAHED front lip (plastic sheet not used)
-│▓▓                      ▓▓│  recess ring 4,8 mm, black, along the edges
 ├──────────────────────────┤  face        2,4 mm  black, stencil letter holes
 ├──────────────────────────┤  paper       tracing paper, diffuses the light
 │ │    │    │    │    │    │  light grid  25 mm walls, white
 │▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬│  LED strip on the back plate (2 mm)
-├──┬────────────────────┬──┤
-│▓▓│       wiring       │▓▓│  spacer ring 10,1 mm (▓), wiring in the middle
-└──┴────────────────────┴──┘  SANNAHED back board
+└──────────────────────────┘
+          wiring
+   SANNAHED back board (45 mm behind the front lip)
 ```
 
 | Layer | Thickness | Colour / material |
 |-------|-----------|-------------------|
-| Recess ring | 4,8 mm | Opaque black PLA |
 | Face | 2,4 mm | Opaque black PLA/PETG |
 | Paper diffuser | ~0,1 mm | Tracing paper, 90 g/m² |
 | Light grid + back plate | 27 mm | White PLA (reflects light) |
-| Spacer ring (wiring inside) | 10,1 mm | White or black PLA |
-| **Total** | **45 mm** (0,4 mm of play) | |
+| **Panel** | **~30 mm** | |
 
-The face sits 5 mm behind the front lip, which gives the clock some
-depth. The black recess ring fills those 10 mm along the edges, and the
-spacer ring fills what is left behind the grid, so the back board presses
-the whole stack against the front lip and nothing rattles. Both come from
-`frame_depth` (45 mm), `recess` (5 mm) and `front_sheet_t` (0 mm: the
-frame's plastic sheet is not used). Change them and render again.
+The frame is 45 mm deep inside, so about 15 mm are left for the wiring
+and for whatever holds the panel. The optional rings in section 7.3 fill
+that depth exactly if you want printed parts for it.
 
 ---
 
@@ -88,8 +86,8 @@ frame's plastic sheet is not used). Change them and render again.
 |------|-----|---------------------|---------|
 | `<lang>/face_rXcY.stl` | 9 | yes | Black face with stencil letter holes |
 | `common/grid_rXcY.stl` | 9 | no | Light grid that isolates each cell and holds the LED strips |
-| `common/spacer.stl` | 4 | no | Quarter of the spacer ring behind the grid (print it four times) |
-| `common/recess.stl` | 4 | no | Quarter of the black recess ring in front of the face (print it four times, in black) |
+| `optional/spacer.stl` | (4) | no | Only with `--optional`: quarter of a spacer ring behind the grid |
+| `optional/recess.stl` | (4) | no | Only with `--optional`: quarter of a black recess ring in front of the face |
 | `common/screenfront.stl` | 1 | no | Screen module: bezel and walls, camera above the screen |
 | `common/screenback.stl` | 1 | no | Screen module: back cover with keyholes |
 | `common/screenhanger.stl` | 1 | no | Screen module: hanger plate bolted to the frame |
@@ -155,7 +153,7 @@ Bambu Lab A1 to `build/bambu/`, with one part per plate:
 | Project | Plates | Settings per part |
 |---------|--------|-------------------|
 | `face_<lang>.3mf` | 9 face tiles of one language | 100% infill |
-| `grid.3mf` | 9 grid tiles + 4 spacer + 4 recess pieces + screen module | 3 walls, 15% infill |
+| `grid.3mf` | 9 grid tiles + screen module | 3 walls, 15% infill |
 | `test_<lang>.3mf` | Face and grid test corner (with `--test`) | default |
 
 Open a project in Bambu Studio, pick the filament for each plate and print
@@ -269,7 +267,20 @@ the test corner again.
 
 ---
 
-### 7.3 Spacer ring
+### 7.3 Optional rings to hold the panel in the frame
+
+The face and the grid make a 48,9 × 48,9 cm panel that goes into the 49 ×
+49 cm inside of the frame; the small front lip stops it from falling out.
+How it is held at the back is left to the build. If you want printed
+parts for it, `uv run wordclock-cad --optional` renders two rings to
+`build/stl/optional/`, each made of four identical L pieces:
+
+- a **spacer ring** behind the grid, as thick as the depth left over
+  (`frame_depth`), with cable grooves;
+- a black **recess ring** in front of the face, `recess` mm deep, that sets
+  the face back from the lip.
+
+The spacer ring in detail:
 
 Four identical L-shaped pieces make a 25 mm wide ring along the edges,
 behind the grid. Each piece runs from a corner to the middle of two edges,
@@ -467,8 +478,7 @@ DSI connector, so this build has no touch display.
 
 - [ ] 4 × 4 test corner printed and checked for fit, letters and light bleed
 - [ ] Nine face tiles printed for each language and fitted together
-- [ ] Four spacer pieces printed and fitted into a ring on the back board
-- [ ] Four recess pieces printed in black and fitted behind the front lip
+- [ ] Panel fitted into the frame (optional rings printed if needed)
 - [ ] Nine grid tiles printed in white, fitted together and bolted (24 × M3)
 - [ ] Magnets pressed into the grid posts and the face bosses, polarity checked
 - [ ] Tracing paper cut to 45,5 × 45,5 cm

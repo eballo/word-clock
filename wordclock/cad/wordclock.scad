@@ -29,6 +29,9 @@ tile = [0, 5, 0, 5];
 splits = [0, 5, 11, 16];
 
 /* [Assembly view] */
+// Show the optional spacer and recess rings that can hold the panel in the
+// frame
+show_rings = false;
 // Gap between layers in the assembly view (0 = assembled)
 explode = 0;
 // Show the SANNAHED frame around the panel
@@ -789,8 +792,10 @@ module assembly() {
     for (r = [0:cells - 1])
         color("seagreen") translate([line_x(0), cell_y(r) - 5, back_t]) cube([matrix_size, 10, 1.5]);
     color("ivory") translate([line_x(0), line_y(cells), paper_z]) cube([matrix_size, matrix_size, paper_t]);
-    color("gray") translate([0, 0, -explode / 2]) spacer_ring();
-    if (recess > 0) color("#1a1a1a") recess_ring(face_z + face_t + explode / 2);
+    if (show_rings) {
+        color("gray") translate([0, 0, -explode / 2]) spacer_ring();
+        if (recess > 0) color("#1a1a1a") recess_ring(face_z + face_t + explode / 2);
+    }
     // Screen module centred under the frame, its back against the wall
     translate([panel_size / 2 - screen_outer()[0] / 2, -clearance / 2 - (500 - inner_size) / 2 - screen_gap - screen_outer()[1],
                -back_gap + screen_total_depth() + (screen_hang ? screen_hanger_t : 0)])
