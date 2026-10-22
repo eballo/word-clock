@@ -37,7 +37,7 @@ The panel and the light grid fill the inner opening of the frame. With
 | Panel size | 48,4 × 48,4 cm |
 | Cell pitch | 3,0 cm |
 | LED matrix | 48,0 × 48,0 cm |
-| Letter cap height | 18 mm |
+| Letter cap height | 16 mm (Karla Bold Stencil) |
 | Tile size (2 × 2 split) | 24,2 × 24,2 cm |
 
 > **Note:** A 30 LEDs/metre strip has a fixed 3,33 cm pitch, so 16 LEDs
@@ -53,8 +53,8 @@ The panel and the light grid fill the inner opening of the frame. With
      │
      ▼
 ┌──────────────────────────┐  SANNAHED front glazing
-├──────────────────────────┤  face      1,6 mm  black, letter holes
-├──────────────────────────┤  diffuser  0,6 mm  white
+├──────────────────────────┤  face      2,4 mm  black, stencil letter holes
+├──────────────────────────┤  paper     tracing paper, diffuses the light
 │ │    │    │    │    │    │  light grid 20 mm walls, white
 ├──┬─┴──┬─┴──┬─┴──┬─┴──┬─┴─┤  back plate 2 mm, 12 mm pixel holes
    ▼    ▼    ▼    ▼    ▼      bullet pixels and wiring
@@ -66,9 +66,8 @@ The panel and the light grid fill the inner opening of the frame. With
 
 | Layer | Thickness | Colour |
 |-------|-----------|--------|
-| Face | 1,6 mm | Opaque black PLA/PETG |
-| Letter fill (optional) | 1,6 mm | White PLA |
-| Diffuser | 0,6 mm | White PLA |
+| Face | 2,4 mm | Opaque black PLA/PETG |
+| Paper diffuser | ~0,1 mm | Tracing paper, 48,4 × 48,4 cm |
 | Light grid + back plate | 22 mm | White PLA (reflects light) |
 | Pixels behind the back plate | ~15 mm | — |
 
@@ -81,12 +80,13 @@ about 40 mm between the glazing and the back board.
 
 | File | Qty | Depends on language | Purpose |
 |------|-----|---------------------|---------|
-| `<lang>/face_rXcY.stl` | 4 | yes | Black face with letter holes |
-| `<lang>/letters_rXcY.stl` | 4 | yes | White letter fill, flush with the face (needs AMS lite) |
-| `<lang>/diffuser_rXcY.stl` | 4 | yes | White backing that diffuses light and holds the letter islands (O, A, D, …) |
+| `<lang>/face_rXcY.stl` | 4 | yes | Black face with stencil letter holes |
 | `common/grid_rXcY.stl` | 4 | no | Light grid that isolates each cell and holds the pixels |
 | `common/pibox.stl` | 1 | no | Box for the Raspberry Pi Zero 2 W and the 74AHCT125 |
 | `common/pilid.stl` | 1 | no | Ventilated lid for the box |
+
+Only the face depends on the language. To change the language of the
+clock, swap the four face tiles and keep everything else.
 
 Tiles are named by row and column: `r0c0` is top-left, `r1c1` is
 bottom-right, as seen from the front. All seams fall on a cell wall, never
@@ -102,7 +102,24 @@ through a letter.
 
 ---
 
-## 4. Rendering the STL files
+## 4. Letters
+
+The face uses **Karla Bold Stencil** (SIL Open Font License 1.1, bundled in
+`wordclock/cad/fonts/`). Every letter is a single through-hole: the counters
+of letters such as O, A, D or B are held by small bridges, so the face prints
+in one material without loose islands. The paper behind the face diffuses
+the light and hides the pixel.
+
+| Parameter | Value |
+|-----------|-------|
+| Font | Karla Bold Stencil |
+| Cap height | 16 mm |
+| Accents | É, Í, Ó fit inside the cell |
+| Face thickness | 2,4 mm |
+
+---
+
+## 5. Rendering the STL files
 
 The model lives in `wordclock/cad/wordclock.scad`. It needs OpenSCAD 2025
 or later (Manifold backend).
@@ -119,7 +136,7 @@ Files are written to `build/stl/`.
 
 To see the whole clock in 3D, write a preview file and open it in the
 OpenSCAD GUI. Press `F5` to preview, drag to rotate, and use the Customizer
-(`explode`, `show_frame`) to pull the layers apart or assemble them.
+(`explode`, `show_frame`, `cap_height`) to pull the layers apart or assemble them.
 
 ```bash
 uv run wordclock-cad --preview --lang catalan
@@ -132,21 +149,13 @@ grid height, letter size), edit the parameters at the top of
 
 ---
 
-## 5. Printing on the Bambu Lab A1
+## 6. Printing on the Bambu Lab A1
 
-### 5.1 Face (one tile at a time)
+### 6.1 Face (one tile at a time)
 
 The face tiles are modelled mirrored so they print **face down** on the
-textured PEI plate, which gives the front a matte finish.
-
-**With AMS lite:** import `face`, `letters` and `diffuser` of the same tile
-together and answer **Yes** when Bambu Studio asks to load them as one
-object with multiple parts. Assign black to `face` and white to `letters`
-and `diffuser`.
-
-**Without AMS:** import `face` and `diffuser` only. In the layer slider, add
-a filament change at the first layer of the diffuser (1,6 mm). The letters
-stay open in the black layers and the white layer bridges over them.
+textured PEI plate, which gives the front a matte finish. Print them in
+opaque black, one tile per plate (24,6 × 24,6 cm with the joint tabs).
 
 | Setting | Value |
 |---------|-------|
@@ -155,7 +164,7 @@ stay open in the black layers and the white layer bridges over them.
 | Infill | 100% |
 | Supports | none |
 
-### 5.2 Light grid
+### 6.2 Light grid
 
 Print each grid tile with the back plate on the bed, in white PLA.
 
@@ -166,14 +175,38 @@ Print each grid tile with the back plate on the bed, in white PLA.
 | Infill | 15% |
 | Supports | none |
 
-### 5.3 Raspberry Pi box
+### 6.3 Raspberry Pi box
 
 Print the box upright and the lid upside down (vents on the bed). No
 supports are needed.
 
 ---
 
-## 6. Joining the tiles
+## 7. Joining the tiles
+
+### 7.1 Face
+
+The face tiles lock together with dovetail tabs. Tiles have tabs on their
+right and bottom edges and sockets on their left and top edges. The joints
+sit where four cells meet, so they never touch a letter.
+
+```
+┌──────────┬──────────┐
+│   r0c0   ▶   r0c1   │   ▶ / ▼  dovetail tab into the
+├────▼─────┼────▼─────┤          neighbour's socket
+│   r1c0   ▶   r1c1   │
+└──────────┴──────────┘
+```
+
+1. Lay the four tiles face down on a flat table.
+2. Press the tabs into the sockets, starting with `r0c0` and `r0c1`.
+3. Optional: add a drop of CA glue on each joint for a rigid panel. Leave it
+   unglued if you want to take the face apart again.
+
+The frame clamps the face between the glazing and the grid, so the tiles
+cannot move once the frame is closed.
+
+### 7.2 Light grid
 
 The grid tiles have a full wall on every shared edge, so each seam is a
 double wall with two M3 holes 4 mm above the back plate.
@@ -183,12 +216,15 @@ double wall with two M3 holes 4 mm above the back plate.
    other side.
 3. Repeat until the four tiles form one 48,4 × 48,4 cm grid.
 
-The face tiles are not bolted. The frame clamps them between the glazing
-and the grid.
+### 7.3 Paper diffuser
+
+Cut one sheet of tracing paper (90 g/m²) to 48,4 × 48,4 cm and lay it on
+the grid, under the face. A3 sheets are too small: use a roll or a 50 × 65 cm
+sheet.
 
 ---
 
-## 7. Fitting the pixels
+## 8. Fitting the pixels
 
 1. Push one 12 mm bullet pixel into each back plate hole from behind,
    following the snake order: row 0 left → right, row 1 right → left, and
@@ -202,7 +238,7 @@ and the grid.
 
 ---
 
-## 8. Raspberry Pi
+## 9. Raspberry Pi
 
 The Raspberry Pi Zero 2 W and the 74AHCT125 board go in the printed box,
 screwed onto the outside of the SANNAHED back board.
@@ -224,12 +260,13 @@ The box is optional: the Pi can also stay outside the frame, with only the
 
 ---
 
-## 9. Build checklist
+## 10. Build checklist
 
 - [ ] Frame rebate depth measured (about 40 mm needed)
 - [ ] 4 × 4 test corner printed and checked for fit, letters and light bleed
-- [ ] Four face tiles printed for each language
+- [ ] Four face tiles printed for each language and fitted together
 - [ ] Four grid tiles printed in white and bolted together
+- [ ] Tracing paper cut to 48,4 × 48,4 cm
 - [ ] 256 bullet pixels fitted in snake order
 - [ ] Power injected at row 0 and row 8
 - [ ] Colour order checked with a test pattern

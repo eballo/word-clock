@@ -109,7 +109,8 @@ One short paragraph summarising what this doc covers.
 | Cell size | 3.0 × 3.0 cm |
 | LEDs | 12 mm bullet pixels in a printed light grid (30 LEDs/metre strip does not fit) |
 | LED count | 256 (16 × 16) |
-| Front panel | 3D-printed, opaque black PLA/PETG face + white diffuser |
+| Front panel | 3D-printed, opaque black PLA/PETG, Karla Bold Stencil letters, dovetail-joined tiles; only part that changes per language |
+| Diffuser | Tracing paper between the face and the light grid |
 | Printer | Bambu Lab A1, 2×2 tiles of 24.2 cm |
 | CAD | OpenSCAD model in `wordclock/cad/`, rendered with `wordclock-cad` |
 | Wiring | Snake (even rows L→R, odd rows R→L) |

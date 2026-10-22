@@ -10,8 +10,12 @@
 //
 // Prefer `uv run wordclock-cad`, which renders every part and tile.
 
+// Karla Bold Stencil (SIL OFL 1.1): every letter is a single through-hole
+// with bridges, so the face prints in one piece without loose islands.
+use <fonts/KarlaBoldStencil.ttf>
+
 /* [Part selection] */
-// face | letters | diffuser | grid | pibox | pilid | assembly
+// face | grid | pibox | pilid | assembly | none (library use)
 part = "grid";
 // Cell range [col_start, col_end, row_start, row_end), end exclusive
 tile = [0, 8, 0, 8];
@@ -34,13 +38,25 @@ cells = 16;
 pitch = 30;
 
 /* [Front face] */
-// Opaque black layer with letter-shaped holes
-face_t = 1.6;
-// White backing layer that diffuses light and holds the letter islands
-diffuser_t = 0.6;
-font = "Liberation Sans:style=Bold";
+// Opaque black panel with stencil letter holes
+face_t = 2.4;
+font = "Karla:style=Bold Stencil";
 // Cap height of the letters
-cap_height = 18;
+cap_height = 16;
+// Font metrics as a ratio of the font size: capitals, accent top, descender
+cap_ratio = 0.901;
+accent_ratio = 1.25;
+descent_ratio = 0.25;
+
+/* [Face joints] */
+// Dovetail tabs that lock neighbouring face tiles together
+tab_depth = 4;
+tab_neck = 5;
+tab_head = 8;
+// Play between a tab and its socket
+joint_gap = 0.15;
+// Paper diffuser between the face and the grid (assembly view only)
+paper_t = 0.3;
 
 /* [Light grid] */
 wall_t = 1.2;
@@ -69,8 +85,9 @@ $fn = 48;
 
 panel_size = inner_size - clearance;
 border = (panel_size - cells * pitch) / 2;
-// Liberation Sans Bold capitals are ~0.955 of the font size
-font_size = cap_height / 0.955;
+font_size = cap_height / cap_ratio;
+// Baseline below the cell centre that centres accents and descenders
+baseline = -(accent_ratio - descent_ratio) * font_size / 2;
 
 assert(border >= 0, "Matrix does not fit: reduce pitch or cells");
 
@@ -97,41 +114,49 @@ module letters_2d(t) {
     for (r = [t[2]:t[3] - 1], c = [t[0]:t[1] - 1]) {
         ch = rows[r][c];
         if (ch != " ")
-            translate([cell_x(c), cell_y(r) - cap_height / 2])
+            translate([cell_x(c), cell_y(r) + baseline])
                 text(ch, size = font_size, font = font, halign = "center", valign = "baseline");
+    }
+}
+
+// The tile plus one cell around it, so tabs never cover a neighbour letter.
+function grown_tile(t) = [max(0, t[0] - 1), min(cells, t[1] + 1), max(0, t[2] - 1), min(cells, t[3] + 1)];
+
+// Dovetail pointing +x from a seam at x = 0, centred on y = 0.
+module dovetail(grow = 0) {
+    offset(delta = grow)
+        polygon([[-1, -tab_neck / 2], [tab_depth, -tab_head / 2], [tab_depth, tab_head / 2], [-1, tab_neck / 2]]);
+}
+
+// Joints sit on every other grid line along a seam, where four cell
+// corners meet and there is no letter.
+function joint_lines(start, end) = [for (k = [start + 2:2:end - 2]) k];
+
+// Tabs on the right and bottom edges, sockets on the left and top edges.
+module joints(t, grow, tabs) {
+    if (tabs ? t[1] != cells : t[0] != 0)
+        for (k = joint_lines(t[2], t[3]))
+            translate([line_pos(tabs ? t[1] : t[0]), panel_size - line_pos(k)]) dovetail(grow);
+    if (tabs ? t[3] != cells : t[2] != 0)
+        for (k = joint_lines(t[0], t[1]))
+            translate([line_pos(k), panel_size - line_pos(tabs ? t[3] : t[2])]) rotate(-90) dovetail(grow);
+}
+
+module face_2d(t) {
+    difference() {
+        union() {
+            tile_rect(t);
+            joints(t, 0, tabs = true);
+        }
+        joints(t, joint_gap, tabs = false);
+        letters_2d(grown_tile(t));
     }
 }
 
 // Parts printed face-down are mirrored so that the text reads correctly
 // once the printed tile is flipped over.
-module face_down() {
-    mirror([1, 0, 0]) children();
-}
-
-module face_2d(t) {
-    difference() {
-        tile_rect(t);
-        letters_2d(t);
-    }
-}
-
-module letter_fill_2d(t) {
-    intersection() {
-        tile_rect(t);
-        letters_2d(t);
-    }
-}
-
 module face(t) {
-    face_down() linear_extrude(face_t) face_2d(t);
-}
-
-module letter_fill(t) {
-    face_down() linear_extrude(face_t) letter_fill_2d(t);
-}
-
-module diffuser(t) {
-    face_down() translate([0, 0, face_t]) linear_extrude(diffuser_t) tile_rect(t);
+    mirror([1, 0, 0]) linear_extrude(face_t) face_2d(t);
 }
 
 // --- Light grid -----------------------------------------------------------
@@ -256,16 +281,13 @@ module pilid() {
 module assembly() {
     tiles = [[0, 8, 0, 8], [8, 16, 0, 8], [0, 8, 8, 16], [8, 16, 8, 16]];
     grid_top = back_t + grid_h;
-    diffuser_z = grid_top + explode;
-    face_z = diffuser_z + diffuser_t + explode / 2;
+    paper_z = grid_top + explode / 2;
+    face_z = grid_top + explode;
 
+    color("ivory") translate([0, 0, paper_z]) cube([panel_size, panel_size, paper_t]);
     for (t = tiles) {
         color("white") grid(t);
-        color("ivory") translate([0, 0, diffuser_z]) linear_extrude(diffuser_t) tile_rect(t);
-        translate([0, 0, face_z]) {
-            color("#1a1a1a") linear_extrude(face_t) face_2d(t);
-            color("gold") linear_extrude(face_t) letter_fill_2d(t);
-        }
+        color("#1a1a1a") translate([0, 0, face_z]) linear_extrude(face_t) face_2d(t);
     }
     // Back board of the frame, behind the pixel tails
     back_z = -18;
@@ -285,10 +307,8 @@ module assembly() {
 // --- Part selector ----------------------------------------------------------
 
 if (part == "face") face(tile);
-else if (part == "letters") letter_fill(tile);
-else if (part == "diffuser") diffuser(tile);
 else if (part == "grid") grid(tile);
 else if (part == "pibox") pibox();
 else if (part == "pilid") pilid();
 else if (part == "assembly") assembly();
-else assert(false, str("Unknown part: ", part));
+else if (part != "none") assert(false, str("Unknown part: ", part));
