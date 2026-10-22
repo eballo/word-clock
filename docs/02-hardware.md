@@ -20,16 +20,16 @@ Only the letters that correspond to the current time are lit up, so only those l
 │ │           16 × 16 cells, 4 LEDs each    │ │
 │ │                                         │ │
 │ └─────────────────────────────────────────┘ │
-│       inner opening 48,5 × 48,5 cm          │
+│       inside 49 × 49 cm, 45 mm deep         │
 └─────────────────────────────────────────────┘
 ```
 
 | Measurement | Value |
 |-------------|-------|
 | Frame (total) | 50 × 50 cm, 5 cm deep (IKEA SANNAHED) |
-| Frame inner opening | 48,5 × 48,5 cm |
+| Frame inside | 49 × 49 cm, 45 mm deep (50 × 50 cm back board behind a 5 mm inner border) |
 | Depth used | 4 cm |
-| Panel size | 48,4 × 48,4 cm |
+| Panel size | 48,9 × 48,9 cm |
 | LED matrix area | 44,4 × 44,4 cm |
 | Cell size | 2,78 × 2,78 cm |
 | Letter size (cap height) | 15 mm |
@@ -75,7 +75,7 @@ lie on the back plate of the grid.
 
 | Parameter | Value |
 |-----------|-------|
-| Panel size | 48,4 × 48,4 cm |
+| Panel size | 48,9 × 48,9 cm |
 | Cell size | 2,78 × 2,78 cm |
 | Letter size | 15 mm cap height, Karla Bold Stencil |
 | Grid wall | 1,2 mm |

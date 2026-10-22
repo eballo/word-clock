@@ -9,7 +9,7 @@ for this project. It captures all conventions agreed during development.
 
 A 16×16 word clock lit by a WS2812B strip (144 LEDs/metre, 4 LEDs per letter,
 1 024 LEDs) driven by a Raspberry Pi 3B (4B as an upgrade) in a screen module under the frame. Frame: IKEA SANNAHED 50×50 cm
-(inner opening 48.5 cm, 4 cm depth used), LED matrix: 44.4×44.4 cm, cell:
+(inside 49 × 49 cm, 45 mm deep), LED matrix: 44.4×44.4 cm, cell:
 2.78 cm. Front panel: 3D-printed on a Bambu Lab A1 (3×3 tiles), opaque black,
 interchangeable per language.
 Supported languages: English, Catalan, Spanish.
@@ -105,9 +105,9 @@ One short paragraph summarising what this doc covers.
 ### Decisions already made (do not re-discuss)
 | Topic | Decision |
 |-------|----------|
-| Frame | IKEA SANNAHED 50 × 50 cm, inner opening 48.5 × 48.5 cm, 50 mm inside depth with its back board; plastic front sheet not used; face recessed 10 mm behind the front lip by a black ring |
+| Frame | IKEA SANNAHED 50 × 50 cm: inside 49 × 49 cm and 45 mm deep (50 × 50 back board behind a 5 mm inner border), front opening ~46.8 cm; plastic front sheet not used; face recessed 5 mm behind the front lip by a black ring |
 | Rings | 4 identical printed L pieces each: a 25 mm spacer ring behind the grid (frame_depth − recess − face − paper − grid) and an 8 mm black recess ring in front of the face |
-| LED matrix | 44.4 × 44.4 cm, 1.98 cm margin on every side |
+| LED matrix | 44.4 × 44.4 cm, 2.23 cm margin on every side (panel 48.9 cm) |
 | Cell size | 2.78 × 2.78 cm (4 LEDs of a 144 LEDs/metre strip) |
 | LEDs | WS2812B strip, 144 LEDs/metre, stuck on the back plate of the printed light grid |
 | LED count | 256 cells (16 × 16), 1 024 LEDs (4 per cell, snake rows of 64) |

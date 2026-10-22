@@ -35,16 +35,17 @@ explode = 0;
 show_frame = true;
 
 /* [Frame] */
-// Inner opening of the frame, where the panel sits
-inner_size = 485;
+// Inside of the frame where the panel sits (49 x 49 cm: the 50 x 50 cm back
+// board sits behind a 5 mm inner border)
+inner_size = 490;
 // Total play between the panel and the frame (both sides together)
 clearance = 1.0;
 // Inside depth of the frame with its back board in place, from the back
 // board to the front lip
-frame_depth = 50;
+frame_depth = 45;
 // How far the face sits behind the front lip. A black ring of this depth
 // fills the gap between the lip and the face margins.
-recess = 10;
+recess = 5;
 // Width of that ring, from the panel edge inwards (less than the margin)
 recess_w = 8;
 // The frame's plastic front sheet, behind the front lip (0 = not used)

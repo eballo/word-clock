@@ -37,7 +37,7 @@ corner first to check fit, letters and light bleed.
 
 Press the dovetail tabs of the nine grid tiles into their sockets, then
 bolt every seam with M3 × 8 mm bolts and nuts (24 in total). The result is
-one 48,4 × 48,4 cm grid with 256 cells.
+one 48,9 × 48,9 cm grid with 256 cells.
 
 ### 2.2 Cut and stick the strips
 

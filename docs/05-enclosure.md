@@ -21,29 +21,29 @@ same margin on every side.
 ```
             SANNAHED frame, 50 × 50 cm
 ┌───────────────────────────────────────────┐
-│  inner opening 48,5 × 48,5 cm             │
+│  inside 49 × 49 cm, 45 mm deep            │
 │ ┌───────────────────────────────────────┐ │
-│ │        margin 1,98 cm                 │ │
+│ │        margin 2,23 cm                 │ │
 │ │ ┌───────────────────────────────────┐ │ │
 │ │ │ 16 × 16 cells, 2,78 cm pitch      │ │ │
 │ │ │ matrix 44,4 × 44,4 cm             │ │ │
-│ │ └───────────────────────────────────┘ │ │  1,98 cm
-│ │        margin 1,98 cm                 │ │
+│ │ └───────────────────────────────────┘ │ │  2,23 cm
+│ │        margin 2,23 cm                 │ │
 │ └───────────────────────────────────────┘ │
-│   panel 48,4 × 48,4 cm (1 mm clearance)   │
+│   panel 48,9 × 48,9 cm (1 mm clearance)   │
 └───────────────────────────────────────────┘
 ```
 
 | Measurement | Value |
 |-------------|-------|
 | Frame (outer) | 50 × 50 cm |
-| Frame inside depth | 50 mm, from the back board to the front lip |
-| Face recess | 10 mm behind the front lip, held by a black ring |
-| Frame inner opening | 48,5 × 48,5 cm |
-| Panel size | 48,4 × 48,4 cm |
+| Frame inside | 49 × 49 cm, 45 mm deep from the back board to the front lip; the 50 × 50 cm back board sits behind a 5 mm inner border |
+| Front opening | ~46,8 cm (1,6 cm front border): about 1,2 cm of black margin shows around the letters |
+| Face recess | 5 mm behind the front lip, held by a black ring |
+| Panel size | 48,9 × 48,9 cm |
 | Cell pitch | 2,78 cm (4 LEDs of a 144 LEDs/metre strip) |
 | LED matrix | 44,4 × 44,4 cm |
-| Margins | 1,98 cm on every side |
+| Margins | 2,23 cm on every side (about 1,1 cm hidden behind the front border) |
 | Letter cap height | 15 mm (Karla Bold Stencil) |
 
 ---
@@ -55,7 +55,7 @@ same margin on every side.
      │
      ▼
 ┌──────────────────────────┐  SANNAHED front lip (plastic sheet not used)
-│▓▓                      ▓▓│  recess ring 9,8 mm, black, along the edges
+│▓▓                      ▓▓│  recess ring 4,8 mm, black, along the edges
 ├──────────────────────────┤  face        2,4 mm  black, stencil letter holes
 ├──────────────────────────┤  paper       tracing paper, diffuses the light
 │ │    │    │    │    │    │  light grid  25 mm walls, white
@@ -67,18 +67,18 @@ same margin on every side.
 
 | Layer | Thickness | Colour / material |
 |-------|-----------|-------------------|
-| Recess ring | 9,8 mm | Opaque black PLA |
+| Recess ring | 4,8 mm | Opaque black PLA |
 | Face | 2,4 mm | Opaque black PLA/PETG |
 | Paper diffuser | ~0,1 mm | Tracing paper, 90 g/m² |
 | Light grid + back plate | 27 mm | White PLA (reflects light) |
 | Spacer ring (wiring inside) | 10,1 mm | White or black PLA |
-| **Total** | **50 mm** (0,4 mm of play) | |
+| **Total** | **45 mm** (0,4 mm of play) | |
 
-The face sits 10 mm behind the front lip, which gives the clock some
+The face sits 5 mm behind the front lip, which gives the clock some
 depth. The black recess ring fills those 10 mm along the edges, and the
 spacer ring fills what is left behind the grid, so the back board presses
 the whole stack against the front lip and nothing rattles. Both come from
-`frame_depth` (50 mm), `recess` (10 mm) and `front_sheet_t` (0 mm: the
+`frame_depth` (45 mm), `recess` (5 mm) and `front_sheet_t` (0 mm: the
 frame's plastic sheet is not used). Change them and render again.
 
 ---
@@ -282,7 +282,7 @@ the ring, on the grid side, let cables pass from the margins to the middle.
 2. Put the grid on top, then the paper, then the face, and close the frame.
 
 The black recess ring in front of the face is made the same way: four
-identical L pieces, 8 mm wide and 9,8 mm deep, between the front lip and
+identical L pieces, 8 mm wide and 4,8 mm deep, between the front lip and
 the face margins. Print them in black so they match the face.
 
 ### 7.3 Magnets between the face and the grid
