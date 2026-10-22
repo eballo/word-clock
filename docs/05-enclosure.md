@@ -240,9 +240,9 @@ or a strip.
 
 ### 7.1 Light grid: dovetails and M3 bolts
 
-Every seam of the grid is a double wall with M3 holes 4 mm above the back
-plate, two per tile edge, in the corners of the cells. They sit low and to
-the side, so they cast no shadow on the letters and do not touch the strip.
+Every seam of the grid is a double wall with M3 holes 9 mm above the back
+plate, two per tile edge, in the corners of the cells. They sit to the side
+of the letters and above the strip, so the bolt heads never touch it.
 
 1. Lay the nine grid tiles open side up and press the tabs into the
    sockets, row by row.
@@ -324,7 +324,7 @@ spare face sets the same way, so every language face attracts the grid.
 
 | Item | Specification | Quantity |
 |------|---------------|----------|
-| LED strip | WS2812B, 144 LEDs/metre, 5V, 10 mm wide, IP30 (no silicone) | 8 reels of 1 m |
+| LED strip | WS2812B, 144 LEDs/metre, 5V, up to 12 mm wide, IP30 (no silicone) | 8 reels of 1 m |
 | Wire | 3-core, 22 AWG, for the row ends | ~2 m |
 | Power wire | 2-core, 18 AWG, for the power injection | ~2 m |
 
@@ -336,7 +336,8 @@ contains the factory solder joint. 8 reels give exactly 16 rows.
 
 1. Cut 16 rows of 64 LEDs, always on the copper cut marks.
 2. Stick each row on the back plate of the grid, along the centre of the
-   row of cells, passing under the walls through the notches. The first LED
+   row of cells, passing under the walls through the 14 mm notches (for
+   strips up to 12 mm wide; set `strip_w` to the strip width + 2 mm). The first LED
    of each row sits right after the left (or right) outer cell wall.
 3. Connect the rows in a snake: row 0 left → right, row 1 right → left, and
    so on. The row ends sit in the hollow side margins of the grid, where

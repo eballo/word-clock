@@ -107,16 +107,16 @@ magnet_post_d = 9;
 
 /* [Light grid] */
 wall_t = 1.2;
-// M3 bolts through the seam walls, low in the cell corners
+// M3 bolts through the seam walls, in the cell corners, above the strip
 bolt_d = 3.4;
-bolt_z = 4;
+bolt_z = 9;
 // Distance from the grid line, along the seam
 bolt_offset = 5;
 // Height of the walls between the back plate and the face
 grid_h = 25;
 back_t = 2;
 // Notch at the bottom of every wall the strip passes under
-strip_w = 12;
+strip_w = 14;
 strip_notch_h = 3;
 // Ribs in the hollow border, with a notch at the back for the wiring
 rib_notch_h = 8;
