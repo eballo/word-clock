@@ -58,7 +58,7 @@ class TestScadCommand:
 
     def test_omits_tile_and_rows_when_not_set(self) -> None:
         # Given
-        job = RenderJob("pitray", Path("out/pitray.stl"))
+        job = RenderJob("screenback", Path("out/screenback.stl"))
         # When
         cmd = scad_command(job, openscad="/opt/bin/openscad")
         # Then
@@ -72,9 +72,9 @@ class TestPlanJobs:
         out = Path("build")
         # When
         jobs = plan_jobs(["catalan"], out)
-        # Then: face parts per tile, one grid per tile, camera holder and Pi tray
+        # Then: face parts per tile, one grid per tile and the screen module
         assert len(jobs) == len(TILES) * len(FACE_PARTS) + len(TILES) + len(EXTRA_PARTS)
-        assert RenderJob("pitray", out / "common" / "pitray.stl") in jobs
+        assert RenderJob("screenfront", out / "common" / "screenfront.stl") in jobs
 
     def test_face_jobs_carry_language_rows(self) -> None:
         # Given

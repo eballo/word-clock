@@ -20,9 +20,7 @@ def main(
     ] = None,
     out: Annotated[Path, typer.Option(help="Output directory")] = Path("build/stl"),
     grid: Annotated[bool, typer.Option(help="Render the light grid tiles")] = True,
-    extras: Annotated[
-        bool, typer.Option(help="Render the camera holder and the Raspberry Pi tray")
-    ] = True,
+    extras: Annotated[bool, typer.Option(help="Render the screen module")] = True,
     test: Annotated[bool, typer.Option(help="Render only the 4x4 test corner")] = False,
     preview: Annotated[
         bool, typer.Option(help="Write assembly preview files for the OpenSCAD GUI instead")

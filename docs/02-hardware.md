@@ -89,14 +89,15 @@ lie on the back plate of the grid.
 
 ### Raspberry Pi
 
-The clock uses a Raspberry Pi Zero 2 W, which fits inside the frame behind the grid. The LED strip data line connects to **GPIO 18** (PWM). The Camera Module 3 uses the camera connector and the push button uses GPIO 3.
+The clock uses a Raspberry Pi 4B in the screen module under the frame, behind the official 7" Touch Display. The LED strip data line connects to **GPIO 18** (PWM), the camera uses the camera connector and the push button uses GPIO 3.
 
 | Parameter | Value |
 |-----------|-------|
-| Model | Raspberry Pi Zero 2 W, no pin header |
+| Model | Raspberry Pi 4B (a Raspberry Pi 3B works for bench tests) |
+| Display | Raspberry Pi Touch Display v1, 7", 800 × 480, DSI |
 | GPIO pin | GPIO 18 (PWM) |
 | Button | GPIO 3 to GND (also wakes the Pi from halt) |
-| Camera | Camera Module 3, Pi Zero camera cable |
+| Camera | 5 MP OV5647 board or Camera Module 1.3/2/3, 15-pin cable |
 | Protocol | WS2812B (800 kHz) |
 | Logic level | 3,3V → 5V level shifter recommended |
 
@@ -111,7 +112,7 @@ With 1 024 LEDs at a maximum of 60 mA each (full white), the theoretical peak dr
 | 35 letters, full white (140 LEDs) | ~8,4 A (limited by software) |
 | 35 letters, one colour | ~2,8 A |
 | Idle LEDs (1 024 × ~0,5–1 mA) | ~0,5–1 A |
-| Raspberry Pi Zero 2 W + camera | ~0,6–1 A |
+| Raspberry Pi 4B + display + camera | ~1,5–2,5 A |
 
 | Parameter | Value |
 |-----------|-------|
@@ -148,17 +149,17 @@ With 1 024 LEDs at a maximum of 60 mA each (full white), the theoretical peak dr
 | # | Component | Specification |
 |---|-----------|---------------|
 | 1 | LED strip | WS2812B, 144 LEDs/metre, 5V, IP30, 8 reels of 1 m |
-| 2 | Raspberry Pi | Pi Zero 2 W (fits inside the frame) |
+| 2 | Raspberry Pi | Raspberry Pi 4B + Touch Display v1 (in the screen module) |
 | 3 | Power supply | 5V 10A (50W) |
 | 4 | Level shifter | 3,3V → 5V (e.g. 74AHCT125) |
 | 5 | Frame | IKEA SANNAHED 50 × 50 cm |
-| 6 | 3D-printed parts | Face, light grid (with camera bracket), Pi tray (see 05 — Enclosure) |
-| 7 | Bolts | 24 × M3 × 8 mm with nuts (grid seams), 4 × M3 countersunk with nuts (Pi tray) |
+| 6 | 3D-printed parts | Face, light grid, screen module (see 05 — Enclosure) |
+| 7 | Bolts | 24 × M3 × 8 mm with nuts (grid seams), 4 × M3 countersunk self-tapping (screen module) |
 | 8 | Power wire | 2-core, 18 AWG (power injection) |
 | 9 | Wire | 3-core, 22 AWG (row jumpers) |
 | 10 | MicroSD card | For Raspberry Pi OS (16 GB minimum) |
 | 11 | Tracing paper | 90 g/m², 45,5 × 45,5 cm (light diffuser) |
-| 12 | Camera | Raspberry Pi Camera Module 3 + Pi Zero camera cable |
+| 12 | Camera | 5 MP OV5647 board or Raspberry Pi Camera Module |
 | 13 | Push button | 7–12 mm panel-mount momentary button |
 | 14 | DC jack | Panel-mount, rated for 10 A |
 

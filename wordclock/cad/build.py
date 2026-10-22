@@ -30,9 +30,9 @@ TEST_TILE: tuple[int, int, int, int] = (0, 4, 0, 4)
 
 FACE_PARTS: tuple[str, ...] = ("face",)
 GRID_PART = "grid"
-# Single parts that do not depend on the language. The camera bracket is
-# part of the grid, so the face can be swapped without touching the camera.
-EXTRA_PARTS: tuple[str, ...] = ("pitray",)
+# Single parts that do not depend on the language: the screen module under
+# the clock (Touch Display v1, Raspberry Pi 4B and camera).
+EXTRA_PARTS: tuple[str, ...] = ("screenfront", "screenback")
 
 
 @dataclass(frozen=True)
@@ -95,7 +95,7 @@ def plan_jobs(
         languages: Layout names, e.g. ``["catalan"]``.
         out_dir: Directory for the STL files.
         grid: Include the light grid tiles.
-        extras: Include the Raspberry Pi tray.
+        extras: Include the screen module parts.
         test: Render only the 4x4 test corner instead of the full tiles.
 
     Returns:

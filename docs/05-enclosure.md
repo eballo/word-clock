@@ -6,8 +6,8 @@ The clock is built inside an IKEA SANNAHED 50 × 50 cm frame. The LEDs are a
 WS2812B strip with 144 LEDs/metre, four LEDs under every letter. Every
 printed part is made on a Bambu Lab A1 (25 × 25 cm bed), split into 3 × 3 tiles,
 and generated from one parametric OpenSCAD model with `uv run wordclock-cad`.
-The Raspberry Pi Zero 2 W, the camera and the wiring all fit inside the
-frame. This doc covers the dimensions, the printed parts, how to render and
+A screen module under the clock holds the Raspberry Pi Touch Display, the
+Raspberry Pi 4B and the camera. This doc covers the dimensions, the printed parts, how to render and
 print them, and how everything stacks inside the frame.
 
 ---
@@ -15,20 +15,20 @@ print them, and how everything stacks inside the frame.
 ## 1. Dimensions
 
 The panel fills the inner opening of the frame. Every cell sits over four
-LEDs of the strip, so the cell pitch is 4 × 6,94 mm = 27,78 mm. The bottom
-margin is wider than the top one and hides the camera.
+LEDs of the strip, so the cell pitch is 4 × 6,94 mm = 27,78 mm, with the
+same margin on every side.
 
 ```
             SANNAHED frame, 50 × 50 cm
 ┌───────────────────────────────────────────┐
 │  inner opening 48,5 × 48,5 cm             │
 │ ┌───────────────────────────────────────┐ │
-│ │        top margin 1,18 cm             │ │
+│ │        margin 1,98 cm                 │ │
 │ │ ┌───────────────────────────────────┐ │ │
 │ │ │ 16 × 16 cells, 2,78 cm pitch      │ │ │
-│ │ │ matrix 44,4 × 44,4 cm             │ │ │  side margins
+│ │ │ matrix 44,4 × 44,4 cm             │ │ │
 │ │ └───────────────────────────────────┘ │ │  1,98 cm
-│ │        bottom margin 2,78 cm   (◉)    │ │  ← hidden camera
+│ │        margin 1,98 cm                 │ │
 │ └───────────────────────────────────────┘ │
 │   panel 48,4 × 48,4 cm (1 mm clearance)   │
 └───────────────────────────────────────────┘
@@ -42,7 +42,7 @@ margin is wider than the top one and hides the camera.
 | Panel size | 48,4 × 48,4 cm |
 | Cell pitch | 2,78 cm (4 LEDs of a 144 LEDs/metre strip) |
 | LED matrix | 44,4 × 44,4 cm |
-| Margins | 1,18 cm top, 1,98 cm sides, 2,78 cm bottom |
+| Margins | 1,98 cm on every side |
 | Letter cap height | 15 mm (Karla Bold Stencil) |
 
 ---
@@ -59,7 +59,7 @@ margin is wider than the top one and hides the camera.
 │ │    │    │    │    │    │  light grid  25 mm walls, white
 │▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬│  LED strip on the back plate (2 mm)
 ├──────────────────────────┤
-│   [Pi tray]   wiring     │  back gap    10 mm
+│          wiring          │  back gap    10 mm
 └──────────────────────────┘  SANNAHED back board
 ```
 
@@ -77,20 +77,19 @@ margin is wider than the top one and hides the camera.
 
 | File | Qty | Depends on language | Purpose |
 |------|-----|---------------------|---------|
-| `<lang>/face_rXcY.stl` | 9 | yes | Black face with stencil letter holes and the camera pinhole |
-| `common/grid_rXcY.stl` | 9 | no | Light grid that isolates each cell and holds the LED strips; `grid_r2c1` also holds the camera |
-| `common/pitray.stl` | 1 | no | Tray for the Raspberry Pi Zero 2 W and the 74AHCT125 board |
+| `<lang>/face_rXcY.stl` | 9 | yes | Black face with stencil letter holes |
+| `common/grid_rXcY.stl` | 9 | no | Light grid that isolates each cell and holds the LED strips |
+| `common/screenfront.stl` | 1 | no | Screen module: bezel and walls, camera above the screen |
+| `common/screenback.stl` | 1 | no | Screen module: back cover with wall keyholes |
 
 Only the face depends on the language. To change the language of the
 clock, open the back board, lift out the grid, swap the face panel and put
-the grid back. The camera stays on the grid, so nothing is glued to the
-face.
+the grid back. Nothing is glued to the face.
 
 Tiles are named by row and column: `r0c0` is top-left, `r2c2` is
 bottom-right, as seen from the front. The panel is split after columns and
 rows 5 and 11 (5 + 6 + 5 cells). All seams fall on a cell wall, never
-through a letter, and the camera sits in the middle of `r2c1`, away from
-any seam.
+through a letter.
 
 ```
 ┌────────┬──────────┬────────┐
@@ -98,7 +97,7 @@ any seam.
 ├────────┼──────────┼────────┤   (with tabs)
 │  r1c0  │   r1c1   │  r1c2  │
 ├────────┼──────────┼────────┤
-│  r2c0  │   r2c1 ◉ │  r2c2  │
+│  r2c0  │   r2c1   │  r2c2  │
 └────────┴──────────┴────────┘
 ```
 
@@ -140,7 +139,7 @@ Bambu Lab A1 to `build/bambu/`, with one part per plate:
 | Project | Plates | Settings per part |
 |---------|--------|-------------------|
 | `face_<lang>.3mf` | 9 face tiles of one language | 100% infill |
-| `grid.3mf` | 9 grid tiles + Pi tray | 3 walls, 15% infill |
+| `grid.3mf` | 9 grid tiles + screen module | 3 walls, 15% infill |
 | `test_<lang>.3mf` | Face and grid test corner (with `--test`) | default |
 
 Open a project in Bambu Studio, pick the filament for each plate and print
@@ -198,12 +197,12 @@ supports.
 | Infill | 15% |
 | Supports | none |
 
-### 6.3 Pi tray
+### 6.3 Screen module
 
-Print it flat, with the standoffs pointing up. No supports are needed.
-
-The camera bracket is part of `grid_r2c1`: its plate prints as a short
-bridge between two side walls, with the standoffs growing up from it.
+Print the front face down on the textured plate, in black, so the bezel
+matches the clock face. The camera standoffs and the screw bosses grow up
+from the bezel. Print the back cover with its outer face down and the
+columns pointing up. No supports are needed.
 
 ---
 
@@ -290,44 +289,63 @@ row 15                          ←  LEDs  960 .. 1023
 
 ---
 
-## 9. Raspberry Pi, camera and button
+## 9. Screen module
 
-Everything lives inside the frame. Only the power cable leaves the clock.
+The Raspberry Pi 4B, the camera and the button live in a printed case under
+the clock, around the official Raspberry Pi Touch Display (v1, 7", 800 ×
+480). The touch screen controls the clock (settings, reminders, photo
+booth preview, games), and the camera sits above it, where people look.
 
 ```
- front view (face removed)                  side section
-
-┌──────────────────────────────┐            glazing
-│                              │            │face
-│      light grid + strips     │            ││paper
-│                              │            │││ grid  │ gap │
-│                              │            │││       │ Pi  │ back
-├──────────────────────────────┤            │││       │tray │ board
-│     bottom margin   (◉)      │ ← camera   │◉│       │     │
-└──────────────●───────────────┘ ← button in the bottom rail
+┌──────────────────────────────┐
+│                              │
+│         word clock           │  ← SANNAHED frame
+│                              │
+└──────────────────────────────┘
+          │ LED cable, up behind the frame
+       ┌──┴─────────┐
+       │     ◉      │  ← camera
+       │ ┌────────┐ │
+       │ │ screen │ ●  ← push button (right side)
+       │ └────────┘ │
+       └────────────┘  ← power and USB cables at the bottom
 ```
 
-| Component | Placement |
-|-----------|-----------|
-| Raspberry Pi Zero 2 W | On the printed tray, bolted to the back board behind the grid |
-| 74AHCT125 board | On the free area of the same tray |
-| Camera Module 3 | On the bracket of grid tile `r2c1`, right behind the 6 mm pinhole in the bottom margin of the face |
-| Push button | 7–12 mm panel-mount momentary button, in a hole drilled through the bottom rail of the frame, under the hollow bottom margin of the grid |
-| Power input | Panel-mount DC jack rated for 10 A, through the back board |
+| Feature | Value |
+|---------|-------|
+| Outer size | 199,8 × 155,6 × 43 mm |
+| Display | Raspberry Pi Touch Display v1, glass 192,96 × 110,76 mm |
+| Raspberry Pi | Raspberry Pi 4B on the display's M2,5 standoffs (58 × 49 mm) |
+| Camera | Camera board 25 × 24 mm (Camera Module 1.3/2/3 or OV5647), 4 M2 standoffs, 8 mm lens hole |
+| Display retention | 4 columns on the back cover press the display against the bezel at its M3 holes |
+| Back cover | 4 countersunk M3 self-tapping screws into the corner bosses |
+| Wall mount | 2 keyholes, 120 mm apart |
+| Push button | 12 mm panel-mount momentary button on the right side |
+| Cable exits | 60 × 14 mm at the bottom (power, USB), 18 × 10 mm at the top (LED cable) |
 
-1. Screw the camera onto the bracket of `grid_r2c1` with M2 screws, lens
-   facing the face and the cable edge towards the bottom of the frame.
-2. Route the camera cable (Pi Zero version, 15 cm) through the slot in the
-   bracket and the open back of the bottom margin to the Pi.
-3. Bolt the Pi tray to the back board with M3 countersunk bolts, Pi facing
-   the grid. Solder the wires to the Pi directly, without a pin header, to
-   keep it under 10 mm.
-4. Drill the button hole in the bottom rail and wire the button between
-   GPIO 3 and GND (GPIO 3 also wakes the Pi from halt).
+1. Screw the camera onto the standoffs behind the bezel with M2 screws,
+   lens through the hole.
+2. Lay the display face down in the bezel. The stops above and below the
+   glass keep it centred.
+3. Mount the Raspberry Pi 4B on the display's standoffs and connect the
+   display cable, the camera cable and the GPIO wires (LED data through the
+   74AHCT125, button, buzzer).
+4. Close the back cover with four M3 screws. Its columns hold the display.
+5. Hang the module on two wall screws, centred under the clock, and route
+   the LED cable up behind the frame to the first row of the strip.
 
-The Pi Zero 2 W is not soldered to a header and the gap behind the grid is
-10 mm, so check the height of the tray with the Pi on it before closing the
-frame.
+The LED cable comes from below, so wire the strip so that data enters at
+the bottom row and set the start corner in the software configuration.
+Keep the 74AHCT125 close to the Pi and the data wire under 1 m, with GND
+running next to it.
+
+> **Note:** The camera hole and standoffs follow the official camera boards.
+> Other 5 MP (OV5647) boards can differ: check yours against the model
+> (`cam_board`, `cam_holes`, `cam_lens_top`) before printing.
+
+The clock can still hide the camera in its own bottom margin instead: set
+`clock_camera = true` and `bottom_extra = 16` in the model. The face then
+gets a 6 mm pinhole and grid tile `r2c1` a camera bracket.
 
 ---
 
@@ -336,11 +354,12 @@ frame.
 - [ ] 4 × 4 test corner printed and checked for fit, letters and light bleed
 - [ ] Nine face tiles printed for each language and fitted together
 - [ ] Nine grid tiles printed in white, fitted together and bolted (24 × M3)
-- [ ] Tracing paper cut to 45,5 × 45,5 cm (covers the matrix, not the camera)
+- [ ] Tracing paper cut to 45,5 × 45,5 cm
 - [ ] 16 strip rows cut, stuck and connected in snake order
 - [ ] Power injected at rows 0, 4, 8 and 12
-- [ ] Camera screwed to the grid bracket and aligned with the pinhole
-- [ ] Pi tray bolted, Pi and 74AHCT125 wired
-- [ ] Button fitted in the bottom rail
+- [ ] Screen module printed, display and Raspberry Pi 4B fitted
+- [ ] Camera screwed behind the bezel and aligned with its hole
+- [ ] Button fitted in the side of the screen module
+- [ ] Screen module hung on the wall under the clock, LED cable routed up
 - [ ] Colour order checked with a test pattern
 - [ ] Stack fits in the frame with the back board closed

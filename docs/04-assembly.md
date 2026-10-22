@@ -9,7 +9,7 @@ stacked from back to front:
         WALL
          │
     ┌────┴────┐
-    │  Back   │  ← SANNAHED back board + Raspberry Pi tray (10 mm gap)
+    │  Back   │  ← SANNAHED back board (10 mm gap for the wiring)
     ├─────────┤
     │  LED    │  ← WS2812B strips on the 3D-printed light grid
     │  matrix │
@@ -24,8 +24,8 @@ stacked from back to front:
 
 ## 1. 3D printing
 
-All printed parts — front panel, light grid (with the camera bracket) and
-Raspberry Pi tray — are described in [05 — Enclosure](05-enclosure.md), together with the
+All printed parts — front panel, light grid and screen module — are
+described in [05 — Enclosure](05-enclosure.md), together with the
 render commands and the Bambu Lab A1 print settings. Print the 4 × 4 test
 corner first to check fit, letters and light bleed.
 
@@ -105,11 +105,9 @@ DC jack (−) ──┬───────────────────
 
 ### 3.3 Raspberry Pi, camera and button
 
-Mount the Raspberry Pi Zero 2 W and the level shifter on the printed tray,
-and bolt the tray to the back board behind the grid. Screw the camera onto
-the bracket in the bottom margin of the grid, behind the pinhole of the
-face, and connect it with a Pi Zero camera cable. Fit the push button in the bottom rail of the
-frame and wire it between GPIO 3 and GND. See
+The Raspberry Pi 4B, the Touch Display, the camera, the level shifter and
+the push button go in the screen module that hangs under the clock. The
+LED cable runs up behind the frame to the strip. See
 [05 — Enclosure](05-enclosure.md) for the details.
 
 ---
@@ -150,9 +148,9 @@ hooks. Everything is inside the frame, so it hangs flat against the wall.
 - [ ] Power injection at rows 0, 4, 8 and 12
 - [ ] Level shifter wired and tested
 - [ ] Common ground between PSU and Raspberry Pi
-- [ ] Raspberry Pi tray bolted to the back board
-- [ ] Camera aligned with the pinhole
-- [ ] Button fitted in the bottom rail and wired to GPIO 3
+- [ ] Screen module assembled and hung under the clock
+- [ ] Camera aligned with the bezel hole
+- [ ] Button fitted in the screen module and wired to GPIO 3
 - [ ] Front panel, paper and grid clamped in the frame
 - [ ] Full power-on test passed (all LEDs respond)
 - [ ] systemd service running on boot

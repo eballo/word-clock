@@ -19,7 +19,7 @@
 use <fonts/KarlaBoldStencil.ttf>
 
 /* [Part selection] */
-// face | grid | pitray | assembly | pieces | none (library use)
+// face | grid | screenfront | screenback | assembly | pieces | none (library use)
 part = "grid";
 // Cell range [col_start, col_end, row_start, row_end), end exclusive
 tile = [0, 5, 0, 5];
@@ -39,7 +39,7 @@ inner_size = 485;
 // Total play between the panel and the frame (both sides together)
 clearance = 1.0;
 // Space between the back of the grid and the frame back board, for the
-// Raspberry Pi and the wiring
+// wiring
 back_gap = 10;
 
 /* [Matrix] */
@@ -47,8 +47,9 @@ cells = 16;
 // WS2812B strip, 144 LEDs/metre
 led_pitch = 1000 / 144;
 leds_per_cell = 4;
-// Extra margin below the matrix (taken from the top) for the hidden camera
-bottom_extra = 16;
+// Extra margin below the matrix, taken from the top. Set it to 16 when the
+// camera hides in the clock (clock_camera = true).
+bottom_extra = 0;
 
 /* [Front face] */
 // Opaque black panel with stencil letter holes
@@ -88,7 +89,11 @@ strip_notch_h = 3;
 rib_notch_h = 8;
 
 /* [Camera] */
-// Raspberry Pi Camera Module 3: 25 x 24 mm board, M2 holes on 21 x 12.5 mm
+// Camera behind a pinhole in the clock face (true) or in the screen module
+// under the clock (false)
+clock_camera = false;
+// Camera board: 25 x 24 mm, M2 holes on 21 x 12.5 mm (Camera Module 1.3,
+// 2 and 3, and most OV5647 boards)
 cam_board = [25, 24];
 cam_holes = [21, 12.5];
 // Distance from the top edge of the board to the top holes and to the lens
@@ -103,13 +108,32 @@ cam_hole_d = 6;
 holder_t = 1.5;
 cam_standoff_h = 4;
 
-/* [Raspberry Pi tray] */
-// Raspberry Pi Zero 2 W: 65 x 30 mm, holes on a 58 x 23 mm rectangle
-pi_size = [65, 30];
-pi_holes = [58, 23];
-tray_size = [110, 42];
-tray_t = 2;
-pi_standoff_h = 3;
+/* [Screen module] */
+// Raspberry Pi Touch Display v1 (2015), from the official mechanical drawing
+lcd_glass = [192.96, 110.76];
+lcd_t = 6;
+// LCD active area and its distance from the top edge of the glass
+lcd_area = [154.08, 85.92];
+lcd_area_top = 11.41;
+// Metal back frame and its offset from the bottom-left corner of the glass
+lcd_frame = [164.9, 100.6];
+lcd_frame_pos = [12.54, 3.53];
+// M3 mounting holes on the back frame, from its bottom-left corner
+lcd_m3 = [[20, 20], [146.2, 20], [20, 85.65], [146.2, 85.65]];
+// Play around the glass
+lcd_fit = 0.4;
+screen_wall = 3;
+screen_bezel = 2;
+// Space above the glass for the camera and below it for the screws
+screen_top_zone = 28;
+screen_bottom_zone = 10;
+// Depth behind the bezel: display, Raspberry Pi 4B on its standoffs, cables
+screen_depth = 38;
+screen_back_t = 3;
+// Hole in the bezel in front of the camera lens
+screen_cam_hole_d = 8;
+// Panel-mount push button on the right side
+screen_button_d = 12;
 
 /* [Letters] */
 rows = [
@@ -129,6 +153,7 @@ font_size = cap_height / cap_ratio;
 baseline = -(accent_ratio - descent_ratio) * font_size / 2;
 
 assert(border_top >= 2 * wall_t, "Matrix does not fit: reduce cells or bottom_extra");
+assert(!clock_camera || border_bottom >= cam_board[1] + 3, "clock_camera needs bottom_extra = 16");
 
 // Position of grid line k (k = 0..cells), the line between cell k-1 and k.
 function line_x(k) = border_x + k * pitch;
@@ -199,7 +224,7 @@ module face_2d(t) {
         }
         joints(t, joint_gap, tabs = false);
         letters_2d(grown_tile(t));
-        translate([cam_x, cam_lens_y]) circle(d = cam_hole_d);
+        if (clock_camera) translate([cam_x, cam_lens_y]) circle(d = cam_hole_d);
     }
 }
 
@@ -239,7 +264,7 @@ module cell_walls_2d(t) {
     for (k = [t[2]:t[3]]) hwall(t, k, cells_x0(t), cells_x1(t));
 }
 
-function in_cam_zone(x) = abs(x - cam_x) < cam_zone / 2;
+function in_cam_zone(x) = clock_camera && abs(x - cam_x) < cam_zone / 2;
 
 // Perimeter wall, plus seam walls through the border. The bottom border
 // keeps the camera zone free.
@@ -348,7 +373,7 @@ module cam_bracket(t) {
         for (dx = [-cam_holes[0] / 2, cam_holes[0] / 2], dy = [0, -cam_holes[1]])
             [cam_x + dx, cam_lens_y + cam_lens_top - cam_hole_top + dy]
     ];
-    if (t[3] == cells && cam_x > tile_x0(t) + w && cam_x < tile_x1(t) - w) {
+    if (clock_camera && t[3] == cells && cam_x > tile_x0(t) + w && cam_x < tile_x1(t) - w) {
         // Side walls
         for (x = [cam_x - w / 2 - wall_t, cam_x + w / 2])
             translate([x, y0, 0]) cube([wall_t, y1 - y0, back_t + grid_h]);
@@ -366,30 +391,135 @@ module cam_bracket(t) {
     }
 }
 
-// --- Raspberry Pi tray --------------------------------------------------------
+// --- Screen module ----------------------------------------------------------
 
-// Tray bolted to the frame back board, behind the grid. The Pi faces the
-// grid; the free area on the right holds the 74AHCT125 board.
-module pitray() {
-    pi_origin = [4, (tray_size[1] - pi_size[1]) / 2];
+// A case under the clock for the Raspberry Pi Touch Display v1, the
+// Raspberry Pi 4B screwed to the back of the display, and the camera above
+// the screen. Body coordinates: x and y as seen from the front, z the depth
+// behind the front face (0 = front, growing towards the wall). Seen from the
+// front this is a mirror image, so every printed part is mirrored back.
+function screen_outer() = [
+    lcd_glass[0] + 2 * (lcd_fit + screen_wall),
+    lcd_glass[1] + 2 * (lcd_fit + screen_wall) + screen_top_zone + screen_bottom_zone,
+];
+function screen_total_depth() = screen_bezel + screen_depth + screen_back_t;
+// Bottom-left corner of the glass
+function glass_origin() = [screen_wall + lcd_fit, screen_wall + lcd_fit + screen_bottom_zone];
+function screen_cam_pos() = [
+    screen_outer()[0] / 2,
+    glass_origin()[1] + lcd_glass[1] + lcd_fit + screen_top_zone / 2 + 2,
+];
+// Back cover screws, in the corners of the top and bottom zones
+function screen_screws() = let(o = screen_outer(), m = screen_wall + 4) [
+    [m, m], [o[0] - m, m], [m, o[1] - m], [o[0] - m, o[1] - m],
+];
+function lcd_m3_pos() = [
+    for (h = lcd_m3) glass_origin() + lcd_frame_pos + h
+];
+
+module screen_outline(o) {
+    offset(4) offset(-4) square(o);
+}
+
+module screen_front_body() {
+    o = screen_outer();
+    g = glass_origin();
+    d = screen_bezel + screen_depth;
+    cam = screen_cam_pos();
+    area_pos = [g[0] + (lcd_glass[0] - lcd_area[0]) / 2, g[1] + lcd_glass[1] - lcd_area_top - lcd_area[1]];
+    cam_holes_pos = [
+        for (dx = [-cam_holes[0] / 2, cam_holes[0] / 2], dy = [0, -cam_holes[1]])
+            [cam[0] + dx, cam[1] + cam_lens_top - cam_hole_top + dy]
+    ];
     difference() {
-        linear_extrude(tray_t) offset(3) offset(-3) square(tray_size);
-        // Countersunk holes for M3 bolts through the back board
-        for (x = [tray_size[0] - 8, tray_size[0] - 30], y = [8, tray_size[1] - 8])
-            translate([x, y, -1]) {
-                cylinder(d = 3.4, h = tray_t + 2);
-                translate([0, 0, tray_t + 1 - 1.6]) cylinder(d1 = 3.4, d2 = 6.6, h = 1.61);
-            }
-        // Zip-tie slots for the cables
-        for (y = [tray_size[1] / 2 - 8, tray_size[1] / 2 + 5])
-            translate([tray_size[0] - 22, y, -1]) cube([4, 3, tray_t + 2]);
-    }
-    for (dx = [0, pi_holes[0]], dy = [0, pi_holes[1]])
-        translate([pi_origin[0] + 3.5 + dx, pi_origin[1] + 3.5 + dy, tray_t])
+        union() {
             difference() {
-                cylinder(d = 5.5, h = pi_standoff_h);
-                cylinder(d = 2.2, h = pi_standoff_h + 1);
+                linear_extrude(d) screen_outline(o);
+                translate([screen_wall, screen_wall, screen_bezel])
+                    cube([o[0] - 2 * screen_wall, o[1] - 2 * screen_wall, d]);
             }
+            // Screw bosses for the back cover
+            for (p = screen_screws())
+                translate([p[0], p[1], 0]) cylinder(d = 8, h = d);
+            // Stops that keep the glass from sliding up or down
+            for (x = [g[0] + 10, g[0] + lcd_glass[0] - 40])
+                for (y = [g[1] - lcd_fit - 1.5, g[1] + lcd_glass[1] + lcd_fit])
+                    translate([x, y, screen_bezel]) cube([30, 1.5, lcd_t]);
+            // Camera standoffs on the back of the bezel
+            for (p = cam_holes_pos)
+                translate([p[0], p[1], screen_bezel]) cylinder(d = 4.5, h = cam_lens_h);
+        }
+        // Window over the active area
+        translate([area_pos[0] - 0.5, area_pos[1] - 0.5, -1])
+            cube([lcd_area[0] + 1, lcd_area[1] + 1, screen_bezel + 2]);
+        translate([cam[0], cam[1], -1]) cylinder(d = screen_cam_hole_d, h = screen_bezel + 2);
+        for (p = cam_holes_pos)
+            translate([p[0], p[1], screen_bezel - 1]) cylinder(d = 1.8, h = cam_lens_h + 2);
+        for (p = screen_screws())
+            translate([p[0], p[1], screen_bezel + 2]) cylinder(d = 2.6, h = d);
+        // Cable exits: power and USB at the bottom, LED cable at the top
+        translate([o[0] / 2 - 30, -1, d - 16]) cube([60, screen_wall + 2, 14]);
+        translate([o[0] / 2 + 40, o[1] - screen_wall - 1, d - 12]) cube([18, screen_wall + 2, 10]);
+        // Push button on the right side (seen from the front)
+        translate([o[0] - screen_wall - 1, o[1] / 2, screen_bezel + lcd_t + 14])
+            rotate([0, 90, 0]) cylinder(d = screen_button_d, h = screen_wall + 2);
+        // Vents along the top
+        for (i = [0:5])
+            translate([20 + i * 9, o[1] - screen_wall - 1, d - 22]) cube([4, screen_wall + 2, 16]);
+    }
+}
+
+// Back cover with columns that press the display against the bezel, wall
+// keyholes and vents over the Raspberry Pi.
+module screen_back_body() {
+    o = screen_outer();
+    d = screen_bezel + screen_depth;
+    column = d - (screen_bezel + lcd_t);
+    difference() {
+        union() {
+            translate([0, 0, d]) linear_extrude(screen_back_t) screen_outline(o);
+            for (p = lcd_m3_pos())
+                translate([p[0], p[1], screen_bezel + lcd_t]) cylinder(d = 9, h = column);
+        }
+        for (p = lcd_m3_pos())
+            translate([p[0], p[1], 0]) cylinder(d = 3.4, h = d + screen_back_t + 1);
+        // Countersunk screws into the bosses
+        for (p = screen_screws())
+            translate([p[0], p[1], d - 1]) {
+                cylinder(d = 3.4, h = screen_back_t + 2);
+                translate([0, 0, screen_back_t + 1 - 1.8]) cylinder(d1 = 3.4, d2 = 7, h = 1.81);
+            }
+        // Keyholes for two screws in the wall, 120 mm apart
+        for (x = [o[0] / 2 - 60, o[0] / 2 + 60])
+            translate([x, o[1] - 22, d - 1]) {
+                cylinder(d = 8, h = screen_back_t + 2);
+                translate([-2, 0, 0]) cube([4, 10, screen_back_t + 2]);
+            }
+        // Vents over the Raspberry Pi
+        for (i = [0:7])
+            translate([o[0] / 2 - 45, glass_origin()[1] + 25 + i * 8, d - 1]) cube([90, 3, screen_back_t + 2]);
+    }
+}
+
+// Printed face down on the textured plate.
+module screenfront() {
+    mirror([1, 0, 0]) screen_front_body();
+}
+
+// Printed outer face down, columns up.
+module screenback() {
+    d = screen_bezel + screen_depth;
+    translate([0, 0, d + screen_back_t]) rotate([0, 180, 0]) mirror([1, 0, 0]) screen_back_body();
+}
+
+// The module in front-view coordinates (z towards the viewer, front face at
+// z = 0), for the assembly view.
+module screen_module() {
+    mirror([0, 0, 1]) {
+        color("#1a1a1a") screen_front_body();
+        color("dimgray") screen_back_body();
+        color("#0b1a2a") translate([glass_origin()[0], glass_origin()[1], screen_bezel]) cube([lcd_glass[0], lcd_glass[1], 0.7]);
+    }
 }
 
 // --- Assembly view ----------------------------------------------------------
@@ -410,7 +540,10 @@ module assembly() {
     for (r = [0:cells - 1])
         color("seagreen") translate([line_x(0), cell_y(r) - 5, back_t]) cube([matrix_size, 10, 1.5]);
     color("ivory") translate([line_x(0), line_y(cells), paper_z]) cube([matrix_size, matrix_size, paper_t]);
-    color("gray") translate([cam_x - tray_size[0] / 2, line_y(cells) + 20, -back_gap - explode / 2]) pitray();
+    // Screen module centred under the frame, its back against the wall
+    translate([panel_size / 2 - screen_outer()[0] / 2, -clearance / 2 - (500 - inner_size) / 2 - 30 - screen_outer()[1],
+               -back_gap + screen_total_depth()])
+        screen_module();
 
     if (show_frame) {
         frame_wall = (500 - inner_size) / 2;
@@ -454,15 +587,21 @@ module pieces() {
     }
     label("FACE (changes per language)", spread / 2, panel_size + 25, 0);
     label("LIGHT GRID (common)", 1.5 * spread + 3 * gap, panel_size + 25, 0);
-    color("gray") translate([spread + 3 * gap + spread / 2 - tray_size[0] / 2, -spread + panel_size - 2 * gap - tray_size[1] - 40, 0]) pitray();
-    label("Pi tray", spread + 3 * gap + spread / 2, -spread + panel_size - 2 * gap - tray_size[1] - 55, 0);
+    // Screen module parts, below the grid
+    sy = -spread + panel_size - 2 * gap - screen_outer()[1] - 40;
+    sx = spread + 3 * gap + spread / 2;
+    color("#1a1a1a") translate([sx - screen_outer()[0] - 10, sy, 0]) screen_front_body();
+    color("dimgray") translate([sx + 10, sy, 0]) screen_back_body();
+    label("Screen front", sx - screen_outer()[0] / 2 - 10, sy - 15, 0);
+    label("Screen back", sx + screen_outer()[0] / 2 + 10, sy - 15, 0);
 }
 
 // --- Part selector ----------------------------------------------------------
 
 if (part == "face") face(tile);
 else if (part == "grid") grid(tile);
-else if (part == "pitray") pitray();
+else if (part == "screenfront") screenfront();
+else if (part == "screenback") screenback();
 else if (part == "assembly") assembly();
 else if (part == "pieces") pieces();
 else if (part != "none") assert(false, str("Unknown part: ", part));
