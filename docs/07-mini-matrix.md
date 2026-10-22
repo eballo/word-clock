@@ -17,20 +17,21 @@ and wiring the strip, printing the enclosure, assembly and the software.
 | Part | Quantity | Note |
 |------|----------|------|
 | Tremex WS2812B strip, 30 LEDs/metre, 2 m | 1 | Cut into 6 pieces of 10 LEDs |
-| Raspberry Pi 3B with microSD card and its power supply | 1 | Set up as in [03 — Software](03-software.md) |
-| 5V power supply, 2 A or more | 1 | The 5V 10 A supply of the bench test is fine |
+| Raspberry Pi 3B with microSD card | 1 | Set up as in [03 — Software](03-software.md), Wi-Fi and SSH on |
+| 5V power supply, 3 A or more, 5.5 × 2.1 mm plug | 1 | Powers the strip and the Pi: the only cable; the 5V 10 A supply of the bench test is fine |
+| Micro-USB plug with screw terminals (USB-C on a 4B) | 1 | Powers the Pi from the same supply, inside the box |
 | 1000 µF 16 V electrolytic capacitor | 1 | Across 5V and GND at the strip input |
 | 220 Ω resistor | 1 | In the data line (Freenove kit) |
 | Rectifier diode | 1 | Only if the 3,3V data is not read reliably (Freenove kit) |
 | Wire, 22 AWG, three colours | about 1 m | 5 joints between rows, about 6 cm each |
 | M3 × 16 mm bolt and nut | 3 | Join the two grid halves |
-| M3 × 12 mm self-tapping screw | 4 | Fix the back box to the grid |
-| M2.5 × 6 mm self-tapping screw | 4 | Fix the Raspberry Pi in the back box |
-| Panel-mount DC jack, 5.5 × 2.1 mm (DC-022, 11 mm hole) | 1 | LED supply input on the back box |
-| 12 mm momentary push button | 1 | Optional, for a later phase (GPIO 3) |
+| M3 × 12 mm self-tapping screw | 4 | Fix the stand box to the grid |
+| M2.5 × 6 mm self-tapping screw | 4 | Fix the Raspberry Pi in the stand box |
+| Panel-mount DC jack, 5.5 × 2.1 mm (DC-022, 11 mm hole) | 1 | Power input in the back of the stand box |
+| Lever connectors (Wago 221), 3-way | 2 | 5V and GND joints inside the box |
 | Tracing paper | 1 A3 sheet | Diffuser between the face and the grid |
 | PLA, white | about 150 g | Light grid |
-| PLA, black | about 200 g | Front face and back box |
+| PLA, black | about 250 g | Front face and stand box |
 
 ---
 
@@ -55,9 +56,10 @@ and wiring the strip, printing the enclosure, assembly and the software.
 | Matrix | 33,3 × 20,0 cm |
 | Grid panel | 35,7 × 22,4 cm |
 | Face (with its skirt) | 36,1 × 22,8 cm |
-| Depth | about 2,6 cm (2 mm back plate, 22 mm walls, paper, 2 mm face), plus 3,2 cm of back box |
+| Depth | about 2,6 cm (2 mm back plate, 22 mm walls, paper, 2 mm face), plus 4,0 cm of stand box |
 | Printed halves | Grid 17,9 × 22,4 cm, face 18,1 × 22,8 cm: each fits the 25,6 cm bed of the Bambu Lab A1 |
-| Back box | 14,3 × 14,3 × 3,2 cm, centred behind the matrix |
+| Stand box | 14,3 × 18,4 × 4,0 cm, centred behind the matrix, down to its bottom edge |
+| Tilt on the table | 15° backwards |
 | Face windows | 3,03 × 3,03 cm, 3 mm bars |
 
 ---
@@ -74,12 +76,9 @@ and wiring the strip, printing the enclosure, assembly and the software.
 │ │    │    │    │    │    │   │  light grid, white PLA, 22 mm walls
 │ │ ●  │ ●  │ ●  │ ●  │ ●  │ ● │  one WS2812B LED per cell
 └──────────────────────────────┘  back plate 2 mm, strip stuck on it
-        ┌──────────────┐          back box, 32 mm: Raspberry Pi, DC jack,
-        │  Pi   ▣ jack │          wiring; keyholes in its floor
+        ┌──────────────┐          stand box, 40 mm: Raspberry Pi, DC jack,
+        │  Pi   ▣ jack │          wiring
         └──────────────┘
-     ▲
-     │
-   wall
 ```
 
 The strip runs along the centre of every row, under the column walls
@@ -88,27 +87,44 @@ where the wires that join the rows run.
 
 ---
 
-## 4. Back box
+## 4. Stand box
 
-The box is screwed on the back of the grid and hangs the whole matrix on
-the wall. Four M3 × 12 mm self-tapping screws go in from the floor of the
-box, through its corner columns, into four bosses on the grid back plate
-(cell corners, hidden behind the face bars).
+The box on the back is also the stand. Its base is cut at 15°, so the
+matrix stands on a table leaning back, on the bottom edge of the grid and
+the base of the box. It hides the Raspberry Pi and the wiring: only the
+power cable comes out, from the back. Four M3 × 12 mm self-tapping screws
+go in from the back of the box, through its corner columns, into four
+bosses on the grid back plate (cell corners, hidden behind the face bars).
 
 ```
-          seen from the back (as it hangs, floor towards you)
+   side view, standing on the table (front on the left)
 
-                 strip wires (slot in the rim)
-   ┌─────────────────┬┬─────────────────────┐
-   │ ◉            ║║║║║║║  vents        ◉   │
-   │      ⚲  keyhole           keyhole  ⚲   │
-   │                                        │
- ◯ │ button                                 │
-   │                   ┌──────────────────┐ │
-   │                   │  Raspberry Pi 3B │ ├─ USB / Ethernet
-   │ ◉                 └──────────────────┘◉│
-   └───────── ◯ ───────────── ▭ ────────────┘
-           DC jack       Pi power
+          face  grid
+              ╱   ╱
+             ╱   ╱━━━━╱
+            ╱   ╱    ╱   stand box, Raspberry Pi inside
+           ╱   ╱    ◯━━ power cable
+          ╱   ╱    ╱
+   ══════╱═══╱━━━━╱═════  table: flat base of the box
+          15° lean back
+```
+
+```
+          seen from the back
+
+          strip wires (slot in the rim)
+   ┌──────┬┬───────────────────────────┐
+   │ ◉            ║║║║║║║  vents     ◉ │
+   │                                   │
+   │        ┌──────────────────┐       │
+   │        │  Raspberry Pi 3B │       │
+   │        │   (vents behind) │       │
+   │        └──────────────────┘       │
+   │ ◉                              ◉  │
+   │                         ◯ DC jack │
+   │      plug and wiring room         │
+   └───────────────────────────────────┘
+   ▔▔▔▔▔▔▔▔▔▔▔▔ base on the table ▔▔▔▔▔▔▔▔
 ```
 
 The view is from the back, so the Pi sits on the left here and on the
@@ -116,30 +132,32 @@ right in the model, which uses front-view coordinates.
 
 | Opening | Where | For |
 |---------|-------|-----|
-| Pi power | Bottom wall | The Pi's own micro-USB supply (USB-C on a 4B) |
-| DC jack, 11 mm | Bottom wall | 5V supply of the LED strip |
-| USB / Ethernet | Side wall | Keyboard or network cable when needed |
-| Button, 12 mm | Other side wall | Push button for a later phase |
+| DC jack, 11 mm | Back, low | The 5V supply: the only cable |
 | Wire slot | Top rim | Strip input wires from the hole next to row 0 |
-| Keyholes | Floor | Two wall screws, 90 mm apart; the matrix drops 10 mm onto them |
-| Vents | Floor under the Pi and top wall | Air for the Raspberry Pi |
+| Vents | Back under the Pi, and top wall | Air for the Raspberry Pi |
 
-The microSD card faces into the box: take the box off (four screws) to
-change it.
+There is no opening for the USB, Ethernet or HDMI ports: use the Pi over
+Wi-Fi and SSH. The microSD card faces into the box, so take the box off
+(four screws) to change it.
+
+To make the matrix stand steeper or flatter, change `tilt`; a deeper box
+(`box_d`) gives a longer base and a steadier stand.
 
 Inside the box:
 
 ```
- DC jack + ──┬────────────────────────────► strip 5V (red)
-             └─[1000 µF]─┐
- DC jack − ──────────────┴───┬────────────► strip GND (white)
-                             │
- Pi GND (pin 6) ─────────────┘
- Pi GPIO 18 (pin 12) ──[220 Ω]────────────► strip DIN (green)
+ DC jack + ──► Wago 5V ──┬──────────────────► strip 5V (red)
+                         ├──[1000 µF]──┐
+                         └──────────────────► micro-USB plug + ──► Pi power
+ DC jack − ──► Wago GND ─┴─────────────┴────► strip GND (white)
+                         └──────────────────► micro-USB plug − 
+ Pi GPIO 18 (pin 12) ──[220 Ω]──────────────► strip DIN (green)
 ```
 
-Use lever connectors (Wago 221) or a small piece of perfboard for the
-joints, held with double-sided tape.
+The Pi takes its power through its own micro-USB port, from the same
+supply, so it keeps its input protection. The micro-USB cable also joins
+the Pi GND to the strip GND. Hold the Wago connectors and the capacitor
+with double-sided tape.
 
 ---
 
@@ -199,20 +217,20 @@ to left, so each row joins the next at alternating ends.
 
 ### 6.3 Connection to the Raspberry Pi
 
-The wiring is the same as the bench test ([06 — Bench Test](06-bench-test.md), section 2):
+Test first on the breadboard, as in the bench test ([06 — Bench Test](06-bench-test.md), section 2),
+then move the wiring into the stand box (section 4):
 
 | From | To | Note |
 |------|----|------|
 | Pi GPIO 18 (pin 12) | 220 Ω resistor → strip DIN | Data line |
-| Pi GND | Supply − | Common ground |
-| Supply + | Strip 5V | Strip power only, never to the Pi pins |
-| Supply − | Strip GND | |
+| Supply + | Strip 5V and micro-USB plug + | Never to the Pi GPIO pins |
+| Supply − | Strip GND and micro-USB plug − | Common ground through the micro-USB cable |
 | 1000 µF capacitor | Between strip 5V and GND, at the input | Stripe (negative) to GND |
 
 60 LEDs draw up to 3,6 A in full white. The software dims any frame that
-would draw more than 1,5 A (`MATRIX_MAX_MA` in `wordclock/config.py`), so
-the breadboard and a 2 A supply are enough. If the colours flicker, use the
-diode trick from the bench test.
+would draw more than 1,5 A (`MATRIX_MAX_MA` in `wordclock/config.py`); with
+the Pi 3B (up to about 1,2 A) that needs a 3 A supply at least. If the
+colours flicker, use the diode trick from the bench test.
 
 ---
 
@@ -221,18 +239,17 @@ diode trick from the bench test.
 1. Bolt the two grid halves together with the three M3 bolts: one in the
    top margin, one in the bottom margin and one on the middle row wall.
 2. Stick the strip rows and solder the joints (section 6).
-3. Screw the Raspberry Pi into the back box (four M2.5 screws) and fit the
-   DC jack in the bottom wall.
+3. Screw the Raspberry Pi into the stand box (four M2.5 screws) and fit
+   the DC jack in the back.
 4. Pass the strip input wires through the slot in the box rim and wire
    them inside the box (section 4).
 5. Screw the box onto the grid bosses with the four M3 × 12 mm screws,
-   from the floor side.
+   from the back.
 6. Run the `wiring` scene (section 8) and check that the cells light in
    order before closing.
 7. Lay the tracing paper over the grid, cut to the outer edge of the walls.
 8. Press the two face halves onto the grid: the skirt hugs the outer wall.
-9. Hang the matrix on two wall screws, 90 mm apart and level, through the
-   keyholes in the box floor.
+9. Stand the matrix on the table and plug in the power cable.
 
 ---
 
@@ -282,9 +299,9 @@ the same code runs on the 16 × 16 word clock later.
 
 ## 9. Build checklist
 
-- [ ] Grid halves, face halves and back box printed (`uv run wordclock-cad --matrix`)
+- [ ] Grid halves, face halves and stand box printed (`uv run wordclock-cad --matrix`)
 - [ ] Grid halves bolted together with three M3 × 16 mm bolts
-- [ ] Raspberry Pi and DC jack fitted in the back box, box screwed on the grid
+- [ ] Raspberry Pi and DC jack fitted in the stand box, box screwed on the grid
 - [ ] Strip cut into 6 pieces of 10 LEDs, stuck in a snake, arrows checked
 - [ ] Five row joints soldered, input wires through the back plate hole
 - [ ] Safety check of [06 — Bench Test](06-bench-test.md) done before powering up
@@ -292,4 +309,4 @@ the same code runs on the 16 × 16 word clock later.
 - [ ] `rainbow` scene shows the right colours
 - [ ] Tracing paper and face fitted
 - [ ] `text`, `clock`, `ip` and `rain` scenes running
-- [ ] Matrix hanging on the wall by the box keyholes
+- [ ] Matrix standing on the table, only the power cable showing
