@@ -2,6 +2,7 @@
 
 | Version | Date       | Description         |
 |---------|------------|---------------------|
+| v0.8.0 | 2026-10-22 | Add parametric enclosure for the IKEA SANNAHED frame |
 | v0.7.0 | 2026-10-21 | Bump the github-actions group with 2 updates |
 | v0.6.1 | 2026-10-21 | Refresh locked dependencies and add Dependabot config |
 | v0.6.0 | 2026-04-26 | [#19] Cleaning the house |
