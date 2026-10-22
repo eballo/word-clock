@@ -7,10 +7,11 @@ for this project. It captures all conventions agreed during development.
 
 ## Project overview
 
-A 16×16 LED word clock (256 WS2812B/WS2811 12 mm bullet pixels) built on a
-Raspberry Pi. Frame: IKEA SANNAHED 50×50 cm (inner opening 48.5 cm),
-LED matrix: 48×48 cm, cell: 3.0 cm. Front panel: 3D-printed on a Bambu Lab A1
-(2×2 tiles), opaque black, interchangeable per language.
+A 16×16 word clock lit by a WS2812B strip (144 LEDs/metre, 4 LEDs per letter,
+1 024 LEDs) built on a Raspberry Pi Zero 2 W. Frame: IKEA SANNAHED 50×50 cm
+(inner opening 48.5 cm, 4 cm depth used), LED matrix: 44.4×44.4 cm, cell:
+2.78 cm. Front panel: 3D-printed on a Bambu Lab A1 (2×2 tiles), opaque black,
+interchangeable per language.
 Supported languages: English, Catalan, Spanish.
 
 **Stack:**
@@ -105,18 +106,20 @@ One short paragraph summarising what this doc covers.
 | Topic | Decision |
 |-------|----------|
 | Frame | IKEA SANNAHED 50 × 50 cm, inner opening 48.5 × 48.5 cm |
-| LED matrix | 48 × 48 cm |
-| Cell size | 3.0 × 3.0 cm |
-| LEDs | 12 mm bullet pixels in a printed light grid (30 LEDs/metre strip does not fit) |
-| LED count | 256 (16 × 16) |
+| LED matrix | 44.4 × 44.4 cm, margins 1.18 cm top, 1.98 cm sides, 2.78 cm bottom |
+| Cell size | 2.78 × 2.78 cm (4 LEDs of a 144 LEDs/metre strip) |
+| LEDs | WS2812B strip, 144 LEDs/metre, stuck on the back plate of the printed light grid |
+| LED count | 256 cells (16 × 16), 1 024 LEDs (4 per cell, snake rows of 64) |
 | Front panel | 3D-printed, opaque black PLA/PETG, Karla Bold Stencil letters, dovetail-joined tiles; only part that changes per language |
 | Diffuser | Tracing paper between the face and the light grid |
-| Raspberry Pi | Pi Zero 2 W in a printed box that hangs under the frame, with Camera Module 3, a push button and a DC jack |
+| Raspberry Pi | Pi Zero 2 W on a printed tray inside the frame, behind the grid (10 mm gap) |
+| Camera | Camera Module 3 behind a 6 mm pinhole in the bottom margin of the face |
+| Button | Momentary button in the bottom rail of the frame, GPIO 3 |
 | Audio | None (no speaker or microphone), so GPIO 18 stays free for the LEDs |
-| Printer | Bambu Lab A1, 2×2 tiles of 24.2 cm |
+| Printer | Bambu Lab A1, 2×2 tiles, joined with dovetails |
 | CAD | OpenSCAD model in `wordclock/cad/`, rendered with `wordclock-cad` |
 | Wiring | Snake (even rows L→R, odd rows R→L) |
-| Power | 5V 10A PSU, inject at row 0 and row 8 |
+| Power | 5V 10A PSU, inject at rows 0, 4, 8 and 12, software LED limit ~6 A |
 | GPIO | GPIO 18 (PWM), level shifter 74AHCT125 |
 | OS | Raspberry Pi OS Lite 64-bit |
 | Auto-start | systemd service |

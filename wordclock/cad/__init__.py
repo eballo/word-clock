@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from wordclock.cad.build import (
+    EXTRA_PARTS,
     FACE_PARTS,
     SCAD_FILE,
     TEST_TILE,
@@ -13,6 +14,7 @@ from wordclock.cad.build import (
 )
 
 __all__ = [
+    "EXTRA_PARTS",
     "FACE_PARTS",
     "SCAD_FILE",
     "TEST_TILE",

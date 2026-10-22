@@ -26,7 +26,8 @@ TEST_TILE: tuple[int, int, int, int] = (0, 4, 0, 4)
 
 FACE_PARTS: tuple[str, ...] = ("face",)
 GRID_PART = "grid"
-PI_PARTS: tuple[str, ...] = ("pibox", "pilid", "pihanger")
+# Single parts that do not depend on the language: camera holder, Pi tray.
+EXTRA_PARTS: tuple[str, ...] = ("camholder", "pitray")
 
 
 @dataclass(frozen=True)
@@ -77,19 +78,19 @@ def plan_jobs(
     languages: list[str],
     out_dir: Path,
     grid: bool = True,
-    pi: bool = True,
+    extras: bool = True,
     test: bool = False,
 ) -> list[RenderJob]:
     """
     List every STL needed for the given languages.
 
-    Face parts depend on the language; grid and Raspberry Pi parts do not.
+    Face parts depend on the language; grid tiles and extra parts do not.
 
     Args:
         languages: Layout names, e.g. ``["catalan"]``.
         out_dir: Directory for the STL files.
         grid: Include the light grid tiles.
-        pi: Include the Raspberry Pi box and lid.
+        extras: Include the camera holder and the Raspberry Pi tray.
         test: Render only the 4x4 test corner instead of the full tiles.
 
     Returns:
@@ -106,8 +107,8 @@ def plan_jobs(
     if grid:
         for name, tile in tiles.items():
             jobs.append(RenderJob(GRID_PART, out_dir / "common" / f"grid_{name}.stl", tile))
-    if pi and not test:
-        for part in PI_PARTS:
+    if extras and not test:
+        for part in EXTRA_PARTS:
             jobs.append(RenderJob(part, out_dir / "common" / f"{part}.stl"))
     return jobs
 

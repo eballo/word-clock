@@ -4,6 +4,10 @@
 // coordinates: x to the right and y up, as seen by someone looking at the
 // clock. Row 0 is the top row of the letter grid.
 //
+// The LEDs are a WS2812B strip with 144 LEDs/metre. Every cell sits over 4
+// LEDs, so the cell pitch is 4 x 6.94 = 27.78 mm. The strips lie on the back
+// plate of the light grid and pass under the walls through small notches.
+//
 // Render a single part from the command line, for example:
 //   openscad -o face.stl -D 'part="face"' -D 'tile=[0,8,0,8]' \
 //            -D 'rows=["ITISA...", ...]' wordclock.scad
@@ -15,7 +19,7 @@
 use <fonts/KarlaBoldStencil.ttf>
 
 /* [Part selection] */
-// face | grid | pibox | pilid | pihanger | assembly | none (library use)
+// face | grid | camholder | pitray | assembly | none (library use)
 part = "grid";
 // Cell range [col_start, col_end, row_start, row_end), end exclusive
 tile = [0, 8, 0, 8];
@@ -31,25 +35,31 @@ show_frame = true;
 inner_size = 485;
 // Total play between the panel and the frame (both sides together)
 clearance = 1.0;
+// Space between the back of the grid and the frame back board, for the
+// Raspberry Pi and the wiring
+back_gap = 10;
 
 /* [Matrix] */
 cells = 16;
-// Distance between LED centres (cell size)
-pitch = 30;
+// WS2812B strip, 144 LEDs/metre
+led_pitch = 1000 / 144;
+leds_per_cell = 4;
+// Extra margin below the matrix (taken from the top) for the hidden camera
+bottom_extra = 16;
 
 /* [Front face] */
 // Opaque black panel with stencil letter holes
 face_t = 2.4;
 font = "Karla:style=Bold Stencil";
 // Cap height of the letters
-cap_height = 16;
+cap_height = 15;
 // Font metrics as a ratio of the font size: capitals, accent top, descender
 cap_ratio = 0.901;
 accent_ratio = 1.25;
 descent_ratio = 0.25;
 
-/* [Face joints] */
-// Dovetail tabs that lock neighbouring face tiles together
+/* [Joints] */
+// Dovetail tabs that lock neighbouring tiles together (face and grid)
 tab_depth = 4;
 tab_neck = 5;
 tab_head = 8;
@@ -61,28 +71,13 @@ paper_t = 0.3;
 /* [Light grid] */
 wall_t = 1.2;
 // Height of the walls between the back plate and the face
-grid_h = 20;
+grid_h = 25;
 back_t = 2;
-// Hole for 12 mm bullet pixels. Set to 0 for a solid back plate.
-led_hole_d = 12;
-// M3 bolt holes that join neighbouring tiles
-bolt_d = 3.4;
-bolt_z = 4;
-
-/* [Raspberry Pi box] */
-// Raspberry Pi Zero 2 W: 65 x 30 mm, holes on a 58 x 23 mm rectangle
-pi_size = [65, 30];
-pi_holes = [58, 23];
-// Inside of the box that hangs under the frame: width, depth, height
-box_inner = [100, 46, 30];
-box_wall = 2;
-// Plate that rises behind the frame and is bolted to the back board
-hanger_h = 45;
-hanger_t = 3;
-// Panel-mount momentary push button on the front
-button_d = 12;
-// Panel-mount DC jack on the left side (check it is rated for 6 A)
-dc_jack_d = 8;
+// Notch at the bottom of every wall the strip passes under
+strip_w = 12;
+strip_notch_h = 3;
+// Ribs in the hollow border, with a notch at the back for the wiring
+rib_notch_h = 8;
 
 /* [Camera] */
 // Raspberry Pi Camera Module 3: 25 x 24 mm board, M2 holes on 21 x 12.5 mm
@@ -92,10 +87,19 @@ cam_holes = [21, 12.5];
 cam_hole_top = 2;
 cam_lens_top = 9.5;
 cam_lens_d = 10;
-// Gap between the inside of the front wall and the camera board
-cam_standoff_h = 4;
-// Height of the lens centre above the bottom of the box
-cam_lens_z = 17;
+// Height of the lens housing above the front of the board
+cam_lens_h = 6.5;
+// Hole in the face in front of the lens
+cam_hole_d = 6;
+holder_t = 1.5;
+
+/* [Raspberry Pi tray] */
+// Raspberry Pi Zero 2 W: 65 x 30 mm, holes on a 58 x 23 mm rectangle
+pi_size = [65, 30];
+pi_holes = [58, 23];
+tray_size = [110, 42];
+tray_t = 2;
+pi_standoff_h = 3;
 
 /* [Letters] */
 rows = [
@@ -105,28 +109,62 @@ rows = [
 $fn = 48;
 
 panel_size = inner_size - clearance;
-border = (panel_size - cells * pitch) / 2;
+pitch = led_pitch * leds_per_cell;
+matrix_size = cells * pitch;
+border_x = (panel_size - matrix_size) / 2;
+border_top = border_x - bottom_extra / 2;
+border_bottom = border_x + bottom_extra / 2;
 font_size = cap_height / cap_ratio;
 // Baseline below the cell centre that centres accents and descenders
 baseline = -(accent_ratio - descent_ratio) * font_size / 2;
 
-assert(border >= 0, "Matrix does not fit: reduce pitch or cells");
+assert(border_top >= 2 * wall_t, "Matrix does not fit: reduce cells or bottom_extra");
 
-// Position of the line between cell k-1 and cell k (k = 0..cells).
-function line_pos(k) = border + k * pitch;
+// Position of grid line k (k = 0..cells), the line between cell k-1 and k.
+function line_x(k) = border_x + k * pitch;
+function line_y(k) = panel_size - border_top - k * pitch;
 
 // Tile edges in front-view coordinates. Outer edges include the border.
-function tile_x0(t) = t[0] == 0 ? 0 : line_pos(t[0]);
-function tile_x1(t) = t[1] == cells ? panel_size : line_pos(t[1]);
-function tile_y1(t) = t[2] == 0 ? panel_size : panel_size - line_pos(t[2]);
-function tile_y0(t) = t[3] == cells ? 0 : panel_size - line_pos(t[3]);
+function tile_x0(t) = t[0] == 0 ? 0 : line_x(t[0]);
+function tile_x1(t) = t[1] == cells ? panel_size : line_x(t[1]);
+function tile_y1(t) = t[2] == 0 ? panel_size : line_y(t[2]);
+function tile_y0(t) = t[3] == cells ? 0 : line_y(t[3]);
 
-function cell_x(c) = line_pos(c) + pitch / 2;
-function cell_y(r) = panel_size - line_pos(r) - pitch / 2;
+function cell_x(c) = line_x(c) + pitch / 2;
+function cell_y(r) = line_y(r) - pitch / 2;
+
+// Camera, centred in the bottom margin, board top edge against the matrix.
+cam_x = panel_size / 2;
+cam_board_top = line_y(cells) - wall_t / 2 - 0.5;
+cam_lens_y = cam_board_top - cam_lens_top;
+// Area of the bottom border kept free of ribs and walls for the camera
+cam_zone = cam_board[0] + 10;
 
 module tile_rect(t) {
     translate([tile_x0(t), tile_y0(t)])
         square([tile_x1(t) - tile_x0(t), tile_y1(t) - tile_y0(t)]);
+}
+
+// --- Joints -----------------------------------------------------------------
+
+// Dovetail pointing +x from a seam at x = 0, centred on y = 0.
+module dovetail(grow = 0) {
+    offset(delta = grow)
+        polygon([[-1, -tab_neck / 2], [tab_depth, -tab_head / 2], [tab_depth, tab_head / 2], [-1, tab_neck / 2]]);
+}
+
+// Joints sit on every other grid line along a seam, where four cell
+// corners meet and there is no letter and no strip.
+function joint_lines(start, end) = [for (k = [start + 2:2:end - 2]) k];
+
+// Tabs on the right and bottom edges, sockets on the left and top edges.
+module joints(t, grow, tabs) {
+    if (tabs ? t[1] != cells : t[0] != 0)
+        for (k = joint_lines(t[2], t[3]))
+            translate([line_x(tabs ? t[1] : t[0]), line_y(k)]) dovetail(grow);
+    if (tabs ? t[3] != cells : t[2] != 0)
+        for (k = joint_lines(t[0], t[1]))
+            translate([line_x(k), line_y(tabs ? t[3] : t[2])]) rotate(-90) dovetail(grow);
 }
 
 // --- Front face -----------------------------------------------------------
@@ -143,26 +181,6 @@ module letters_2d(t) {
 // The tile plus one cell around it, so tabs never cover a neighbour letter.
 function grown_tile(t) = [max(0, t[0] - 1), min(cells, t[1] + 1), max(0, t[2] - 1), min(cells, t[3] + 1)];
 
-// Dovetail pointing +x from a seam at x = 0, centred on y = 0.
-module dovetail(grow = 0) {
-    offset(delta = grow)
-        polygon([[-1, -tab_neck / 2], [tab_depth, -tab_head / 2], [tab_depth, tab_head / 2], [-1, tab_neck / 2]]);
-}
-
-// Joints sit on every other grid line along a seam, where four cell
-// corners meet and there is no letter.
-function joint_lines(start, end) = [for (k = [start + 2:2:end - 2]) k];
-
-// Tabs on the right and bottom edges, sockets on the left and top edges.
-module joints(t, grow, tabs) {
-    if (tabs ? t[1] != cells : t[0] != 0)
-        for (k = joint_lines(t[2], t[3]))
-            translate([line_pos(tabs ? t[1] : t[0]), panel_size - line_pos(k)]) dovetail(grow);
-    if (tabs ? t[3] != cells : t[2] != 0)
-        for (k = joint_lines(t[0], t[1]))
-            translate([line_pos(k), panel_size - line_pos(tabs ? t[3] : t[2])]) rotate(-90) dovetail(grow);
-}
-
 module face_2d(t) {
     difference() {
         union() {
@@ -171,6 +189,7 @@ module face_2d(t) {
         }
         joints(t, joint_gap, tabs = false);
         letters_2d(grown_tile(t));
+        translate([cam_x, cam_lens_y]) circle(d = cam_hole_d);
     }
 }
 
@@ -182,194 +201,154 @@ module face(t) {
 
 // --- Light grid -----------------------------------------------------------
 
-// Walls inside one tile. Outer edges are solid up to the first cell wall.
-// Edges shared with another tile get a full wall, so the seam is a double
-// wall that can be bolted together.
-module grid_walls_2d(t) {
+// Cell area of a tile, extended over the outer cell walls.
+function cells_x0(t) = t[0] == 0 ? line_x(0) - wall_t / 2 : tile_x0(t);
+function cells_x1(t) = t[1] == cells ? line_x(cells) + wall_t / 2 : tile_x1(t);
+function cells_y0(t) = t[3] == cells ? line_y(cells) - wall_t / 2 : tile_y0(t);
+function cells_y1(t) = t[2] == 0 ? line_y(0) + wall_t / 2 : tile_y1(t);
+
+// Wall on grid line k from y0 to y1 (or x0 to x1). Seam walls stay inside
+// their tile, so a seam is a double wall.
+module vwall(t, k, y0, y1) {
+    x = k == t[0] && t[0] != 0 ? line_x(k)
+        : k == t[1] && t[1] != cells ? line_x(k) - wall_t
+        : line_x(k) - wall_t / 2;
+    translate([x, y0]) square([wall_t, y1 - y0]);
+}
+
+module hwall(t, k, x0, x1) {
+    y = k == t[2] && t[2] != 0 ? line_y(k) - wall_t
+        : k == t[3] && t[3] != cells ? line_y(k)
+        : line_y(k) - wall_t / 2;
+    translate([x0, y]) square([x1 - x0, wall_t]);
+}
+
+// Walls around and between the cells.
+module cell_walls_2d(t) {
+    for (k = [t[0]:t[1]]) vwall(t, k, cells_y0(t), cells_y1(t));
+    for (k = [t[2]:t[3]]) hwall(t, k, cells_x0(t), cells_x1(t));
+}
+
+function in_cam_zone(x) = abs(x - cam_x) < cam_zone / 2;
+
+// Perimeter wall, plus seam walls through the border. The bottom border
+// keeps the camera zone free.
+module border_walls_2d(t) {
     x0 = tile_x0(t);
     x1 = tile_x1(t);
     y0 = tile_y0(t);
     y1 = tile_y1(t);
-    outer = border + wall_t / 2;
-    left = t[0] == 0 ? outer : wall_t;
-    right = t[1] == cells ? outer : wall_t;
-    top = t[2] == 0 ? outer : wall_t;
-    bottom = t[3] == cells ? outer : wall_t;
+    if (t[0] == 0) translate([x0, y0]) square([wall_t, y1 - y0]);
+    if (t[1] == cells) translate([x1 - wall_t, y0]) square([wall_t, y1 - y0]);
+    if (t[2] == 0) translate([x0, y1 - wall_t]) square([x1 - x0, wall_t]);
+    if (t[3] == cells) translate([x0, y0]) square([x1 - x0, wall_t]);
 
-    translate([x0, y0]) square([left, y1 - y0]);
-    translate([x1 - right, y0]) square([right, y1 - y0]);
-    translate([x0, y1 - top]) square([x1 - x0, top]);
-    translate([x0, y0]) square([x1 - x0, bottom]);
-
-    for (k = [t[0] + 1:t[1] - 1])
-        translate([line_pos(k) - wall_t / 2, y0]) square([wall_t, y1 - y0]);
-    for (k = [t[2] + 1:t[3] - 1])
-        translate([x0, panel_size - line_pos(k) - wall_t / 2]) square([x1 - x0, wall_t]);
+    seams_x = [for (k = [t[0], t[1]]) if (k != 0 && k != cells) k];
+    seams_y = [for (k = [t[2], t[3]]) if (k != 0 && k != cells) k];
+    if (t[2] == 0) for (k = seams_x) vwall(t, k, cells_y1(t), y1);
+    if (t[3] == cells) for (k = seams_x) if (!in_cam_zone(line_x(k))) vwall(t, k, y0, cells_y0(t));
+    if (t[0] == 0) for (k = seams_y) hwall(t, k, x0, cells_x0(t));
+    if (t[1] == cells) for (k = seams_y) hwall(t, k, cells_x1(t), x1);
 }
 
-// Bolt holes through the seam walls, two per shared edge.
-module seam_bolts(t) {
-    z = back_t + bolt_z;
-    len = 2 * wall_t + 2;
-    bolt_rows = [t[2] + 1, t[3] - 2];
-    bolt_cols = [t[0] + 1, t[1] - 2];
-
-    for (r = bolt_rows) {
-        if (t[0] != 0)
-            translate([tile_x0(t), cell_y(r), z]) rotate([0, 90, 0]) cylinder(d = bolt_d, h = len, center = true);
-        if (t[1] != cells)
-            translate([tile_x1(t), cell_y(r), z]) rotate([0, 90, 0]) cylinder(d = bolt_d, h = len, center = true);
-    }
-    for (c = bolt_cols) {
-        if (t[2] != 0)
-            translate([cell_x(c), tile_y1(t), z]) rotate([90, 0, 0]) cylinder(d = bolt_d, h = len, center = true);
-        if (t[3] != cells)
-            translate([cell_x(c), tile_y0(t), z]) rotate([90, 0, 0]) cylinder(d = bolt_d, h = len, center = true);
+// Rib of the given footprint, with a notch at the back for the wiring.
+module rib(size, along_x) {
+    difference() {
+        cube([size[0], size[1], back_t + grid_h]);
+        if (along_x) translate([2, -1, -1]) cube([size[0] - 4, size[1] + 2, rib_notch_h + 1]);
+        else translate([-1, 2, -1]) cube([size[0] + 2, size[1] - 4, rib_notch_h + 1]);
     }
 }
 
-// Printed back plate down, open side (towards the face) up.
+// Ribs on every other grid line join the perimeter to the cells.
+module ribs(t) {
+    rows_k = [for (k = [t[2] + 1:t[3] - 1]) if (k % 2 == 0) k];
+    cols_k = [for (k = [t[0] + 1:t[1] - 1]) if (k % 2 == 0) k];
+    if (t[0] == 0)
+        for (k = rows_k) translate([0, line_y(k) - wall_t / 2, 0]) rib([cells_x0(t), wall_t], true);
+    if (t[1] == cells)
+        for (k = rows_k) translate([cells_x1(t), line_y(k) - wall_t / 2, 0]) rib([panel_size - cells_x1(t), wall_t], true);
+    if (t[2] == 0)
+        for (k = cols_k) translate([line_x(k) - wall_t / 2, cells_y1(t), 0]) rib([wall_t, panel_size - cells_y1(t)], false);
+    if (t[3] == cells)
+        for (k = cols_k) if (!in_cam_zone(line_x(k))) translate([line_x(k) - wall_t / 2, 0, 0]) rib([wall_t, cells_y0(t)], false);
+}
+
+// Notches where the strips pass under the vertical walls.
+module strip_notches(t) {
+    for (k = [t[0]:t[1]], r = [t[2]:t[3] - 1])
+        translate([line_x(k) - 3, cell_y(r) - strip_w / 2, back_t - 0.01]) cube([6, strip_w, strip_notch_h]);
+}
+
+// Printed back plate down, open side (towards the face) up. The border is
+// open at the back, so the wiring can reach the strip ends and the camera.
 module grid(t) {
     difference() {
         union() {
-            linear_extrude(back_t) tile_rect(t);
-            translate([0, 0, back_t]) linear_extrude(grid_h) grid_walls_2d(t);
-        }
-        if (led_hole_d > 0)
-            for (r = [t[2]:t[3] - 1], c = [t[0]:t[1] - 1])
-                translate([cell_x(c), cell_y(r), -1]) cylinder(d = led_hole_d, h = back_t + 2);
-        seam_bolts(t);
-    }
-}
-
-// --- Raspberry Pi box -----------------------------------------------------
-
-// The box hangs under the bottom edge of the frame. Box coordinates: x is the
-// width, y the depth (y = 0 at the back, against the wall) and z the height
-// (z = 0 at the open bottom, closed by the lid). Seen from the front, x runs
-// from right to left.
-
-module rounded_box(size, r = 3) {
-    linear_extrude(size[2])
-        offset(r) offset(-r) square([size[0], size[1]]);
-}
-
-function box_outer() = [box_inner[0] + 2 * box_wall, box_inner[1] + 2 * box_wall, box_inner[2] + box_wall];
-
-// Corner bosses for the M3 screws that hold the lid.
-function lid_screws() = [[box_wall + 5, box_wall + box_inner[1] - 5], [box_wall + box_inner[0] - 5, box_wall + box_inner[1] - 5]];
-
-// M3 bolts that join the hanger plate to the back wall of the box.
-function hanger_box_bolts() = [[20, box_outer()[2] / 2], [box_outer()[0] - 20, box_outer()[2] / 2]];
-
-// Camera hole positions on the front wall, as [x, z].
-function cam_holes_xz() = [
-    for (dx = [-cam_holes[0] / 2, cam_holes[0] / 2], dz = [0, -cam_holes[1]])
-        [box_outer()[0] / 2 + dx, cam_lens_z + cam_lens_top - cam_hole_top + dz]
-];
-
-module countersunk_m3(depth) {
-    translate([0, 0, -1]) cylinder(d = 3.4, h = depth + 2);
-    translate([0, 0, depth - 1.6]) cylinder(d1 = 3.4, d2 = 6.6, h = 1.61);
-}
-
-// Box body, printed upside down (top on the bed) so that the camera
-// standoffs grow sideways from the front wall.
-module pibox_body() {
-    outer = box_outer();
-    front = outer[1] - box_wall;
-    difference() {
-        rounded_box(outer);
-        translate([box_wall, box_wall, -1]) rounded_box([box_inner[0], box_inner[1], box_inner[2] + 1], 1);
-        // Camera lens, centred on the front
-        translate([outer[0] / 2, front - 1, cam_lens_z]) rotate([-90, 0, 0]) cylinder(d = cam_lens_d, h = box_wall + 2);
-        // Push button on the front, to the right of the camera
-        translate([20, front - 1, outer[2] / 2]) rotate([-90, 0, 0]) cylinder(d = button_d, h = box_wall + 2);
-        // DC jack on the left side
-        translate([outer[0] - box_wall - 1, outer[1] / 2 + 6, outer[2] / 2]) rotate([0, 90, 0]) cylinder(d = dc_jack_d, h = box_wall + 2);
-        // Cable exit in the top, at the back, up into the frame
-        translate([outer[0] / 2 - 10, box_wall, outer[2] - box_wall - 1]) cube([20, 8, box_wall + 2]);
-        // Bolt holes for the hanger plate
-        for (p = hanger_box_bolts())
-            translate([p[0], -1, p[1]]) rotate([-90, 0, 0]) cylinder(d = 3.4, h = box_wall + 2);
-    }
-    // Bosses for the lid screws (M3 self-tapping)
-    for (p = lid_screws())
-        translate([p[0], p[1], 0])
-            difference() {
-                cylinder(d = 7, h = outer[2] - box_wall);
-                translate([0, 0, -1]) cylinder(d = 2.6, h = 15);
+            linear_extrude(back_t) {
+                translate([cells_x0(t), cells_y0(t)]) square([cells_x1(t) - cells_x0(t), cells_y1(t) - cells_y0(t)]);
+                joints(t, 0, tabs = true);
             }
-    // Standoffs for the camera board (M2 self-tapping)
-    for (p = cam_holes_xz())
-        translate([p[0], front - cam_standoff_h, p[1]]) rotate([-90, 0, 0])
-            difference() {
-                cylinder(d = 4.5, h = cam_standoff_h);
-                translate([0, 0, -1]) cylinder(d = 1.8, h = cam_standoff_h + 2);
+            linear_extrude(back_t + grid_h) {
+                cell_walls_2d(t);
+                border_walls_2d(t);
             }
+            ribs(t);
+        }
+        strip_notches(t);
+        // Sockets go through the plate and the bottom of the walls above them
+        translate([0, 0, -1]) linear_extrude(back_t + 1.2) joints(t, joint_gap, tabs = false);
+    }
 }
 
-// Bottom lid that carries the Raspberry Pi. Printed flat, outside face down.
-module pibox_lid() {
-    outer = box_outer();
-    tol = 0.3;
-    lip = 3;
-    standoff_h = 4;
-    pi_origin = [box_wall + box_inner[0] - pi_size[0] - 4, box_wall + 3];
+// --- Camera holder ------------------------------------------------------------
 
+// Plate glued to the back of the face, centred on the pinhole. The camera
+// board screws onto the standoffs with the lens through the plate.
+// Holder coordinates: the lens is at the origin, the face side is z = 0 and
+// the standoffs point to +z.
+module camholder() {
+    w = cam_board[0] + 6;
+    h = cam_board[1];
+    standoff = cam_lens_h - holder_t;
+    holes = [
+        for (dx = [-cam_holes[0] / 2, cam_holes[0] / 2], dy = [0, -cam_holes[1]])
+            [dx, cam_lens_top - cam_hole_top + dy]
+    ];
     difference() {
-        rounded_box([outer[0], outer[1], box_wall]);
-        // Ventilation slots under the Raspberry Pi
-        for (i = [0:3])
-            translate([pi_origin[0] + 8, pi_origin[1] + 6 + i * 6, -1]) cube([pi_size[0] - 16, 2.5, box_wall + 2]);
-        for (p = lid_screws())
-            translate([p[0], p[1], 0]) mirror([0, 0, 1]) translate([0, 0, -box_wall]) countersunk_m3(box_wall);
-    }
-    // Lip that keeps the lid centred in the box, cut around the bosses
-    translate([0, 0, box_wall])
-        difference() {
-            translate([box_wall + tol, box_wall + tol]) rounded_box([box_inner[0] - 2 * tol, box_inner[1] - 2 * tol, lip], 1);
-            translate([box_wall + tol + 1.2, box_wall + tol + 1.2, -1]) rounded_box([box_inner[0] - 2 * tol - 2.4, box_inner[1] - 2 * tol - 2.4, lip + 2], 1);
-            for (p = lid_screws()) translate([p[0], p[1], -1]) cylinder(d = 8, h = lip + 2);
+        union() {
+            translate([-w / 2, cam_lens_top - h, 0]) cube([w, h, holder_t]);
+            for (p = holes) translate([p[0], p[1], 0]) cylinder(d = 4.5, h = holder_t + standoff);
         }
-    // Standoffs for M2.5 self-tapping screws
+        translate([0, 0, -1]) cylinder(d = cam_lens_d, h = holder_t + 2);
+        for (p = holes) translate([p[0], p[1], -1]) cylinder(d = 1.8, h = holder_t + standoff + 2);
+    }
+}
+
+// --- Raspberry Pi tray --------------------------------------------------------
+
+// Tray bolted to the frame back board, behind the grid. The Pi faces the
+// grid; the free area on the right holds the 74AHCT125 board.
+module pitray() {
+    pi_origin = [4, (tray_size[1] - pi_size[1]) / 2];
+    difference() {
+        linear_extrude(tray_t) offset(3) offset(-3) square(tray_size);
+        // Countersunk holes for M3 bolts through the back board
+        for (x = [tray_size[0] - 8, tray_size[0] - 30], y = [8, tray_size[1] - 8])
+            translate([x, y, -1]) {
+                cylinder(d = 3.4, h = tray_t + 2);
+                translate([0, 0, tray_t + 1 - 1.6]) cylinder(d1 = 3.4, d2 = 6.6, h = 1.61);
+            }
+        // Zip-tie slots for the cables
+        for (y = [tray_size[1] / 2 - 8, tray_size[1] / 2 + 5])
+            translate([tray_size[0] - 22, y, -1]) cube([4, 3, tray_t + 2]);
+    }
     for (dx = [0, pi_holes[0]], dy = [0, pi_holes[1]])
-        translate([pi_origin[0] + 3.5 + dx, pi_origin[1] + 3.5 + dy, box_wall])
+        translate([pi_origin[0] + 3.5 + dx, pi_origin[1] + 3.5 + dy, tray_t])
             difference() {
-                cylinder(d = 5.5, h = standoff_h);
-                cylinder(d = 2.2, h = standoff_h + 1);
+                cylinder(d = 5.5, h = pi_standoff_h);
+                cylinder(d = 2.2, h = pi_standoff_h + 1);
             }
-}
-
-// Plate behind the box that rises behind the frame. The lower holes bolt it
-// to the box, the upper holes to the frame back board. All holes are
-// countersunk on the wall side (y < 0).
-module pibox_hanger() {
-    outer = box_outer();
-    translate([0, -hanger_t, 0])
-        difference() {
-            cube([outer[0], hanger_t, outer[2] + hanger_h]);
-            for (p = concat(hanger_box_bolts(), [[15, outer[2] + hanger_h - 12], [outer[0] - 15, outer[2] + hanger_h - 12]]))
-                translate([p[0], 0, p[1]]) rotate([-90, 0, 0]) countersunk_m3_from_back(hanger_t);
-        }
-}
-
-// Countersunk M3 hole along +z with the countersink at z = 0.
-module countersunk_m3_from_back(depth) {
-    translate([0, 0, depth]) mirror([0, 0, 1]) countersunk_m3(depth);
-}
-
-module pibox() {
-    translate([0, box_outer()[1], box_outer()[2]]) rotate([180, 0, 0]) pibox_body();
-}
-
-module pilid() {
-    pibox_lid();
-}
-
-// Printed flat on the bed.
-module pihanger() {
-    rotate([90, 0, 0]) translate([0, hanger_t, 0]) pibox_hanger();
 }
 
 // --- Assembly view ----------------------------------------------------------
@@ -382,28 +361,24 @@ module assembly() {
     paper_z = grid_top + explode / 2;
     face_z = grid_top + explode;
 
-    color("ivory") translate([0, 0, paper_z]) cube([panel_size, panel_size, paper_t]);
     for (t = tiles) {
         color("white") grid(t);
         color("#1a1a1a") translate([0, 0, face_z]) linear_extrude(face_t) face_2d(t);
     }
-    // Back board of the frame, behind the pixel tails
-    back_z = -18;
-    frame_wall = (500 - inner_size) / 2;
-    frame_bottom = -clearance / 2 - frame_wall;
-    // Box coordinates (x, depth, height) to front view (-x, height, depth)
-    translate([panel_size / 2 + box_outer()[0] / 2, frame_bottom - box_outer()[2], back_z])
-        multmatrix([[-1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0]]) {
-            color("dimgray") pibox_body();
-            color("gray") translate([0, 0, -explode / 2]) pibox_lid();
-            color("gray") translate([0, -explode / 2, 0]) pibox_hanger();
-        }
+    // LED strips, one per row
+    for (r = [0:cells - 1])
+        color("seagreen") translate([line_x(0), cell_y(r) - 5, back_t]) cube([matrix_size, 10, 1.5]);
+    color("ivory") translate([line_x(0), line_y(cells), paper_z]) cube([matrix_size, matrix_size, paper_t]);
+    color("dimgray") translate([cam_x, cam_lens_y, face_z]) mirror([0, 0, 1]) camholder();
+    color("gray") translate([cam_x - tray_size[0] / 2, line_y(cells) + 20, -back_gap - explode / 2]) pitray();
+
     if (show_frame) {
+        frame_wall = (500 - inner_size) / 2;
         color("burlywood", 0.35)
-            translate([-clearance / 2 - frame_wall, -clearance / 2 - frame_wall, back_z])
+            translate([-clearance / 2 - frame_wall, -clearance / 2 - frame_wall, -back_gap])
                 difference() {
-                    cube([500, 500, 60]);
-                    translate([frame_wall, frame_wall, -1]) cube([inner_size, inner_size, 62]);
+                    cube([500, 500, 50]);
+                    translate([frame_wall, frame_wall, -1]) cube([inner_size, inner_size, 52]);
                 }
     }
 }
@@ -412,8 +387,7 @@ module assembly() {
 
 if (part == "face") face(tile);
 else if (part == "grid") grid(tile);
-else if (part == "pibox") pibox();
-else if (part == "pilid") pilid();
-else if (part == "pihanger") pihanger();
+else if (part == "camholder") camholder();
+else if (part == "pitray") pitray();
 else if (part == "assembly") assembly();
 else if (part != "none") assert(false, str("Unknown part: ", part));

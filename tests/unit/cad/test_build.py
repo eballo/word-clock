@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from wordclock.cad import (
+    EXTRA_PARTS,
     FACE_PARTS,
     SCAD_FILE,
     TEST_TILE,
@@ -56,7 +57,7 @@ class TestScadCommand:
 
     def test_omits_tile_and_rows_when_not_set(self) -> None:
         # Given
-        job = RenderJob("pibox", Path("out/pibox.stl"))
+        job = RenderJob("pitray", Path("out/pitray.stl"))
         # When
         cmd = scad_command(job, openscad="/opt/bin/openscad")
         # Then
@@ -70,15 +71,15 @@ class TestPlanJobs:
         out = Path("build")
         # When
         jobs = plan_jobs(["catalan"], out)
-        # Then: face parts per tile, one grid per tile, Pi box, lid and hanger
-        assert len(jobs) == len(TILES) * len(FACE_PARTS) + len(TILES) + 3
-        assert RenderJob("pibox", out / "common" / "pibox.stl") in jobs
+        # Then: face parts per tile, one grid per tile, camera holder and Pi tray
+        assert len(jobs) == len(TILES) * len(FACE_PARTS) + len(TILES) + len(EXTRA_PARTS)
+        assert RenderJob("pitray", out / "common" / "pitray.stl") in jobs
 
     def test_face_jobs_carry_language_rows(self) -> None:
         # Given
         out = Path("build")
         # When
-        jobs = plan_jobs(["english"], out, grid=False, pi=False)
+        jobs = plan_jobs(["english"], out, grid=False, extras=False)
         # Then
         assert all(job.rows is not None and len(job.rows) == 16 for job in jobs)
         assert all(job.output.parent == out / "english" for job in jobs)
@@ -88,7 +89,7 @@ class TestPlanJobs:
         out = Path("build")
         # When
         jobs = plan_jobs(["spanish"], out, test=True)
-        # Then: no Pi box, every job uses the 4x4 corner
+        # Then: no extra parts, every job uses the 4x4 corner
         assert len(jobs) == len(FACE_PARTS) + 1
         assert all(job.tile == TEST_TILE for job in jobs)
 

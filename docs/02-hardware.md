@@ -2,8 +2,8 @@
 
 ## Overview
 
-The clock is built around a 16×16 matrix of individually addressable WS2812B LEDs mounted inside an IKEA SANNAHED 50×50 cm frame.
-A 3D-printed front panel with letter-shaped holes sits in front of a 3D-printed light grid that holds one pixel per cell.
+The clock is built around a 16×16 matrix of letters lit by a WS2812B LED strip (144 LEDs/metre, 4 LEDs per letter) inside an IKEA SANNAHED 50×50 cm frame.
+A 3D-printed front panel with letter-shaped holes sits in front of a 3D-printed light grid that holds the strips.
 Only the letters that correspond to the current time are lit up, so only those letters are visible through the panel.
 
 ---
@@ -16,8 +16,8 @@ Only the letters that correspond to the current time are lit up, so only those l
 │ ┌─────────────────────────────────────────┐ │
 │ │                                         │ │
 │ │           LED matrix                    │ │ 50 cm
-│ │           48,0 × 48,0 cm                │ │
-│ │           16 × 16 = 256 LEDs            │ │
+│ │           44,4 × 44,4 cm                │ │
+│ │           16 × 16 cells, 4 LEDs each    │ │
 │ │                                         │ │
 │ └─────────────────────────────────────────┘ │
 │       inner opening 48,5 × 48,5 cm          │
@@ -26,13 +26,14 @@ Only the letters that correspond to the current time are lit up, so only those l
 
 | Measurement | Value |
 |-------------|-------|
-| Frame (total) | 50 × 50 cm (IKEA SANNAHED) |
+| Frame (total) | 50 × 50 cm, 5 cm deep (IKEA SANNAHED) |
 | Frame inner opening | 48,5 × 48,5 cm |
+| Depth used | 4 cm |
 | Panel size | 48,4 × 48,4 cm |
-| LED matrix area | 48,0 × 48,0 cm |
-| Cell size | 3,0 × 3,0 cm |
-| Letter size (cap height) | 16 mm |
-| Grid | 16 × 16 = 256 LEDs |
+| LED matrix area | 44,4 × 44,4 cm |
+| Cell size | 2,78 × 2,78 cm |
+| Letter size (cap height) | 15 mm |
+| Grid | 16 × 16 cells = 1 024 LEDs (4 per cell) |
 
 See [05 — Enclosure](05-enclosure.md) for the printed parts.
 
@@ -40,58 +41,61 @@ See [05 — Enclosure](05-enclosure.md) for the printed parts.
 
 ## Components
 
-### LED pixels
+### LED strip
 
 A 30 LEDs/metre strip has a fixed 3,33 cm pitch: 16 LEDs need 53,3 cm and do
-not fit in the frame. The clock uses individual 12 mm bullet pixels instead,
-pushed into the back plate of the light grid at a 3,0 cm pitch.
+not fit in the frame. A 144 LEDs/metre strip has a 6,94 mm pitch, so four
+LEDs make one 2,78 cm cell. Four LEDs per letter also light it more evenly.
 
 | Parameter | Value |
 |-----------|-------|
-| Model | 12 mm bullet pixel, WS2811 or WS2812B |
+| Model | WS2812B, 144 LEDs/metre, 10 mm wide, IP30 |
 | Voltage | 5V DC |
-| Pitch | 3,0 cm (set by the light grid) |
-| Pixels needed | 256 (16 × 16), e.g. 6 strings of 50 |
-| Wire between pixels | 5–10 cm (spare wire folds behind the grid) |
+| LEDs per cell | 4 |
+| LEDs needed | 1 024 (16 rows × 64) |
+| Strip needed | 8 reels of 1 m (2 rows per reel) |
 
-The pixels are wired in a snake pattern — left to right on even rows, right to left on odd rows.
+The rows are wired in a snake pattern — left to right on even rows, right to left on odd rows.
 
 ```
-row  0 →  LED   0 ..  15   (left → right)
-row  1 ←  LED  16 ..  31   (right → left)
-row  2 →  LED  32 ..  47   (left → right)
+row  0 →  LED   0 ..   63   (left → right)
+row  1 ←  LED  64 ..  127   (right → left)
+row  2 →  LED 128 ..  191   (left → right)
 ...
-row 15 ←  LED 240 .. 255   (right → left)
+row 15 ←  LED 960 .. 1023   (right → left)
 ```
 
 ### 3D-printed front panel and light grid
 
 The front panel is a 2,4 mm opaque black face with stencil letter holes
 (Karla Bold Stencil), with a sheet of tracing paper behind it to diffuse
-the light. Behind the paper, a white light grid with 20 mm
-walls isolates each cell so light does not bleed into the neighbouring
-letters.
+the light. Behind the paper, a white light grid with 25 mm walls isolates
+each cell so light does not bleed into the neighbouring letters. The strips
+lie on the back plate of the grid.
 
 | Parameter | Value |
 |-----------|-------|
 | Panel size | 48,4 × 48,4 cm |
-| Cell size | 3,0 × 3,0 cm |
-| Letter size | 16 mm cap height, Karla Bold Stencil |
+| Cell size | 2,78 × 2,78 cm |
+| Letter size | 15 mm cap height, Karla Bold Stencil |
 | Grid wall | 1,2 mm |
-| Grid depth | 20 mm + 2 mm back plate |
+| Grid depth | 25 mm + 2 mm back plate |
 | Filament | Black PLA/PETG (face), white PLA (grid) |
-| Diffuser | Tracing paper, 48,4 × 48,4 cm |
+| Diffuser | Tracing paper, 45,5 × 45,5 cm |
 
-> **Note:** Every part is printed in a 2×2 split of 24,2 × 24,2 cm tiles to fit
+> **Note:** The face and the grid are printed in a 2×2 split of tiles to fit
 > the Bambu Lab A1 bed. Seams fall on the walls between cells.
 
 ### Raspberry Pi
 
-Any Raspberry Pi with GPIO support will work. The LED strip data line connects to **GPIO 18** (PWM).
+The clock uses a Raspberry Pi Zero 2 W, which fits inside the frame behind the grid. The LED strip data line connects to **GPIO 18** (PWM). The Camera Module 3 uses the camera connector and the push button uses GPIO 3.
 
 | Parameter | Value |
 |-----------|-------|
+| Model | Raspberry Pi Zero 2 W, no pin header |
 | GPIO pin | GPIO 18 (PWM) |
+| Button | GPIO 3 to GND (also wakes the Pi from halt) |
+| Camera | Camera Module 3, Pi Zero camera cable |
 | Protocol | WS2812B (800 kHz) |
 | Logic level | 3,3V → 5V level shifter recommended |
 
@@ -99,13 +103,22 @@ Any Raspberry Pi with GPIO support will work. The LED strip data line connects t
 
 ### Power supply
 
-With 256 LEDs at a maximum of 60 mA each (full white), the theoretical peak draw is ~15A at 5V. In practice, a word clock never lights all LEDs at once — typical usage lights 20–40 LEDs at a time.
+With 1 024 LEDs at a maximum of 60 mA each (full white), the theoretical peak draw is ~60 A at 5V. In practice, a word clock never lights all LEDs at once: a typical sentence lights 25–35 letters, or 100–140 LEDs. The software limits the LED current to stay within the supply.
+
+| Load | Current at 5V |
+|------|---------------|
+| 35 letters, full white (140 LEDs) | ~8,4 A (limited by software) |
+| 35 letters, one colour | ~2,8 A |
+| Idle LEDs (1 024 × ~0,5–1 mA) | ~0,5–1 A |
+| Raspberry Pi Zero 2 W + camera | ~0,6–1 A |
 
 | Parameter | Value |
 |-----------|-------|
 | Voltage | 5V DC |
 | Recommended supply | 5V 10A (50W) |
-| Connector | Power the strip directly from the PSU, not through the Raspberry Pi |
+| LED current limit | ~6 A (software) |
+| Power injection | Rows 0, 4, 8 and 12 |
+| Connector | Panel-mount DC jack rated for 10 A. Power the strip directly from the PSU, not through the Raspberry Pi |
 
 > **Important:** Always power the LED strip directly from the power supply. Never draw more than 2–3A through the Raspberry Pi's GPIO pins.
 
@@ -116,8 +129,8 @@ With 256 LEDs at a maximum of 60 mA each (full white), the theoretical peak draw
 ```
                     5V PSU (10A)
                    ┌────────────┐
-                   │ + (5V)     ├──────────────────── LED strip VCC (red)
-                   │ - (GND)    ├──────────────────── LED strip GND (black)
+                   │ + (5V)     ├──────────────────── LED strip VCC (rows 0, 4, 8, 12)
+                   │ - (GND)    ├──────────────────── LED strip GND (rows 0, 4, 8, 12)
                    └──────┬─────┘
                           │ GND
                    ┌──────┴─────┐
@@ -133,18 +146,19 @@ With 256 LEDs at a maximum of 60 mA each (full white), the theoretical peak draw
 
 | # | Component | Specification |
 |---|-----------|---------------|
-| 1 | Bullet pixels | 12 mm, WS2811/WS2812B, 5V, 256 units |
-| 2 | Raspberry Pi | Pi Zero 2 W (fits the printed box) or any model with GPIO |
+| 1 | LED strip | WS2812B, 144 LEDs/metre, 5V, IP30, 8 reels of 1 m |
+| 2 | Raspberry Pi | Pi Zero 2 W (fits inside the frame) |
 | 3 | Power supply | 5V 10A (50W) |
 | 4 | Level shifter | 3,3V → 5V (e.g. 74AHCT125) |
 | 5 | Frame | IKEA SANNAHED 50 × 50 cm |
-| 6 | 3D-printed parts | Face, light grid, Pi box (see 05 — Enclosure) |
-| 7 | Bolts | 8 × M3 × 8 mm with nuts (grid seams) |
-| 8 | JST connectors | For joining pixel strings |
-| 9 | Wire | 3-core, 22 AWG |
+| 6 | 3D-printed parts | Face, light grid, camera holder, Pi tray (see 05 — Enclosure) |
+| 7 | Bolts | 4 × M3 countersunk with nuts (Pi tray) |
+| 8 | Power wire | 2-core, 18 AWG (power injection) |
+| 9 | Wire | 3-core, 22 AWG (row jumpers) |
 | 10 | MicroSD card | For Raspberry Pi OS (16 GB minimum) |
-| 11 | Tracing paper | 90 g/m², 48,4 × 48,4 cm (light diffuser) |
+| 11 | Tracing paper | 90 g/m², 45,5 × 45,5 cm (light diffuser) |
 | 12 | Camera | Raspberry Pi Camera Module 3 + Pi Zero camera cable |
-| 13 | Push button | 12 mm panel-mount momentary button |
+| 13 | Push button | 7–12 mm panel-mount momentary button |
+| 14 | DC jack | Panel-mount, rated for 10 A |
 
 ---
