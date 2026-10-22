@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from logging import getLogger
 from pathlib import Path
 
-from wordclock.cad.bambu import write_project
+from wordclock.cad.bambu import count_bodies, read_stl, write_project
 from wordclock.layouts.utils.layout import load_grid
 
 logger = getLogger(__name__)
@@ -222,6 +222,20 @@ def render(job: RenderJob, openscad: str = "openscad") -> Path:
         raise RuntimeError(f"OpenSCAD failed for {job.output}:\n{result.stderr}")
     logger.info("Rendered %s", job.output)
     return job.output
+
+
+def find_loose_parts(paths: list[Path]) -> dict[Path, int]:
+    """
+    Find STL files that contain more than one solid body.
+
+    Args:
+        paths: Rendered STL files.
+
+    Returns:
+        Each file with loose parts and its number of bodies.
+    """
+    counts = {path: count_bodies(read_stl(path)) for path in paths}
+    return {path: n for path, n in counts.items() if n != 1}
 
 
 def render_all(jobs: list[RenderJob], openscad: str = "openscad", workers: int = 4) -> list[Path]:

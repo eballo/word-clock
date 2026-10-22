@@ -135,6 +135,9 @@ uv run wordclock-cad --lang catalan          # one language
 uv run wordclock-cad --test --lang catalan   # 4 × 4 test corner only
 ```
 
+After rendering, the tool checks that every STL file is a single solid
+body and stops with an error if a part has loose pieces.
+
 STL files are written to `build/stl/`, and Bambu Studio projects for the
 Bambu Lab A1 to `build/bambu/`, with one part per plate:
 
@@ -261,7 +264,8 @@ The face and the grid hold together with neodymium disc magnets, 5 × 2 mm,
 so the face stays aligned while you handle the clock and comes off in one
 move to change the language. Each outer tile has one magnet pair per outer
 edge, in the margin: a boss on the back of the face (so the magnet is
-hidden from the front) and a post in the hollow margin of the grid. The
+hidden from the front) and a post in the hollow margin of the grid, tied
+to the perimeter wall and the cells by a rib. The
 centre tile has no margin and is held by its dovetails.
 
 | Item | Value |

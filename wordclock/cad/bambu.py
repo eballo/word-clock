@@ -103,6 +103,34 @@ def _binary_corners(data: bytes) -> list[tuple[float, float, float]]:
     return corners
 
 
+def count_bodies(mesh: Mesh) -> int:
+    """
+    Count the separate solid bodies in a mesh.
+
+    Triangles that share a vertex belong to the same body. A printed part
+    should have exactly one; more means a loose piece in the model.
+
+    Args:
+        mesh: Indexed mesh, e.g. from :func:`read_stl`.
+
+    Returns:
+        Number of separate bodies.
+    """
+    parent = list(range(len(mesh.vertices)))
+
+    def find(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for a, b, c in mesh.triangles:
+        root = find(a)
+        parent[find(b)] = root
+        parent[find(c)] = root
+    return len({find(a) for triangle in mesh.triangles for a in triangle})
+
+
 def centred(mesh: Mesh) -> Mesh:
     """
     Move a mesh so its footprint is centred on the origin and it rests on z = 0.

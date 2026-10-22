@@ -7,7 +7,13 @@ from typing import Annotated
 
 import typer
 
-from wordclock.cad.build import plan_jobs, render_all, write_bambu_projects, write_preview
+from wordclock.cad.build import (
+    find_loose_parts,
+    plan_jobs,
+    render_all,
+    write_bambu_projects,
+    write_preview,
+)
 from wordclock.layouts.utils.layout import Layout
 
 app = typer.Typer()
@@ -51,10 +57,15 @@ def main(
     jobs = plan_jobs(languages, out, grid=grid, extras=extras, optional=optional, test=test)
     typer.echo(f"Rendering {len(jobs)} STL files into {out}/ ...")
     try:
-        render_all(jobs, openscad=openscad, workers=workers)
+        paths = render_all(jobs, openscad=openscad, workers=workers)
     except RuntimeError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1) from exc
+    loose = find_loose_parts(paths)
+    for path, bodies in loose.items():
+        typer.echo(f"Loose parts: {path} has {bodies} separate bodies", err=True)
+    if loose:
+        raise typer.Exit(1)
     for project in write_bambu_projects(languages, out, out.parent / "bambu"):
         typer.echo(f"Bambu Studio project: {project}")
     typer.echo("Done.")

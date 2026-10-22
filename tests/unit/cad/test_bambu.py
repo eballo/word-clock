@@ -10,6 +10,7 @@ from wordclock.cad.bambu import (
     PLATE_STRIDE,
     Mesh,
     centred,
+    count_bodies,
     plate_origin,
     read_stl,
     write_project,
@@ -50,6 +51,23 @@ class TestReadStl:
         # Then
         assert len(mesh.vertices) == 4
         assert mesh.triangles == [(0, 1, 2), (0, 2, 3)]
+
+
+class TestCountBodies:
+    def test_one_body_when_triangles_share_vertices(self, square_stl: Path) -> None:
+        # Given: a square made of two triangles
+        mesh = read_stl(square_stl)
+        # When / Then
+        assert count_bodies(mesh) == 1
+
+    def test_counts_separate_pieces(self) -> None:
+        # Given: two triangles with no shared vertex
+        mesh = Mesh(
+            [(0, 0, 0), (1, 0, 0), (0, 1, 0), (5, 5, 0), (6, 5, 0), (5, 6, 0)],
+            [(0, 1, 2), (3, 4, 5)],
+        )
+        # When / Then
+        assert count_bodies(mesh) == 2
 
 
 class TestCentred:

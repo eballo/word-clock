@@ -355,9 +355,9 @@ module border_walls_2d(t) {
 }
 
 // Rib of the given footprint, with a notch at the back for the wiring.
-module rib(size, along_x) {
+module rib(size, along_x, h = back_t + grid_h) {
     difference() {
-        cube([size[0], size[1], back_t + grid_h]);
+        cube([size[0], size[1], h]);
         if (along_x) translate([2, -1, -1]) cube([size[0] - 4, size[1] + 2, rib_notch_h + 1]);
         else translate([-1, 2, -1]) cube([size[0] + 2, size[1] - 4, rib_notch_h + 1]);
     }
@@ -392,6 +392,23 @@ module seam_bolts(t) {
             translate([line_x(k) + bolt_offset, line_y(seam), z]) rotate([90, 0, 0]) cylinder(d = bolt_d, h = len, center = true);
 }
 
+// Ribs through the magnet posts, from the perimeter wall to the cells, so
+// the posts are part of the grid. As low as the posts, to clear the face
+// bosses.
+module magnet_ribs(t) {
+    h = back_t + grid_h - magnet_boss_h;
+    for (p = magnet_positions(t)) {
+        if (p[1] > line_y(0))
+            translate([p[0] - wall_t / 2, cells_y1(t), 0]) rib([wall_t, panel_size - cells_y1(t)], false, h);
+        else if (p[1] < line_y(cells))
+            translate([p[0] - wall_t / 2, 0, 0]) rib([wall_t, cells_y0(t)], false, h);
+        else if (p[0] < line_x(0))
+            translate([0, p[1] - wall_t / 2, 0]) rib([cells_x0(t), wall_t], true, h);
+        else
+            translate([cells_x1(t), p[1] - wall_t / 2, 0]) rib([panel_size - cells_x1(t), wall_t], true, h);
+    }
+}
+
 // Notches where the strips pass under the vertical walls.
 module strip_notches(t) {
     for (k = [t[0]:t[1]], r = [t[2]:t[3] - 1])
@@ -416,6 +433,7 @@ module grid(t) {
             // Magnet posts, their tops leave room for the face bosses
             for (p = magnet_positions(t))
                 translate([p[0], p[1], 0]) cylinder(d = magnet_post_d, h = back_t + grid_h - magnet_boss_h);
+            magnet_ribs(t);
         }
         for (p = magnet_positions(t))
             translate([p[0], p[1], 0]) magnet_pocket(back_t + grid_h - magnet_boss_h);
