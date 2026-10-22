@@ -159,7 +159,7 @@ class TestStencilFont:
 
 
 class TestWriteBambuProjects:
-    def test_grid_project_prints_the_spacer_four_times(self, tmp_path: Path) -> None:
+    def test_grid_project_prints_each_ring_four_times(self, tmp_path: Path) -> None:
         # Given: a tiny STL for every grid tile and extra part
         stl = "\n".join(
             ["solid s", "facet normal 0 0 1", "outer loop", "vertex 0 0 0", "vertex 1 0 0"]
@@ -171,8 +171,9 @@ class TestWriteBambuProjects:
             (common / f"{name}.stl").write_text(stl, encoding="ascii")
         # When
         projects = write_bambu_projects([], tmp_path / "stl", tmp_path / "bambu")
-        # Then: one plate per grid tile, four spacers, the other extra parts
+        # Then: one plate per grid tile, four per ring, the other extra parts
         with zipfile.ZipFile(projects[0]) as zf:
             settings = zf.read("Metadata/model_settings.config").decode()
-        assert settings.count("<plate>") == len(TILES) + 4 + len(EXTRA_PARTS) - 1
+        assert settings.count("<plate>") == len(TILES) + 2 * 4 + len(EXTRA_PARTS) - 2
         assert settings.count('key="plater_name" value="spacer"') == 4
+        assert settings.count('key="plater_name" value="recess"') == 4

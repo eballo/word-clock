@@ -19,7 +19,7 @@
 use <fonts/KarlaBoldStencil.ttf>
 
 /* [Part selection] */
-// face | grid | spacer | screenfront | screenback | screenhanger | pitray | assembly | pieces |
+// face | grid | spacer | recess | screenfront | screenback | screenhanger | pitray | assembly | pieces |
 // none (library use)
 part = "grid";
 // Cell range [col_start, col_end, row_start, row_end), end exclusive
@@ -41,7 +41,12 @@ inner_size = 485;
 clearance = 1.0;
 // Inside depth of the frame with its back board in place, from the back
 // board to the front lip
-frame_depth = 40;
+frame_depth = 50;
+// How far the face sits behind the front lip. A black ring of this depth
+// fills the gap between the lip and the face margins.
+recess = 10;
+// Width of that ring, from the panel edge inwards (less than the margin)
+recess_w = 8;
 // The frame's plastic front sheet, behind the front lip (0 = not used)
 front_sheet_t = 0;
 
@@ -194,7 +199,8 @@ $fn = 48;
 panel_size = inner_size - clearance;
 // Space between the back of the grid and the frame back board, for the
 // wiring and the spacer
-back_gap = frame_depth - front_sheet_t - face_t - paper_t - back_t - grid_h;
+back_gap = frame_depth - front_sheet_t - recess - face_t - paper_t - back_t - grid_h;
+assert(recess == 0 || recess_w < border_x - 2, "recess_w must leave the letters clear");
 assert(back_gap >= 8, "Not enough depth behind the grid for the wiring: lower grid_h");
 pitch = led_pitch * leds_per_cell;
 matrix_size = cells * pitch;
@@ -464,16 +470,23 @@ module grid(t) {
 // One quarter of the spacer ring: an L along two edges of the panel, from a
 // corner to the middle of each edge. Four identical pieces make the ring;
 // each one's tab locks into the next one's socket.
-module spacer_2d() {
+// One quarter of a ring of width w along the panel edges. The dovetail
+// shrinks with narrow rings so it never cuts through the arm.
+module ring_quarter_2d(w) {
     c = panel_size / 2;
+    k = min(1, w / (2 * tab_head));
     difference() {
         union() {
-            square([c, spacer_w]);
-            square([spacer_w, c]);
-            translate([c, spacer_w / 2]) dovetail(0);
+            square([c, w]);
+            square([w, c]);
+            translate([c, w / 2]) scale(k) dovetail(0);
         }
-        translate([spacer_w / 2, c]) rotate(-90) dovetail(joint_gap);
+        translate([w / 2, c]) rotate(-90) offset(delta = joint_gap) scale(k) dovetail(0);
     }
+}
+
+module spacer_2d() {
+    ring_quarter_2d(spacer_w);
 }
 
 // Printed flat, back board side down, cable grooves on top.
@@ -494,6 +507,19 @@ module spacer_ring() {
     c = panel_size / 2;
     for (a = [0, 90, 180, 270])
         translate([c, c, -back_gap]) rotate(a) translate([-c, -c, 0]) spacer();
+}
+
+// One quarter of the black recess ring between the front lip and the face.
+// Printed flat; print it four times, in black.
+module recess_piece() {
+    linear_extrude(recess - spacer_fit) ring_quarter_2d(recess_w);
+}
+
+// The four pieces in front of the face (assembly view).
+module recess_ring(z) {
+    c = panel_size / 2;
+    for (a = [0, 90, 180, 270])
+        translate([c, c, z]) rotate(a) translate([-c, -c, 0]) recess_piece();
 }
 
 // --- Camera bracket ---------------------------------------------------------
@@ -763,6 +789,7 @@ module assembly() {
         color("seagreen") translate([line_x(0), cell_y(r) - 5, back_t]) cube([matrix_size, 10, 1.5]);
     color("ivory") translate([line_x(0), line_y(cells), paper_z]) cube([matrix_size, matrix_size, paper_t]);
     color("gray") translate([0, 0, -explode / 2]) spacer_ring();
+    if (recess > 0) color("#1a1a1a") recess_ring(face_z + face_t + explode / 2);
     // Screen module centred under the frame, its back against the wall
     translate([panel_size / 2 - screen_outer()[0] / 2, -clearance / 2 - (500 - inner_size) / 2 - screen_gap - screen_outer()[1],
                -back_gap + screen_total_depth() + (screen_hang ? screen_hanger_t : 0)])
@@ -824,6 +851,7 @@ module pieces() {
 if (part == "face") face(tile);
 else if (part == "grid") grid(tile);
 else if (part == "spacer") spacer();
+else if (part == "recess") recess_piece();
 else if (part == "screenfront") screenfront();
 else if (part == "screenback") screenback();
 else if (part == "screenhanger") screenhanger();

@@ -37,7 +37,8 @@ same margin on every side.
 | Measurement | Value |
 |-------------|-------|
 | Frame (outer) | 50 × 50 cm |
-| Frame inside depth | 40 mm, from the back board to the front lip |
+| Frame inside depth | 50 mm, from the back board to the front lip |
+| Face recess | 10 mm behind the front lip, held by a black ring |
 | Frame inner opening | 48,5 × 48,5 cm |
 | Panel size | 48,4 × 48,4 cm |
 | Cell pitch | 2,78 cm (4 LEDs of a 144 LEDs/metre strip) |
@@ -54,6 +55,7 @@ same margin on every side.
      │
      ▼
 ┌──────────────────────────┐  SANNAHED front lip (plastic sheet not used)
+│▓▓                      ▓▓│  recess ring 9,8 mm, black, along the edges
 ├──────────────────────────┤  face        2,4 mm  black, stencil letter holes
 ├──────────────────────────┤  paper       tracing paper, diffuses the light
 │ │    │    │    │    │    │  light grid  25 mm walls, white
@@ -65,17 +67,19 @@ same margin on every side.
 
 | Layer | Thickness | Colour / material |
 |-------|-----------|-------------------|
+| Recess ring | 9,8 mm | Opaque black PLA |
 | Face | 2,4 mm | Opaque black PLA/PETG |
 | Paper diffuser | ~0,1 mm | Tracing paper, 90 g/m² |
 | Light grid + back plate | 27 mm | White PLA (reflects light) |
 | Spacer ring (wiring inside) | 10,1 mm | White or black PLA |
-| **Total** | **40 mm** | |
+| **Total** | **50 mm** (0,4 mm of play) | |
 
-The spacer ring fills the depth that is left, so the back board presses
-the whole stack against the front lip and nothing rattles. Its thickness
-comes from `frame_depth` (40 mm) and `front_sheet_t` (0 mm: the frame's
-plastic sheet is not used). If you add the sheet, set its thickness and
-render again.
+The face sits 10 mm behind the front lip, which gives the clock some
+depth. The black recess ring fills those 10 mm along the edges, and the
+spacer ring fills what is left behind the grid, so the back board presses
+the whole stack against the front lip and nothing rattles. Both come from
+`frame_depth` (50 mm), `recess` (10 mm) and `front_sheet_t` (0 mm: the
+frame's plastic sheet is not used). Change them and render again.
 
 ---
 
@@ -86,6 +90,7 @@ render again.
 | `<lang>/face_rXcY.stl` | 9 | yes | Black face with stencil letter holes |
 | `common/grid_rXcY.stl` | 9 | no | Light grid that isolates each cell and holds the LED strips |
 | `common/spacer.stl` | 4 | no | Quarter of the spacer ring behind the grid (print it four times) |
+| `common/recess.stl` | 4 | no | Quarter of the black recess ring in front of the face (print it four times, in black) |
 | `common/screenfront.stl` | 1 | no | Screen module: bezel and walls, camera above the screen |
 | `common/screenback.stl` | 1 | no | Screen module: back cover with keyholes |
 | `common/screenhanger.stl` | 1 | no | Screen module: hanger plate bolted to the frame |
@@ -151,7 +156,7 @@ Bambu Lab A1 to `build/bambu/`, with one part per plate:
 | Project | Plates | Settings per part |
 |---------|--------|-------------------|
 | `face_<lang>.3mf` | 9 face tiles of one language | 100% infill |
-| `grid.3mf` | 9 grid tiles + 4 spacer pieces + screen module | 3 walls, 15% infill |
+| `grid.3mf` | 9 grid tiles + 4 spacer + 4 recess pieces + screen module | 3 walls, 15% infill |
 | `test_<lang>.3mf` | Face and grid test corner (with `--test`) | default |
 
 Open a project in Bambu Studio, pick the filament for each plate and print
@@ -275,6 +280,10 @@ the ring, on the grid side, let cables pass from the margins to the middle.
 1. Lay the four pieces on the back board, grooves up, and press the
    dovetails together.
 2. Put the grid on top, then the paper, then the face, and close the frame.
+
+The black recess ring in front of the face is made the same way: four
+identical L pieces, 8 mm wide and 9,8 mm deep, between the front lip and
+the face margins. Print them in black so they match the face.
 
 ### 7.3 Magnets between the face and the grid
 
@@ -460,6 +469,7 @@ DSI connector, so this build has no touch display.
 - [ ] 4 × 4 test corner printed and checked for fit, letters and light bleed
 - [ ] Nine face tiles printed for each language and fitted together
 - [ ] Four spacer pieces printed and fitted into a ring on the back board
+- [ ] Four recess pieces printed in black and fitted behind the front lip
 - [ ] Nine grid tiles printed in white, fitted together and bolted (24 × M3)
 - [ ] Magnets pressed into the grid posts and the face bosses, polarity checked
 - [ ] Tracing paper cut to 45,5 × 45,5 cm

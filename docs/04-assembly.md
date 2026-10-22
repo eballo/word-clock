@@ -14,7 +14,7 @@ stacked from back to front:
     │  LED    │  ← WS2812B strips on the 3D-printed light grid
     │  matrix │
     ├─────────┤
-    │  Front  │  ← tracing paper + 3D-printed front panel (+ optional plastic sheet)
+    │  Front  │  ← tracing paper + 3D-printed front panel + black recess ring
     └─────────┘
          │
        viewer
@@ -117,9 +117,9 @@ through its bottom rail and plugs into the module with a JST connector. See
 
 Follow this order when putting the clock together:
 
-1. **Place the front panel** face down in the frame, against its front lip,
-   then the tracing paper, then the light grid with the strips on top, then
-   the spacer ring
+1. **Lay the frame face down** and put in the black recess ring against the
+   front lip, then the front panel face down, the tracing paper, the light
+   grid with the strips on top, and the spacer ring
 2. **Connect all wiring** — data, power, ground, camera, button — and
    double-check polarity
 3. **Power on briefly** (with the back board open) and run the mock test to
