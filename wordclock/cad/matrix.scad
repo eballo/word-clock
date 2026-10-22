@@ -67,13 +67,13 @@ fit = 0.2;
 paper_t = 0.3;
 
 /* [Stand box] */
-// The box clicks onto the grid with four snap clips, next to the grid line
-// crossings [col_start, col_end, row_start, row_end]: 4 x 4 cells in the
-// middle of the matrix, across the seam. The box reaches down to the bottom
-// edge of the panel.
+// The box slides onto the grid: four pins with wide heads, near the grid
+// line crossings [col_start, col_end, row_start, row_end], go into keyhole
+// slots in the back plate. That is 4 x 4 cells in the middle of the matrix,
+// across the seam. The box reaches down to the bottom edge of the panel.
 box_lines = [3, 7, 1, 5];
 // How far the box reaches past those crossings (sides and top)
-box_overhang = 8;
+box_overhang = 5;
 // The matrix leans back by this angle when it stands on the table
 tilt = 15;
 // Depth from the back plate of the grid to the back of the box. It sets the
@@ -81,19 +81,23 @@ tilt = 15;
 box_d = 40;
 box_wall = 2.4;
 box_floor = 2.4;
-// Snap clips: a flexible arm rises from the floor of the box, goes through a
-// slot in the grid back plate and hooks onto its front face. The top clips
-// hook upwards and the bottom ones downwards, so the box cannot slide off.
-clip_w = 6;
-clip_t = 2;
-// How far the hook reaches over the edge of the slot
-clip_lip = 1;
-// Height of the ramp that pushes the arm aside on the way in
-clip_ramp = 1.5;
-// Distance from the grid line to the arm, clear of the walls
-clip_gap = 2;
-// Play around the arm in the slot, and above the back plate under the hook
-clip_fit = 0.2;
+// Slide lock: the pin heads go in through the wide end of the keyhole slots,
+// then the box slides down and the heads hold it against the back plate.
+// Gravity keeps it locked, and on the table it cannot slide up.
+pin_neck_d = 4;
+pin_head_d = 8;
+// Cone under the head that pulls the box tight as it slides down, and the
+// flat cap on top
+pin_cone_h = 2;
+pin_cap_h = 1;
+// Column that carries the pin from the floor of the box
+pin_column_d = 10;
+// Distance the box slides down to lock
+pin_slide = 8;
+// Distance from the grid lines to the slot, clear of the walls
+pin_offset = 6;
+// Play around the pin in the slot, and between the cone and the back plate
+pin_fit = 0.2;
 // Raspberry Pi 3B / 4B: 85 x 56 mm board, M2.5 holes on 58 x 49 mm,
 // 3.5 mm from the edge with the micro-USB and HDMI ports
 rpi_board = [85, 56];
@@ -184,28 +188,27 @@ module strip_notches(h) {
             cube([2 * wall_t + 2, strip_w, strip_notch_h + 0.01]);
 }
 
-// Snap clips of the stand box: grid line crossing and the direction the
-// clip points to, inwards along x and outwards (its hook) along y.
-function box_clips() = [for (c = [0, 1], r = [0, 1]) [line_x(box_lines[c]), line_y(box_lines[2 + r]), c == 0 ? 1 : -1, r == 0 ? 1 : -1]];
+// Locked positions of the box pins, inside the cells next to the grid line
+// crossings. Each keyhole slot runs up from there into the same cell.
+function box_pins() = [for (c = [0, 1], r = [0, 1]) [
+    line_x(box_lines[c]) + (c == 0 ? pin_offset : -pin_offset),
+    line_y(box_lines[2 + r]) + (r == 0 ? -pin_offset - pin_slide : pin_offset),
+]];
 
-// Place a clip drawn for the top-left crossing (arm towards +x and +y).
-module at_clip(clip) {
-    translate([clip[0], clip[1], 0]) mirror([clip[2] < 0 ? 1 : 0, 0, 0]) mirror([0, clip[3] < 0 ? 1 : 0, 0]) children();
+// Keyhole slot in the back plate: wide entry at the top, narrow slot down
+// to the locked position.
+module pin_slot() {
+    translate([0, pin_slide, -1]) cylinder(d = pin_head_d + 2 * pin_fit, h = back_t + 2);
+    hull() for (dy = [0, pin_slide]) translate([0, dy, -1]) cylinder(d = pin_neck_d + 2 * pin_fit, h = back_t + 2);
 }
 
-// Arm with its hook. The catch face sits just above the front face of the
-// back plate; the ramp above it pushes the arm aside on the way in.
-module clip_arm() {
-    catch_z = back_t + clip_fit;
-    translate([clip_gap, clip_gap, -box_d]) cube([clip_w, clip_t, box_d + catch_z + clip_ramp]);
-    translate([clip_gap, 0, 0]) rotate([90, 0, 90]) linear_extrude(clip_w)
-        polygon([[clip_gap + clip_t, catch_z], [clip_gap + clip_t + clip_lip, catch_z], [clip_gap + clip_t, catch_z + clip_ramp]]);
-}
-
-// Slot in the back plate, with room for the arm to bend aside.
-module clip_slot() {
-    translate([clip_gap - clip_fit, clip_gap - clip_lip - clip_fit, -1])
-        cube([clip_w + 2 * clip_fit, clip_t + clip_lip + 2 * clip_fit, back_t + 2]);
+// Pin on its column, from the floor of the box through the back plate.
+module box_pin() {
+    cone_z = back_t + pin_fit;
+    translate([0, 0, -box_d]) cylinder(d = pin_column_d, h = box_d);
+    cylinder(d = pin_neck_d, h = cone_z + 0.01);
+    translate([0, 0, cone_z]) cylinder(d1 = pin_neck_d, d2 = pin_head_d, h = pin_cone_h);
+    translate([0, 0, cone_z + pin_cone_h]) cylinder(d = pin_head_d, h = pin_cap_h);
 }
 
 module grid(h) {
@@ -220,7 +223,7 @@ module grid(h) {
         }
         strip_notches(h);
         seam_holes();
-        for (clip = box_clips()) at_clip(clip) clip_slot();
+        for (p = box_pins()) translate(p) pin_slot();
         if (h == 0)
             translate([(outer_t + line_x(0)) / 2 - cable_hole[0] / 2, cell_y(0) - cable_hole[1] / 2, -1])
                 cube([cable_hole[0], cable_hole[1], back_t + 2]);
@@ -270,10 +273,10 @@ box_x1 = line_x(box_lines[1]) + box_overhang;
 box_y0 = 0;
 box_y1 = line_y(box_lines[2]) + box_overhang;
 
-// Raspberry Pi on the right, above the bottom clips, component side
+// Raspberry Pi on the right, above the bottom pins, component side
 // towards the grid. The space below it takes the power plug and the wiring.
 rpi_x0 = box_x1 - box_wall - 4 - rpi_board[0];
-rpi_y0 = line_y(box_lines[3]) + 3;
+rpi_y0 = line_y(box_lines[3]) + pin_offset + pin_column_d / 2 + 2;
 rpi_top = -box_d + box_floor + rpi_standoff_h + 1.6;
 
 assert(rpi_top + rpi_ports_h < -2, "Box too shallow for the Raspberry Pi: raise box_d");
@@ -285,7 +288,7 @@ module box_outline(grow = 0) {
 // Everything above the table plane, raised by `lift` along y.
 module above_table(lift = 0) {
     z0 = -box_d - 1;
-    // High enough to keep the clips that reach into the grid
+    // High enough to keep the pins that reach into the grid
     z1 = back_t + 10;
     translate([box_x0 - 1, 0, 0]) rotate([90, 0, 90]) linear_extrude(box_x1 - box_x0 + 2)
         polygon([[table_y(z1) + lift, z1], [table_y(z0) + lift, z0], [panel_h, z0], [panel_h, z1]]);
@@ -301,7 +304,7 @@ module box_shell() {
                     above_table(box_wall / cos(tilt));
                 }
             }
-            for (clip = box_clips()) at_clip(clip) clip_arm();
+            for (p = box_pins()) translate(p) box_pin();
             for (hole = rpi_holes)
                 translate([rpi_x0 + hole[0], rpi_y0 + hole[1], -box_d]) cylinder(d = rpi_standoff_d, h = box_floor + rpi_standoff_h);
         }
