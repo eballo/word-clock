@@ -31,7 +31,7 @@ choose:
 | Username and password | `pi` (or your choice) and a password |
 | Wi-Fi | your network, country `ES` |
 | Time zone | `Europe/Madrid` |
-| SSH | enabled, with your public key (the one you use for GitHub) |
+| SSH | enabled, public-key authentication only (see section 2 for a dedicated key) |
 
 Write the card, put it in the Pi and power it on with its own supply
 (micro-USB, 5V 2,5 A for the Pi 3B).
@@ -48,6 +48,25 @@ ssh pi@wordclock.local
 
 > If `wordclock.local` does not resolve, find the Pi's IP address on your
 > router and use `ssh pi@<ip>`.
+
+The examples use the user `pi`: replace it with the user you chose in the
+Imager. A dedicated key and a host entry in `~/.ssh/config` shorten the
+command to `ssh wordclock`:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/wordclock -C "wordclock-pi"
+```
+
+```
+Host wordclock
+    HostName wordclock.local
+    User pi
+    IdentityFile ~/.ssh/wordclock
+    IdentitiesOnly yes
+```
+
+Paste `~/.ssh/wordclock.pub` into the Imager's SSH settings (public-key
+authentication only) before writing the card.
 
 Update the system and install the build tools for the LED library:
 
@@ -144,7 +163,8 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-Enable and start it:
+Replace `/home/pi` with your user's home directory if you did not use
+`pi`. Enable and start it:
 
 ```bash
 sudo systemctl daemon-reload
