@@ -24,7 +24,7 @@ and wiring the strip, printing the enclosure, assembly and the software.
 | 220 Ω resistor | 1 | In the data line (Freenove kit) |
 | Rectifier diode | 1 | Only if the 3,3V data is not read reliably (Freenove kit) |
 | Wire, 22 AWG, three colours | about 1 m | 5 joints between rows, about 6 cm each |
-| M3 × 16 mm bolt and nut | 3 | Join the two grid halves |
+| M3 × 16 mm bolt and nut | 2 | Join the two grid halves |
 | M2.5 × 6 mm self-tapping screw | 4 | Fix the Raspberry Pi in the stand box |
 | Panel-mount DC jack, 5.5 × 2.1 mm (DC-022, 11 mm hole) | 1 | Power input in the back of the stand box |
 | Lever connectors (Wago 221), 3-way | 2 | 5V and GND joints inside the box |
@@ -289,8 +289,9 @@ so the limit can stay at 1,5 A.
 
 ## 7. Assemble
 
-1. Bolt the two grid halves together with the three M3 bolts: one in the
-   top margin, one in the bottom margin and one on the middle row wall.
+1. Bolt the two grid halves together with the two M3 bolts, one in the
+   top margin and one in the bottom margin. The stand box pins sit in both
+   halves, so the box also holds the middle of the seam.
 2. Stick the strip rows and solder the joints (section 6).
 3. Screw the Raspberry Pi into the stand box (four M2.5 screws) and fit
    the DC jack in the back.
@@ -354,7 +355,7 @@ the same code runs on the 16 × 16 word clock later.
 ## 9. Build checklist
 
 - [ ] Grid halves, face halves and stand box printed (`uv run wordclock-cad --matrix`)
-- [ ] Grid halves bolted together with three M3 × 16 mm bolts
+- [ ] Grid halves bolted together with two M3 × 16 mm bolts
 - [ ] Raspberry Pi and DC jack fitted in the stand box, box slid onto the grid
 - [ ] Strip cut into 6 pieces of 10 LEDs, stuck in a snake, arrows checked
 - [ ] Five row joints soldered, input wires through the back plate hole

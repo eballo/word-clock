@@ -47,11 +47,10 @@ strip_notch_h = 3;
 cable_hole = [7, 14];
 
 /* [Seam bolts] */
-// M3 bolts that join the two grid halves: one in the top margin, one in the
-// bottom margin and one on the middle row wall
+// M3 bolts that join the two grid halves: one in the top margin and one in
+// the bottom margin, where the bolt heads and nuts can be reached
 bolt_d = 3.4;
 bolt_block = 6;
-boss_h = 10;
 
 /* [Front face] */
 // Black face with one square window per cell, printed front side down
@@ -161,23 +160,21 @@ module walls_2d(h) {
     for (k = [0:rows]) row_wall(k, h);
 }
 
-// Bolt positions along the seam: top margin, middle row line, bottom margin.
-bolt_ys = [panel_h - margin / 2, line_y(rows / 2), margin / 2];
-function bolt_z(y) = y == line_y(rows / 2) ? back_t + boss_h - bolt_block / 2 : back_t + grid_h / 2;
+// Bolt positions along the seam: top margin and bottom margin.
+bolt_ys = [panel_h - margin / 2, margin / 2];
+bolt_z = back_t + grid_h / 2;
 
 module seam_blocks(h) {
     side = h == 0 ? -bolt_block : 0;
     // Margin blocks span the full height, from the matrix to the outer wall.
-    for (y = [bolt_ys[0], bolt_ys[2]])
+    for (y = bolt_ys)
         translate([seam_x + side, y - (margin - outer_t) / 2, 0])
             cube([bolt_block, margin - outer_t, back_t + grid_h]);
-    // Boss on the middle row wall, low enough to leave the cells clear.
-    translate([seam_x + side, line_y(rows / 2) - bolt_block / 2, 0]) cube([bolt_block, bolt_block, back_t + boss_h]);
 }
 
 module seam_holes() {
     for (y = bolt_ys)
-        translate([seam_x - bolt_block - 1, y, bolt_z(y)]) rotate([0, 90, 0]) cylinder(d = bolt_d, h = 2 * bolt_block + 2);
+        translate([seam_x - bolt_block - 1, y, bolt_z]) rotate([0, 90, 0]) cylinder(d = bolt_d, h = 2 * bolt_block + 2);
 }
 
 // Strip notches under every column wall, at the centre of each row.
