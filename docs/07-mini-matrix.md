@@ -84,6 +84,22 @@ The strip runs along the centre of every row, under the column walls
 through 13 mm notches. The ends of each row come out into the margin,
 where the wires that join the rows run.
 
+The strip input wires also run in the margin, hidden behind the face
+border: from the start of row 0 up the left margin, then along the top
+margin to a 14 × 6 mm hole in the back plate. The hole sits behind the
+stand box, so the wires go straight into it.
+
+```
+   front view, left half, top-left corner
+
+   ┌───────────────────────────────────────── outer wall
+   │  ═══════════════════════▣  ← 14 × 6 mm hole, behind the box
+   │ ║┌──────┬──────┬──────┬──────┬───
+   │ ║│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ row 0 strip, DIN on the left
+   │ ║┼──────┼──────┼──────┼──────┼───
+   │ ║ wires in the margin
+```
+
 ---
 
 ## 4. Stand box
@@ -131,9 +147,9 @@ down, slide the box 8 mm up and lift it.
 ```
           seen from the back
 
-          strip wires (slot in the rim)
-   ┌──────┬┬───────────────────────────┐
-   │ ◉            ║║║║║║║  vents     ◉ │
+   ┌───────────────────────────────────┐  ← top edge of the grid
+   │                 ║║║║║║║  vents  ▣  │  ▣ strip wires from the
+   │ ◉                              ◉  │    cable hole (inside)
    │                                   │
    │        ┌──────────────────┐       │
    │        │  Raspberry Pi 3B │       │
@@ -152,7 +168,7 @@ right in the model, which uses front-view coordinates.
 | Opening | Where | For |
 |---------|-------|-----|
 | DC jack, 11 mm | Back, low | The 5V supply: the only cable |
-| Wire slot | Top rim | Strip input wires from the hole next to row 0 |
+| Cable hole, 14 × 6 mm | Grid back plate, top margin, inside the box | Strip input wires, never outside |
 | Vents | Back under the Pi, and top wall | Air for the Raspberry Pi |
 
 There is no opening for the USB, Ethernet or HDMI ports: use the Pi over
@@ -228,8 +244,9 @@ to left, so each row joins the next at alternating ends.
 4. Solder three wires (5V, data, GND) from the DOUT end of each row to the
    DIN end of the next one, in the side margin. Keep the colours the same
    on every joint.
-5. Solder the input wires to the DIN end of row 0 and pass them through the
-   hole in the back plate of the left half.
+5. Solder the input wires to the DIN end of row 0, about 40 cm long. Run
+   them up the left margin and along the top margin, and pass them through
+   the 14 × 6 mm hole in the back plate of the left half.
 
 > ⚠️ Data goes from DOUT to DIN only. A row stuck the wrong way round stays
 > dark, and so does every row after it.
@@ -295,8 +312,8 @@ so the limit can stay at 1,5 A.
 2. Stick the strip rows and solder the joints (section 6).
 3. Screw the Raspberry Pi into the stand box (four M2.5 screws) and fit
    the DC jack in the back.
-4. Pass the strip input wires through the slot in the box rim and wire
-   them inside the box (section 4).
+4. Wire the strip input wires, which come out of the cable hole, inside
+   the box (section 4). Leave about 2 cm of slack for the 8 mm slide.
 5. Lay the matrix face down. Put the four pin heads into the wide ends of
    the keyhole slots and slide the box 8 mm down, towards the bottom edge,
    until its base lines up with the bottom of the grid.
@@ -358,7 +375,7 @@ the same code runs on the 16 × 16 word clock later.
 - [ ] Grid halves bolted together with two M3 × 16 mm bolts
 - [ ] Raspberry Pi and DC jack fitted in the stand box, box slid onto the grid
 - [ ] Strip cut into 6 pieces of 10 LEDs, stuck in a snake, arrows checked
-- [ ] Five row joints soldered, input wires through the back plate hole
+- [ ] Five row joints soldered, input wires along the margins and through the hole behind the box
 - [ ] Quick test powered from the Pi (section 6.4): `wiring` scene with `--max-ma 600`
 - [ ] Safety check of [06 — Bench Test](06-bench-test.md) done before powering up
 - [ ] `wiring` scene lights the 60 cells in order

@@ -43,8 +43,10 @@ margin = 12;
 // Notch at the bottom of every wall the strip passes under
 strip_w = 13;
 strip_notch_h = 3;
-// Hole in the back plate for the data and power wires, next to row 0
-cable_hole = [7, 14];
+// Hole in the back plate for the strip input wires, in the top margin
+// behind the stand box. The wires run from the start of row 0 up the left
+// margin and along the top margin, hidden behind the face border.
+cable_hole = [14, 6];
 
 /* [Seam bolts] */
 // M3 bolts that join the two grid halves: one in the top margin and one in
@@ -69,9 +71,10 @@ paper_t = 0.3;
 // The box slides onto the grid: four pins with wide heads, near the grid
 // line crossings [col_start, col_end, row_start, row_end], go into keyhole
 // slots in the back plate. That is 4 x 4 cells in the middle of the matrix,
-// across the seam. The box reaches down to the bottom edge of the panel.
+// across the seam. The box reaches from the bottom edge of the panel to the
+// top edge, so it covers the cable hole in the top margin.
 box_lines = [3, 7, 1, 5];
-// How far the box reaches past those crossings (sides and top)
+// How far the box reaches past those crossings, left and right
 box_overhang = 5;
 // The matrix leans back by this angle when it stands on the table
 tilt = 15;
@@ -109,8 +112,6 @@ rpi_ports_h = 17;
 // Panel-mount 5.5 x 2.1 mm DC jack in the back of the box, the only cable
 // that comes out (DC-022: 11 mm hole)
 jack_d = 11;
-// Slot in the rim for the strip wires coming from the hole next to row 0
-wire_slot = [12, 8];
 // Ventilation slots in the back under the Raspberry Pi and in the top wall
 vent = [3, 30];
 
@@ -208,6 +209,10 @@ module box_pin() {
     translate([0, 0, cone_z + pin_cone_h]) cylinder(d = pin_head_d, h = pin_cap_h);
 }
 
+// Cable hole in the top margin channel, inside the box near its left wall.
+cable_hole_x = line_x(box_lines[0]) + cable_hole[0] / 2 + 5;
+cable_hole_y = (panel_h - outer_t + line_y(0) + wall_t / 2) / 2;
+
 module grid(h) {
     difference() {
         intersection() {
@@ -222,7 +227,7 @@ module grid(h) {
         seam_holes();
         for (p = box_pins()) translate(p) pin_slot();
         if (h == 0)
-            translate([(outer_t + line_x(0)) / 2 - cable_hole[0] / 2, cell_y(0) - cable_hole[1] / 2, -1])
+            translate([cable_hole_x - cable_hole[0] / 2, cable_hole_y - cable_hole[1] / 2, -1])
                 cube([cable_hole[0], cable_hole[1], back_t + 2]);
     }
 }
@@ -268,7 +273,7 @@ function table_y(z) = -z * tan(tilt);
 box_x0 = line_x(box_lines[0]) - box_overhang;
 box_x1 = line_x(box_lines[1]) + box_overhang;
 box_y0 = 0;
-box_y1 = line_y(box_lines[2]) + box_overhang;
+box_y1 = panel_h;
 
 // Raspberry Pi on the right, above the bottom pins, component side
 // towards the grid. The space below it takes the power plug and the wiring.
@@ -288,7 +293,7 @@ module above_table(lift = 0) {
     // High enough to keep the pins that reach into the grid
     z1 = back_t + 10;
     translate([box_x0 - 1, 0, 0]) rotate([90, 0, 90]) linear_extrude(box_x1 - box_x0 + 2)
-        polygon([[table_y(z1) + lift, z1], [table_y(z0) + lift, z0], [panel_h, z0], [panel_h, z1]]);
+        polygon([[table_y(z1) + lift, z1], [table_y(z0) + lift, z0], [panel_h + 1, z0], [panel_h + 1, z1]]);
 }
 
 module box_shell() {
@@ -316,8 +321,6 @@ module box() {
         for (hole = rpi_holes) translate([rpi_x0 + hole[0], rpi_y0 + hole[1], -box_d + 1]) cylinder(d = rpi_pilot_d, h = box_d);
         // DC jack in the back, low and left of the Raspberry Pi
         translate([(box_x0 + rpi_x0) / 2, line_y(box_lines[3]) - 15, -box_d - 1]) cylinder(d = jack_d, h = box_floor + 2);
-        // Strip wires come in through the rim, next to the top-left corner
-        translate([box_x0 + box_wall + 10, box_y1 - box_wall - 1, -wire_slot[1]]) cube([wire_slot[0], box_wall + 2, wire_slot[1] + 1]);
         // Vents in the back under the Raspberry Pi and in the top wall
         for (i = [0:5])
             translate([rpi_x0 + 12 + i * 10, rpi_y0 + rpi_board[1] / 2 - vent[1] / 2, -box_d - 1]) cube([vent[0], vent[1], box_floor + 2]);
