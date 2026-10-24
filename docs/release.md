@@ -2,6 +2,7 @@
 
 | Version | Date       | Description         |
 |---------|------------|---------------------|
+| v0.10.0 | 2026-10-24 | Matrix show: texts for the day and week, drawings and personal texts |
 | v0.9.0 | 2026-10-24 | Add a 10x6 mini matrix for the 30 LEDs/metre strip |
 | v0.8.0 | 2026-10-22 | Add parametric enclosure for the IKEA SANNAHED frame |
 | v0.7.0 | 2026-10-21 | Bump the github-actions group with 2 updates |
