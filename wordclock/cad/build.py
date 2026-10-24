@@ -6,27 +6,38 @@ from dataclasses import dataclass
 from logging import getLogger
 from pathlib import Path
 
+from wordclock.cad.bambu import count_bodies, read_stl, write_project
 from wordclock.layouts.utils.layout import load_grid
 
 logger = getLogger(__name__)
 
 SCAD_FILE: Path = Path(__file__).parent / "wordclock.scad"
 
+# Grid lines where the panel is split, matching `splits` in the SCAD model.
+# A 3x3 split keeps every tile under 17.5 cm, well inside the 25 cm bed of
+# the Bambu Lab A1.
+TILE_SPLITS: tuple[int, ...] = (0, 5, 11, 16)
+
 # Cell ranges (col_start, col_end, row_start, row_end), end exclusive.
-# A 2x2 split keeps every tile under 256 mm, the Bambu Lab A1 bed size.
 TILES: dict[str, tuple[int, int, int, int]] = {
-    "r0c0": (0, 8, 0, 8),
-    "r0c1": (8, 16, 0, 8),
-    "r1c0": (0, 8, 8, 16),
-    "r1c1": (8, 16, 8, 16),
+    f"r{i}c{j}": (TILE_SPLITS[j], TILE_SPLITS[j + 1], TILE_SPLITS[i], TILE_SPLITS[i + 1])
+    for i in range(len(TILE_SPLITS) - 1)
+    for j in range(len(TILE_SPLITS) - 1)
 }
 
 # Top-left 4x4 corner, used to test fit, letters and light bleed.
 TEST_TILE: tuple[int, int, int, int] = (0, 4, 0, 4)
 
-FACE_PARTS: tuple[str, ...] = ("face", "letters", "diffuser")
+FACE_PARTS: tuple[str, ...] = ("face",)
 GRID_PART = "grid"
-PI_PARTS: tuple[str, ...] = ("pibox", "pilid")
+# Single parts that do not depend on the language: the screen module under
+# the clock (Touch Display v1, Raspberry Pi and camera) with its hanger.
+EXTRA_PARTS: tuple[str, ...] = ("screenfront", "screenback", "screenhanger")
+
+# Parts rendered only on request: the spacer ring and the black recess ring
+# that can hold the panel in the frame (four identical pieces each), and a
+# Raspberry Pi Zero 2 W tray for a clock without the screen module.
+OPTIONAL_PARTS: tuple[str, ...] = ("spacer", "recess", "pitray")
 
 
 @dataclass(frozen=True)
@@ -77,19 +88,21 @@ def plan_jobs(
     languages: list[str],
     out_dir: Path,
     grid: bool = True,
-    pi: bool = True,
+    extras: bool = True,
+    optional: bool = False,
     test: bool = False,
 ) -> list[RenderJob]:
     """
     List every STL needed for the given languages.
 
-    Face parts depend on the language; grid and Raspberry Pi parts do not.
+    Face parts depend on the language; grid tiles and extra parts do not.
 
     Args:
         languages: Layout names, e.g. ``["catalan"]``.
         out_dir: Directory for the STL files.
         grid: Include the light grid tiles.
-        pi: Include the Raspberry Pi box and lid.
+        extras: Include the screen module parts.
+        optional: Include the optional parts, such as the Pi Zero tray.
         test: Render only the 4x4 test corner instead of the full tiles.
 
     Returns:
@@ -106,35 +119,88 @@ def plan_jobs(
     if grid:
         for name, tile in tiles.items():
             jobs.append(RenderJob(GRID_PART, out_dir / "common" / f"grid_{name}.stl", tile))
-    if pi and not test:
-        for part in PI_PARTS:
+    if optional and not test:
+        for part in OPTIONAL_PARTS:
+            jobs.append(RenderJob(part, out_dir / "optional" / f"{part}.stl"))
+    if extras and not test:
+        for part in EXTRA_PARTS:
             jobs.append(RenderJob(part, out_dir / "common" / f"{part}.stl"))
     return jobs
 
 
-def write_preview(lang: str, out_dir: Path) -> Path:
-    """
-    Write a SCAD file that shows the assembled clock for one language.
+# Per-object print settings in the Bambu Studio projects.
+FACE_SETTINGS: dict[str, str] = {"sparse_infill_density": "100%"}
+GRID_SETTINGS: dict[str, str] = {"wall_loops": "3", "sparse_infill_density": "15%"}
 
-    The file includes the model and overrides ``part`` and ``rows``, so it
-    opens directly in the OpenSCAD GUI with the Customizer available.
+
+def write_bambu_projects(languages: list[str], stl_dir: Path, out_dir: Path) -> list[Path]:
+    """
+    Group rendered STL files into Bambu Studio projects, one part per plate.
+
+    Writes ``face_<lang>.3mf`` for every language and ``grid.3mf`` with the
+    grid tiles and the extra parts. The 4x4 test corner, when rendered, goes
+    into ``test_<lang>.3mf`` together with its grid tile.
+
+    Args:
+        languages: Layout names, e.g. ``["catalan"]``.
+        stl_dir: Directory with the rendered STL files.
+        out_dir: Directory for the projects.
+
+    Returns:
+        Paths of the written projects.
+    """
+    projects = []
+    grid_test = stl_dir / "common" / "grid_test.stl"
+    for lang in languages:
+        faces = [stl_dir / lang / f"face_{name}.stl" for name in TILES]
+        if all(path.exists() for path in faces):
+            projects.append(write_project(faces, out_dir / f"face_{lang}.3mf", FACE_SETTINGS))
+        face_test = stl_dir / lang / "face_test.stl"
+        if face_test.exists() and grid_test.exists():
+            projects.append(write_project([face_test, grid_test], out_dir / f"test_{lang}.3mf"))
+    grids = [stl_dir / "common" / f"grid_{name}.stl" for name in TILES]
+    extras = [stl_dir / "common" / f"{part}.stl" for part in EXTRA_PARTS]
+    if all(path.exists() for path in grids):
+        parts = grids + [path for path in extras if path.exists()]
+        projects.append(write_project(parts, out_dir / "grid.3mf", GRID_SETTINGS))
+    return projects
+
+
+# Preview views: file prefix and the SCAD part that draws it.
+PREVIEW_VIEWS: dict[str, str] = {
+    "preview": "assembly",
+    "pieces": "pieces",
+}
+
+
+def write_preview(lang: str, out_dir: Path) -> list[Path]:
+    """
+    Write SCAD files that show the clock for one language in the OpenSCAD GUI.
+
+    ``preview_<lang>.scad`` shows the assembled clock and
+    ``pieces_<lang>.scad`` shows every printed tile pulled apart and
+    labelled. Each file includes the model and overrides ``part`` and
+    ``rows``, so the Customizer stays available.
 
     Args:
         lang: Layout name, e.g. ``"catalan"``.
-        out_dir: Directory for the preview file.
+        out_dir: Directory for the preview files.
 
     Returns:
-        Path of the written SCAD file.
+        Paths of the written SCAD files.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / f"preview_{lang}.scad"
     rows = scad_string_list(load_grid(lang))
-    path.write_text(
-        f'include <{SCAD_FILE.resolve()}>\n\npart = "assembly";\nrows = {rows};\n',
-        encoding="utf-8",
-    )
-    logger.info("Wrote %s", path)
-    return path
+    paths = []
+    for prefix, part in PREVIEW_VIEWS.items():
+        path = out_dir / f"{prefix}_{lang}.scad"
+        path.write_text(
+            f'include <{SCAD_FILE.resolve()}>\n\npart = "{part}";\nrows = {rows};\n',
+            encoding="utf-8",
+        )
+        logger.info("Wrote %s", path)
+        paths.append(path)
+    return paths
 
 
 def render(job: RenderJob, openscad: str = "openscad") -> Path:
@@ -157,6 +223,20 @@ def render(job: RenderJob, openscad: str = "openscad") -> Path:
         raise RuntimeError(f"OpenSCAD failed for {job.output}:\n{result.stderr}")
     logger.info("Rendered %s", job.output)
     return job.output
+
+
+def find_loose_parts(paths: list[Path]) -> dict[Path, int]:
+    """
+    Find STL files that contain more than one solid body.
+
+    Args:
+        paths: Rendered STL files.
+
+    Returns:
+        Each file with loose parts and its number of bodies.
+    """
+    counts = {path: count_bodies(read_stl(path)) for path in paths}
+    return {path: n for path, n in counts.items() if n != 1}
 
 
 def render_all(jobs: list[RenderJob], openscad: str = "openscad", workers: int = 4) -> list[Path]:

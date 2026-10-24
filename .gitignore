@@ -12,3 +12,5 @@ htmlcov/
 *.log
 .claude/settings.local.json
 build/
+# Report written by the Bambu Studio command line
+result.json

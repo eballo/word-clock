@@ -7,10 +7,11 @@ for this project. It captures all conventions agreed during development.
 
 ## Project overview
 
-A 16×16 LED word clock (256 WS2812B/WS2811 12 mm bullet pixels) built on a
-Raspberry Pi. Frame: IKEA SANNAHED 50×50 cm (inner opening 48.5 cm),
-LED matrix: 48×48 cm, cell: 3.0 cm. Front panel: 3D-printed on a Bambu Lab A1
-(2×2 tiles), opaque black, interchangeable per language.
+A 16×16 word clock lit by a WS2812B strip (144 LEDs/metre, 4 LEDs per letter,
+1 024 LEDs) driven by a Raspberry Pi 3B (4B as an upgrade) in a screen module under the frame. Frame: IKEA SANNAHED 50×50 cm
+(inside 49 × 49 cm, 45 mm deep), LED matrix: 44.4×44.4 cm, cell:
+2.78 cm. Front panel: 3D-printed on a Bambu Lab A1 (3×3 tiles), opaque black,
+interchangeable per language.
 Supported languages: English, Catalan, Spanish.
 
 **Stack:**
@@ -104,16 +105,23 @@ One short paragraph summarising what this doc covers.
 ### Decisions already made (do not re-discuss)
 | Topic | Decision |
 |-------|----------|
-| Frame | IKEA SANNAHED 50 × 50 cm, inner opening 48.5 × 48.5 cm |
-| LED matrix | 48 × 48 cm |
-| Cell size | 3.0 × 3.0 cm |
-| LEDs | 12 mm bullet pixels in a printed light grid (30 LEDs/metre strip does not fit) |
-| LED count | 256 (16 × 16) |
-| Front panel | 3D-printed, opaque black PLA/PETG face + white diffuser |
-| Printer | Bambu Lab A1, 2×2 tiles of 24.2 cm |
+| Frame | IKEA SANNAHED 50 × 50 cm: inside 49 × 49 cm and 45 mm deep (50 × 50 back board behind a 5 mm inner border, small front lip holds the panel); plastic front sheet not used; face recessed 5 mm behind the front lip by a black ring |
+| Rings | Optional (`--optional`): a spacer ring behind the grid and a black recess ring in front of the face, 4 identical L pieces each; the user mounts the 48.9 cm panel in the frame himself |
+| LED matrix | 44.4 × 44.4 cm, 2.23 cm margin on every side (panel 48.9 cm) |
+| Cell size | 2.78 × 2.78 cm (4 LEDs of a 144 LEDs/metre strip) |
+| LEDs | WS2812B strip, 144 LEDs/metre, stuck on the back plate of the printed light grid |
+| LED count | 256 cells (16 × 16), 1 024 LEDs (4 per cell, snake rows of 64) |
+| Front panel | 3D-printed, opaque black PLA/PETG, Karla Bold Stencil letters, dovetail-joined tiles, no glue; only part that changes per language |
+| Diffuser | Tracing paper between the face and the light grid |
+| Face to grid | 5 × 2 mm neodymium magnets in the margins (face bosses + grid posts), no glue |
+| Raspberry Pi | Pi 3B (or 4B, same footprint) in a printed screen module under the clock, with the 7" Touch Display v1; the module hooks (keyholes, no tools) on a hanger plate bolted through the frame back board (one wall hook) |
+| Camera | In the screen module, above the display (OV5647 or Camera Module); `clock_camera = true` hides it in the clock instead |
+| Button | 12 mm momentary button on the side of the screen module, GPIO 3 |
+| Audio | None (no speaker or microphone), so GPIO 18 stays free for the LEDs |
+| Printer | Bambu Lab A1 (25 cm bed), 3×3 tiles split at lines 5 and 11; dovetails, plus M3 bolts on the grid seams |
 | CAD | OpenSCAD model in `wordclock/cad/`, rendered with `wordclock-cad` |
 | Wiring | Snake (even rows L→R, odd rows R→L) |
-| Power | 5V 10A PSU, inject at row 0 and row 8 |
+| Power | 5V 10A PSU, inject at rows 0, 4, 8 and 12, software LED limit ~6 A |
 | GPIO | GPIO 18 (PWM), level shifter 74AHCT125 |
 | OS | Raspberry Pi OS Lite 64-bit |
 | Auto-start | systemd service |
@@ -311,7 +319,7 @@ uv run wordclock --mock --debug        # run clock loop with grid display
 uv run wordclock-api --mock            # run FastAPI + web simulator
 uv run wordclock-serve --mock          # run clock loop + API together
 uv run wordclock-generate --lang ca    # generate static grid for a language
-uv run wordclock-cad --lang catalan    # render enclosure STLs into build/stl/
+uv run wordclock-cad --lang catalan    # render STLs (build/stl/) and Bambu projects (build/bambu/)
 uv run pytest                          # run tests
 uv run ruff check .                    # lint
 uv run ruff format .                   # format

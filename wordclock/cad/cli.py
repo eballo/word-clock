@@ -7,7 +7,13 @@ from typing import Annotated
 
 import typer
 
-from wordclock.cad.build import plan_jobs, render_all, write_preview
+from wordclock.cad.build import (
+    find_loose_parts,
+    plan_jobs,
+    render_all,
+    write_bambu_projects,
+    write_preview,
+)
 from wordclock.layouts.utils.layout import Layout
 
 app = typer.Typer()
@@ -20,7 +26,10 @@ def main(
     ] = None,
     out: Annotated[Path, typer.Option(help="Output directory")] = Path("build/stl"),
     grid: Annotated[bool, typer.Option(help="Render the light grid tiles")] = True,
-    pi: Annotated[bool, typer.Option(help="Render the Raspberry Pi box")] = True,
+    extras: Annotated[bool, typer.Option(help="Render the screen module")] = True,
+    optional: Annotated[
+        bool, typer.Option(help="Also render optional parts (frame rings, Pi Zero tray)")
+    ] = False,
     test: Annotated[bool, typer.Option(help="Render only the 4x4 test corner")] = False,
     preview: Annotated[
         bool, typer.Option(help="Write assembly preview files for the OpenSCAD GUI instead")
@@ -38,17 +47,25 @@ def main(
         raise typer.Exit(1)
     if preview:
         for name in languages:
-            typer.echo(f"Open in OpenSCAD: {write_preview(name, out.parent / 'preview')}")
+            for path in write_preview(name, out.parent / "preview"):
+                typer.echo(f"Open in OpenSCAD: {path}")
         return
     if shutil.which(openscad) is None:
         typer.echo(f"OpenSCAD not found: {openscad!r}", err=True)
         raise typer.Exit(1)
 
-    jobs = plan_jobs(languages, out, grid=grid, pi=pi, test=test)
+    jobs = plan_jobs(languages, out, grid=grid, extras=extras, optional=optional, test=test)
     typer.echo(f"Rendering {len(jobs)} STL files into {out}/ ...")
     try:
-        render_all(jobs, openscad=openscad, workers=workers)
+        paths = render_all(jobs, openscad=openscad, workers=workers)
     except RuntimeError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1) from exc
+    loose = find_loose_parts(paths)
+    for path, bodies in loose.items():
+        typer.echo(f"Loose parts: {path} has {bodies} separate bodies", err=True)
+    if loose:
+        raise typer.Exit(1)
+    for project in write_bambu_projects(languages, out, out.parent / "bambu"):
+        typer.echo(f"Bambu Studio project: {project}")
     typer.echo("Done.")
