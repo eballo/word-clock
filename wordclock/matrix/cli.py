@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 from logging import DEBUG, INFO, basicConfig
+from pathlib import Path
 from signal import SIGTERM, signal
 from types import FrameType
 from typing import Annotated
@@ -13,6 +14,7 @@ from wordclock.led.controller import create_controller
 from wordclock.matrix.canvas import Canvas, Color
 from wordclock.matrix.runner import MatrixRunner
 from wordclock.matrix.scenes import SCENE_NAMES, create_scene
+from wordclock.matrix.show import ShowScene, load_personal
 
 SceneName = StrEnum("SceneName", {name: name for name in SCENE_NAMES})
 
@@ -68,6 +70,9 @@ def main(
     seconds: Annotated[float | None, typer.Option(help="Stop after this many seconds")] = None,
     mock: Annotated[bool, typer.Option(help="No LEDs: draw the matrix in the terminal")] = False,
     preview: Annotated[bool | None, typer.Option(help="Draw the matrix in the terminal")] = None,
+    config: Annotated[Path, typer.Option(help="Personal texts for the show, a TOML file")] = Path(
+        "matrix.toml"
+    ),
     debug: bool = False,
 ) -> None:
     """Play a scene on the mini LED matrix."""
@@ -82,4 +87,8 @@ def main(
         snake=snake,
         preview=mock if preview is None else preview,
     )
-    runner.play(create_scene(scene.value, text=text, color=rgb), seconds=seconds)
+    if scene == SceneName.show:
+        player = ShowScene(load_personal(config))
+    else:
+        player = create_scene(scene.value, text=text, color=rgb)
+    runner.play(player, seconds=seconds)

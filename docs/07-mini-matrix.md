@@ -350,7 +350,7 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 | Scene | What it shows |
 |-------|---------------|
 | `show` | The default: every scene in turn, with new colours each time (section 9) |
-| `text` | Scrolling text (`--text`), 3 × 5 pixel font, accents folded (`à` → `A`) |
+| `text` | Scrolling text (`--text`), 3 × 5 pixel font on the bottom five rows, accents folded (`à` → `A`) |
 | `clock` | The time as `HH:MM`, scrolling |
 | `ip` | The local IP address, scrolling |
 | `rain` | Green drops with fading trails, like Matrix rain |
@@ -378,19 +378,50 @@ The `show` scene plays on its own, without a keyboard or a network. It
 starts with the IP address once, then repeats forever:
 
 ```
-   IP ──► clock ──► text ──► effect ──► clock ──► text ──► effect ──► …
-          HH:MM     greeting, date      rainbow,
-                    or a message        rain or sparkles
+   IP ──► clock ──► text ──► effect ──► clock ──► text ──► drawing ──► …
+          HH:MM                rainbow,                     heart, smile,
+                               rain or sparkles             ZZZ at night
 ```
 
 | Part | Content | Time |
 |------|---------|------|
 | Clock | `HH:MM`, a random colour or rainbow letters | One pass across the matrix |
-| Text | `BON DIA` / `BONA TARDA` / `BONA NIT` by the hour, the date (`DISSABTE 24`), or a message (`HOLA!`, `SOMRIU!`, `♥ ♥ ♥`, …) | One pass across the matrix |
+| Text | One text that fits the moment (table below), or a personal one | One pass across the matrix |
 | Effect | `rainbow` at a random speed, `rain` in a random colour, or `sparkle` | 15 s |
+| Drawing | A red heart or a smile; `ZZZ` from 23:00 to 06:59. It pulses like a heartbeat | 6 s |
 
-Every scene fades in and out over 0,5 s. Edit `MESSAGES` in
-`wordclock/matrix/scenes.py` to change the messages.
+Every scene fades in and out over 0,5 s.
+
+| Text | When |
+|------|------|
+| `BON DIA` / `BONA TARDA` / `BONA NIT` | 06–13 h / 13–20 h / 20–06 h |
+| `24 OCT` | Always |
+| `FALTEN 3 DIES PER DIVENDRES`, `DEMÀ ÉS DIVENDRES!` | Monday to Thursday |
+| `BON CAP DE SETMANA!` | Friday from 15:00 |
+| `BON DISSABTE`, `BON DIUMENGE` | Weekend |
+| `HORA DE DINAR` / `HORA DE SOPAR` | 13–15 h / 20–22 h |
+| `A DORMIR!` | 23:00 to 06:59 |
+
+### Personal texts
+
+Names and dates stay out of the public repository, in `matrix.toml` next
+to the code on the Pi (`~/word-clock/matrix.toml`, ignored by git). The
+show mixes the messages with the texts above. On a date of the list, half
+of the texts are that date's own.
+
+```toml
+# Shown any day
+messages = ["HOLA ENRIC", "♥ CASA ♥"]
+
+# Shown on one day of every year, "MM-DD"
+[dates]
+"03-14" = "FELICITATS ANNA!"
+"12-25" = ["BON NADAL!", "♥ ♥ ♥"]
+```
+
+The show reads the file when it starts: restart the service after editing
+it. A missing or broken file only leaves the personal texts out
+(`journalctl` says why). `--config` reads another file.
 
 A systemd service starts the show when the Pi boots. Create it on the Pi:
 

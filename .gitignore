@@ -14,3 +14,5 @@ htmlcov/
 build/
 # Report written by the Bambu Studio command line
 result.json
+# Personal texts for the matrix show, kept on the Pi only
+matrix.toml
