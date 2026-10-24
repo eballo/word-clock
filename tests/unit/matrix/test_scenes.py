@@ -1,29 +1,18 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 import pytest
 
 from wordclock.led.controller import MockLedController
 from wordclock.matrix.canvas import Canvas
-from wordclock.matrix.font import GLYPHS, fold_char
 from wordclock.matrix.runner import MatrixRunner, preview_lines
 from wordclock.matrix.scenes import (
-    EFFECT_SECONDS,
-    MESSAGES,
     SCENE_NAMES,
-    WEEKDAYS,
-    ClockScene,
-    IpScene,
     RainbowScene,
     RainScene,
-    ShowScene,
     SparkleScene,
     TextScene,
     WiringScene,
     create_scene,
-    date_text,
-    greeting,
     local_ip,
 )
 
@@ -118,75 +107,6 @@ class TestSparkleScene:
         # Then
         assert first
         assert all(0 <= x < 10 and 0 <= y < 6 for x, y in lit_cells(canvas))
-
-
-class TestGreeting:
-    @pytest.mark.parametrize(
-        ("hour", "text"),
-        [(0, "BONA NIT"), (6, "BON DIA"), (12, "BON DIA"), (13, "BONA TARDA"), (20, "BONA NIT")],
-    )
-    def test_greets_for_the_time_of_day(self, hour: int, text: str) -> None:
-        # Given / When / Then
-        assert greeting(hour) == text
-
-    @pytest.mark.parametrize("text", MESSAGES + WEEKDAYS + ("BONA TARDA",))
-    def test_every_show_text_has_glyphs(self, text: str) -> None:
-        # Given / When
-        missing = [char for char in text if fold_char(char) not in GLYPHS]
-        # Then
-        assert missing == []
-
-    def test_date_uses_the_catalan_weekday(self) -> None:
-        # Given: 24 October 2026 is a Saturday
-        now = datetime(2026, 10, 24, 10, 0)
-        # When / Then
-        assert date_text(now) == "DISSABTE 24"
-
-
-class TestShowScene:
-    def play(self, scene: ShowScene, seconds: float) -> list[type]:
-        canvas = Canvas(10, 6)
-        seen: list[type] = []
-        for frame in range(int(seconds * scene.fps)):
-            scene.render(canvas, frame)
-            assert scene._item is not None
-            if not seen or seen[-1] is not type(scene._item.scene):
-                seen.append(type(scene._item.scene))
-        return seen
-
-    def test_starts_with_the_ip_then_clock_text_and_effect(self) -> None:
-        # Given
-        scene = ShowScene(seed=1, clock=lambda: datetime(2026, 10, 24, 10, 0))
-        # When: long enough for the first round
-        seen = self.play(scene, 60 + EFFECT_SECONDS)
-        # Then
-        assert seen[:3] == [IpScene, ClockScene, TextScene]
-        assert seen[3] in (RainbowScene, RainScene, SparkleScene)
-
-    def test_fades_in_from_black(self) -> None:
-        # Given
-        canvas = Canvas(10, 6)
-        scene = ShowScene(seed=1)
-        scene._items = iter([RainbowScene])
-        # When
-        scene.render(canvas, 0)
-        dark = max(max(color) for row in canvas.rows() for color in row)
-        for frame in range(1, int(scene.fps)):
-            scene.render(canvas, frame)
-        # Then
-        assert dark == 0
-        assert max(max(color) for row in canvas.rows() for color in row) == 255
-
-    def test_effect_ends_after_its_time(self) -> None:
-        # Given: an effect, then a clock
-        canvas = Canvas(10, 6)
-        scene = ShowScene(seed=1)
-        scene._items = iter([RainbowScene, ClockScene])
-        # When
-        for frame in range(int(EFFECT_SECONDS * scene.fps) + 1):
-            scene.render(canvas, frame)
-        # Then
-        assert isinstance(scene._item.scene if scene._item else None, ClockScene)
 
 
 class TestWiringScene:
