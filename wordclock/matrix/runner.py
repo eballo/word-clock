@@ -43,17 +43,23 @@ class MatrixRunner:
         max_ma: float,
         snake: bool = True,
         preview: bool = False,
+        rotate: bool = False,
+        mirror: bool = False,
     ) -> None:
         self.canvas = canvas
         self.controller = controller
         self.max_ma = max_ma
         self.snake = snake
         self.preview = preview
+        self.rotate = rotate
+        self.mirror = mirror
 
     def show_frame(self) -> None:
         """Send the canvas to the strip, under the current limit."""
         colors = limit_current(
-            self.canvas.to_strip(self.snake), self.max_ma, self.controller.brightness
+            self.canvas.to_strip(self.snake, self.rotate, self.mirror),
+            self.max_ma,
+            self.controller.brightness,
         )
         for index, (r, g, b) in enumerate(colors):
             self.controller.set_pixel(index, r, g, b)

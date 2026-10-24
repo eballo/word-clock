@@ -65,6 +65,33 @@ class TestToStrip:
         # Then
         assert strip[10] == (2, 0, 0)
 
+    def test_rotate_turns_the_picture_upside_down(self) -> None:
+        # Given: the top-left cell
+        canvas = Canvas(10, 6)
+        canvas.set(0, 0, (1, 0, 0))
+        # When
+        strip = canvas.to_strip(rotate=True)
+        # Then: it lands on the bottom-right cell, which row 5 (right to left) starts with
+        assert strip.index((1, 0, 0)) == 50
+
+    def test_mirror_flips_left_and_right(self) -> None:
+        # Given: the top-left cell
+        canvas = Canvas(10, 6)
+        canvas.set(0, 0, (1, 0, 0))
+        # When
+        strip = canvas.to_strip(mirror=True)
+        # Then: it lands on the top-right cell
+        assert strip.index((1, 0, 0)) == 9
+
+    def test_rotate_and_mirror_flip_top_and_bottom(self) -> None:
+        # Given: the top-left cell
+        canvas = Canvas(10, 6)
+        canvas.set(0, 0, (1, 0, 0))
+        # When
+        strip = canvas.to_strip(rotate=True, mirror=True)
+        # Then: it lands on the bottom-left cell, the last LED of row 5
+        assert strip.index((1, 0, 0)) == 59
+
 
 class TestCurrentLimit:
     def test_full_white_draws_60_ma_per_led(self) -> None:

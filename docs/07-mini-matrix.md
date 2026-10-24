@@ -365,6 +365,8 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 | `--max-ma` | 1500 | Software current limit in mA |
 | `--seconds` | none | Stop after this time |
 | `--no-snake` | | Every row wired left to right |
+| `--rotate` | | Turn the picture 180°, when the matrix is mounted upside down |
+| `--mirror` | | Flip the picture left to right |
 | `--preview` | with `--mock` | Also draw the matrix in the terminal |
 
 The scenes draw on a cell canvas of any size (`--width`, `--height`), so
