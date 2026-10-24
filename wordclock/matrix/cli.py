@@ -67,6 +67,8 @@ def main(
     brightness: Annotated[int, typer.Option(min=0, max=255)] = MATRIX_BRIGHTNESS,
     max_ma: Annotated[int, typer.Option(help="Software current limit in mA")] = MATRIX_MAX_MA,
     snake: Annotated[bool, typer.Option(help="Odd rows run right to left")] = True,
+    rotate: Annotated[bool, typer.Option(help="Turn the picture 180°, matrix upside down")] = False,
+    mirror: Annotated[bool, typer.Option(help="Flip the picture left to right")] = False,
     seconds: Annotated[float | None, typer.Option(help="Stop after this many seconds")] = None,
     mock: Annotated[bool, typer.Option(help="No LEDs: draw the matrix in the terminal")] = False,
     preview: Annotated[bool | None, typer.Option(help="Draw the matrix in the terminal")] = None,
@@ -86,6 +88,8 @@ def main(
         max_ma=max_ma,
         snake=snake,
         preview=mock if preview is None else preview,
+        rotate=rotate,
+        mirror=mirror,
     )
     if scene == SceneName.show:
         player = ShowScene(load_personal(config))
