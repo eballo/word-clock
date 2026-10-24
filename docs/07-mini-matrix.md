@@ -449,8 +449,10 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-Replace `/home/eballo` with your user's home directory. Enable and start
-it:
+Replace `/home/eballo` with your user's home directory. If the text reads
+upside down (the strip starts at the bottom-right corner instead of the
+top-left), add `--rotate` to `ExecStart`; if it reads mirrored, add
+`--mirror`. Enable and start it:
 
 ```bash
 sudo systemctl daemon-reload
