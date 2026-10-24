@@ -12,6 +12,7 @@ from wordclock.layouts.utils.layout import load_grid
 logger = getLogger(__name__)
 
 SCAD_FILE: Path = Path(__file__).parent / "wordclock.scad"
+MATRIX_SCAD_FILE: Path = Path(__file__).parent / "matrix.scad"
 
 # Grid lines where the panel is split, matching `splits` in the SCAD model.
 # A 3x3 split keeps every tile under 17.5 cm, well inside the 25 cm bed of
@@ -39,6 +40,12 @@ EXTRA_PARTS: tuple[str, ...] = ("screenfront", "screenback", "screenhanger")
 # Raspberry Pi Zero 2 W tray for a clock without the screen module.
 OPTIONAL_PARTS: tuple[str, ...] = ("spacer", "recess", "pitray")
 
+# Mini 10x6 matrix for the 30 LEDs/metre strip: the grid and the face in two
+# halves, and one back box for the Raspberry Pi and the wiring.
+MATRIX_PARTS: tuple[str, ...] = ("grid", "face")
+MATRIX_HALVES: dict[str, int] = {"left": 0, "right": 1}
+MATRIX_BOX_PART = "box"
+
 
 @dataclass(frozen=True)
 class RenderJob:
@@ -48,6 +55,8 @@ class RenderJob:
     output: Path
     tile: tuple[int, int, int, int] | None = None
     rows: tuple[str, ...] | None = None
+    half: int | None = None
+    scad: Path = SCAD_FILE
 
 
 def scad_string_list(values: list[str] | tuple[str, ...]) -> str:
@@ -80,7 +89,9 @@ def scad_command(job: RenderJob, openscad: str = "openscad") -> list[str]:
         cmd += ["-D", "tile=[{}]".format(", ".join(str(v) for v in job.tile))]
     if job.rows is not None:
         cmd += ["-D", f"rows={scad_string_list(job.rows)}"]
-    cmd.append(str(SCAD_FILE))
+    if job.half is not None:
+        cmd += ["-D", f"half={job.half}"]
+    cmd.append(str(job.scad))
     return cmd
 
 
@@ -128,6 +139,26 @@ def plan_jobs(
     return jobs
 
 
+def plan_matrix_jobs(out_dir: Path) -> list[RenderJob]:
+    """
+    List every STL of the mini matrix.
+
+    Args:
+        out_dir: Directory for the STL files; they go into ``matrix/``.
+
+    Returns:
+        Render jobs for the left and right halves of the grid and the face,
+        and for the back box.
+    """
+    jobs = [
+        RenderJob(part, out_dir / "matrix" / f"{part}_{name}.stl", half=half, scad=MATRIX_SCAD_FILE)
+        for part in MATRIX_PARTS
+        for name, half in MATRIX_HALVES.items()
+    ]
+    box = out_dir / "matrix" / f"{MATRIX_BOX_PART}.stl"
+    return jobs + [RenderJob(MATRIX_BOX_PART, box, scad=MATRIX_SCAD_FILE)]
+
+
 # Per-object print settings in the Bambu Studio projects.
 FACE_SETTINGS: dict[str, str] = {"sparse_infill_density": "100%"}
 GRID_SETTINGS: dict[str, str] = {"wall_loops": "3", "sparse_infill_density": "15%"}
@@ -163,6 +194,34 @@ def write_bambu_projects(languages: list[str], stl_dir: Path, out_dir: Path) -> 
     if all(path.exists() for path in grids):
         parts = grids + [path for path in extras if path.exists()]
         projects.append(write_project(parts, out_dir / "grid.3mf", GRID_SETTINGS))
+    return projects
+
+
+def write_matrix_projects(stl_dir: Path, out_dir: Path) -> list[Path]:
+    """
+    Group the mini matrix STL files into Bambu Studio projects.
+
+    Writes ``matrix_grid.3mf`` and ``matrix_face.3mf``, one half per plate,
+    and ``matrix_box.3mf``, so each project carries the print settings of its
+    part.
+
+    Args:
+        stl_dir: Directory with the rendered STL files.
+        out_dir: Directory for the projects.
+
+    Returns:
+        Paths of the written projects.
+    """
+    settings = {"grid": GRID_SETTINGS, "face": FACE_SETTINGS}
+    projects = []
+    for part in MATRIX_PARTS:
+        halves = [stl_dir / "matrix" / f"{part}_{name}.stl" for name in MATRIX_HALVES]
+        if all(path.exists() for path in halves):
+            output = out_dir / f"matrix_{part}.3mf"
+            projects.append(write_project(halves, output, settings[part]))
+    box = stl_dir / "matrix" / f"{MATRIX_BOX_PART}.stl"
+    if box.exists():
+        projects.append(write_project([box], out_dir / "matrix_box.3mf", GRID_SETTINGS))
     return projects
 
 
