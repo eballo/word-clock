@@ -2,6 +2,7 @@
 
 | Version | Date       | Description         |
 |---------|------------|---------------------|
+| v0.9.0 | 2026-10-24 | Add a 10x6 mini matrix for the 30 LEDs/metre strip |
 | v0.8.0 | 2026-10-22 | Add parametric enclosure for the IKEA SANNAHED frame |
 | v0.7.0 | 2026-10-21 | Bump the github-actions group with 2 updates |
 | v0.6.1 | 2026-10-21 | Refresh locked dependencies and add Dependabot config |
