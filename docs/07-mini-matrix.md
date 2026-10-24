@@ -331,6 +331,7 @@ The matrix uses the `wordclock-matrix` command. On the Mac, `--mock` draws
 the matrix in the terminal instead of lighting LEDs:
 
 ```bash
+uv run wordclock-matrix --mock show
 uv run wordclock-matrix --mock text --text "Hola!"
 uv run wordclock-matrix --mock rain
 uv run wordclock-matrix --mock clock --color ff8800
@@ -348,11 +349,13 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 
 | Scene | What it shows |
 |-------|---------------|
+| `show` | The default: every scene in turn, with new colours each time (section 9) |
 | `text` | Scrolling text (`--text`), 3 × 5 pixel font, accents folded (`à` → `A`) |
 | `clock` | The time as `HH:MM`, scrolling |
 | `ip` | The local IP address, scrolling |
 | `rain` | Green drops with fading trails, like Matrix rain |
 | `rainbow` | A rainbow sliding diagonally |
+| `sparkle` | Cells that light up in random colours and fade out |
 | `wiring` | One cell at a time, in order, to test the wiring |
 
 | Option | Default | Use |
@@ -369,7 +372,72 @@ the same code runs on the 16 × 16 word clock later.
 
 ---
 
-## 9. Build checklist
+## 9. Start the show on boot
+
+The `show` scene plays on its own, without a keyboard or a network. It
+starts with the IP address once, then repeats forever:
+
+```
+   IP ──► clock ──► text ──► effect ──► clock ──► text ──► effect ──► …
+          HH:MM     greeting, date      rainbow,
+                    or a message        rain or sparkles
+```
+
+| Part | Content | Time |
+|------|---------|------|
+| Clock | `HH:MM`, a random colour or rainbow letters | One pass across the matrix |
+| Text | `BON DIA` / `BONA TARDA` / `BONA NIT` by the hour, the date (`DISSABTE 24`), or a message (`HOLA!`, `SOMRIU!`, `♥ ♥ ♥`, …) | One pass across the matrix |
+| Effect | `rainbow` at a random speed, `rain` in a random colour, or `sparkle` | 15 s |
+
+Every scene fades in and out over 0,5 s. Edit `MESSAGES` in
+`wordclock/matrix/scenes.py` to change the messages.
+
+A systemd service starts the show when the Pi boots. Create it on the Pi:
+
+```bash
+sudo nano /etc/systemd/system/wordclock-matrix.service
+```
+
+```ini
+[Unit]
+Description=Mini LED matrix show
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/eballo/word-clock
+ExecStart=/home/eballo/word-clock/.venv/bin/wordclock-matrix show
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Replace `/home/eballo` with your user's home directory. Enable and start
+it:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now wordclock-matrix
+sudo systemctl status wordclock-matrix
+```
+
+| Command | Use |
+|---------|-----|
+| `sudo systemctl stop wordclock-matrix` | Stop the show and turn the LEDs off, e.g. to run another scene by hand |
+| `sudo systemctl start wordclock-matrix` | Start it again |
+| `sudo systemctl disable wordclock-matrix` | Do not start it on boot any more |
+| `journalctl -u wordclock-matrix -f` | Follow its log |
+
+> ⚠️ Stop the service before running `wordclock-matrix` by hand: two
+> programs driving GPIO 18 at once garble the strip.
+
+---
+
+## 10. Build checklist
 
 - [ ] Grid halves, face halves and stand box printed (`uv run wordclock-cad --matrix`)
 - [ ] Grid halves bolted together with two M3 × 16 mm bolts
@@ -382,4 +450,5 @@ the same code runs on the 16 × 16 word clock later.
 - [ ] `rainbow` scene shows the right colours
 - [ ] Tracing paper and face fitted
 - [ ] `text`, `clock`, `ip` and `rain` scenes running
+- [ ] `wordclock-matrix` service enabled: the show starts when the matrix is plugged in
 - [ ] Matrix standing on the table, only the power cable showing

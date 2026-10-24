@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from enum import StrEnum
 from logging import DEBUG, INFO, basicConfig
+from signal import SIGTERM, signal
+from types import FrameType
 from typing import Annotated
 
 import typer
@@ -39,9 +41,23 @@ def parse_color(value: str) -> Color:
         raise typer.BadParameter(f"Expected a hex colour like ff8800, got {value!r}") from exc
 
 
+def stop_on_sigterm(signum: int, frame: FrameType | None) -> None:
+    """
+    Stop like Ctrl+C when systemd stops the service, so the LEDs go dark.
+
+    Args:
+        signum: The signal number.
+        frame: The interrupted stack frame.
+
+    Raises:
+        KeyboardInterrupt: Always, to end the scene.
+    """
+    raise KeyboardInterrupt
+
+
 @app.command()
 def main(
-    scene: Annotated[SceneName, typer.Argument(help="Scene to play")] = SceneName.text,
+    scene: Annotated[SceneName, typer.Argument(help="Scene to play")] = SceneName.show,
     text: Annotated[str, typer.Option(help="Text for the text scene")] = "HOLA",
     color: Annotated[str | None, typer.Option(help="Hex colour, e.g. ff8800")] = None,
     width: int = MATRIX_WIDTH,
@@ -56,6 +72,7 @@ def main(
 ) -> None:
     """Play a scene on the mini LED matrix."""
     basicConfig(level=DEBUG if debug else INFO, format="%(asctime)s %(levelname)-8s %(message)s")
+    signal(SIGTERM, stop_on_sigterm)
     rgb = parse_color(color) if color else None
     ctrl = create_controller(mock=mock, num_leds=width * height, brightness=brightness)
     runner = MatrixRunner(
