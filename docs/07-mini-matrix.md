@@ -350,7 +350,7 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 | Scene | What it shows |
 |-------|---------------|
 | `show` | The default: every scene in turn, with new colours each time (section 9) |
-| `text` | Scrolling text (`--text`), 3 × 5 pixel font, accents folded (`à` → `A`) |
+| `text` | Scrolling text (`--text`), 3 × 5 pixel font on the bottom five rows, accents folded (`à` → `A`) |
 | `clock` | The time as `HH:MM`, scrolling |
 | `ip` | The local IP address, scrolling |
 | `rain` | Green drops with fading trails, like Matrix rain |

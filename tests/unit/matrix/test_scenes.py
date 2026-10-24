@@ -40,8 +40,8 @@ class TestTextScene:
         # When: one step in, the first column of L is on the last column
         scene.render(canvas, 1)
         # Then
-        assert lit_cells(canvas) == {(9, y) for y in range(5)}
-        assert canvas.get(9, 0) == (255, 0, 0)
+        assert lit_cells(canvas) == {(9, y) for y in range(1, 6)}
+        assert canvas.get(9, 5) == (255, 0, 0)
 
     def test_loops_after_leaving_the_left_edge(self) -> None:
         # Given: "L" is 3 columns, so one loop is 3 + 10 frames
@@ -50,7 +50,7 @@ class TestTextScene:
         # When
         scene.render(canvas, 13 + 1)
         # Then
-        assert lit_cells(canvas) == {(9, y) for y in range(5)}
+        assert lit_cells(canvas) == {(9, y) for y in range(1, 6)}
 
     def test_loop_frames_cover_one_pass(self) -> None:
         # Given: "L" is 3 columns wide

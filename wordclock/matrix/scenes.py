@@ -77,7 +77,8 @@ class TextScene:
         if step == 0 and (text := self._text()) is not None:
             self._columns = render_text(text)
             loop = len(self._columns) + canvas.width
-        top = (canvas.height - FONT_HEIGHT) // 2
+        # Sit the text on the bottom row.
+        top = canvas.height - FONT_HEIGHT
         canvas.clear()
         for i, column in enumerate(self._columns):
             x = canvas.width - step + i
