@@ -8,9 +8,10 @@
 //
 //   openscad -o grid_left.stl -D 'part="grid"' -D 'half=0' matrix.scad
 //
-// A box that slides onto the back is also the stand: its base is cut at an
-// angle, so the matrix stands on a table leaning back. It hides the
-// Raspberry Pi and the wiring; only the power cable comes out.
+// A compact box slides onto the back. Its base is cut at an angle, so the
+// matrix stands on a table leaning back, and keyholes in its back hang it on
+// a wall. It hides the Raspberry Pi and the wiring; only the power cable
+// comes out.
 //
 // Prefer `uv run wordclock-cad --matrix`, which renders every part.
 
@@ -38,16 +39,17 @@ grid_h = 22;
 back_t = 2;
 outer_t = 2;
 // Space between the matrix and the outer wall. The side margins take the
-// wires that join the rows, with room for a soldering iron; the top and
-// bottom margins take the stand box pins and the strip input wires.
+// wires that join the rows, with room for a soldering iron; the bottom
+// margin takes the strip input wires to the box.
 margin = 22;
 // Notch at the bottom of every wall the strip passes under
 strip_w = 13;
 strip_notch_h = 3;
-// Hole in the back plate for the strip input wires, in the top margin
-// behind the stand box. The wires run from the start of row 0 up the left
-// margin and along the top margin, hidden behind the face border.
+// Holes in the back plate for the strip input wires, in the bottom margin
+// behind the box, one on each side of the seam. The wires run from the
+// start of row 0 along the margins, hidden behind the face border.
 cable_hole = [20, 12];
+cable_hole_dx = 25;
 
 /* [Seam bolts] */
 // M3 bolts that join the two grid halves: one in the top margin and one in
@@ -69,11 +71,11 @@ fit = 0.2;
 paper_t = 0.3;
 
 /* [Stand box] */
-// The box covers the grid between the column lines [first, last], plus
-// box_overhang on each side, and the full height of the panel, so it also
-// covers the cable hole in the top margin.
-box_cols = [3, 7];
-box_overhang = 5;
+// Box at the bottom of the back, centred on the seam. On a table its
+// slanted base and the bottom edge of the grid rest on the table; on a wall
+// it hangs from two screws through keyholes in its back.
+box_w = 120;
+box_h = 101;
 // The matrix leans back by this angle when it stands on the table
 tilt = 15;
 // Depth from the back plate of the grid to the back of the box. It sets the
@@ -81,10 +83,12 @@ tilt = 15;
 box_d = 40;
 box_wall = 2.4;
 box_floor = 2.4;
-// Slide lock: four pins with wide heads go through keyhole slots in the top
-// and bottom margins of the back plate, clear of the strip, then the box
-// slides down and the heads hold it against the back plate. Gravity keeps
-// it locked, and on the table it cannot slide up.
+// Slide lock: four pins with wide heads go through keyhole slots in the
+// back plate on the row lines [lower, upper], then the box slides down and
+// the heads hold it against the back plate. Each slot crosses under its row
+// wall through a low tunnel, so the heads stay between the strips. Gravity
+// keeps the box locked, on a table and on a wall.
+pin_lines = [5, 4];
 pin_neck_d = 4;
 pin_head_d = 8;
 // Cone under the head that pulls the box tight as it slides down, and the
@@ -94,13 +98,13 @@ pin_cap_h = 1;
 // Column that carries the pin from the floor of the box
 pin_column_d = 10;
 // Distance the box slides down to lock
-pin_slide = 8;
+pin_slide = 10;
 // Play around the pin in the slot, and between the cone and the back plate
 pin_fit = 0.2;
 // Raspberry Pi 3B / 4B: 85 x 56 mm board, holes on 58 x 49 mm, 3.5 mm from
-// the long edge with the micro-USB and HDMI ports. The board stands upright
-// against the left wall, ports towards a window in that wall, microSD card
-// at the top.
+// the long edge with the micro-USB and HDMI ports. The board lies across
+// the box between the pin columns: ports up towards a window in the top
+// wall, microSD card towards a slot in the right wall.
 rpi_board = [85, 56];
 rpi_holes = [[3.5, 3.5], [61.5, 3.5], [3.5, 52.5], [61.5, 52.5]];
 rpi_thick = 1.6;
@@ -110,11 +114,11 @@ rpi_standoff_d = 6;
 // Short pegs on the standoffs that go into the board holes (2.7 mm)
 rpi_peg_d = 2.3;
 rpi_peg_h = 2;
-// Gap between the port edge of the board and the left wall
+// Gap between the port edge of the board and the top wall
 rpi_gap = 1;
 // Height of the USB and Ethernet stack above the board
 rpi_ports_h = 17;
-// Click mount, no screws: the port edge goes under two lips on the left
+// Click mount, no screws: the port edge goes under two lips on the top
 // wall, then the other edge is pushed down until a snap hook clicks over it.
 // The lips and the hook sit where the board edges have no parts.
 lip_over = 1.5;
@@ -122,16 +126,22 @@ lip_spans = [[0.5, 4], [62, 80]];
 hook_span = [65, 80];
 hook_t = 1.8;
 hook_over = 1.2;
-// Window in the left wall for the micro-USB and HDMI plugs, from the end of
+// Window in the top wall for the micro-USB and HDMI plugs, from the end of
 // the board with the microSD card, and its height around the ports
 port_window = [5, 46];
 port_window_h = 15;
-// Panel-mount 5.5 x 2.1 mm DC jack in the back of the box (DC-022: 11 mm
-// thread)
+// Slot in the right wall to reach the microSD card, [length, height]
+sd_slot = [16, 8];
+// Keyholes in the back for two wall screws, heads up to 8 mm
+wall_keyhole_dx = 60;
+wall_head_d = 8.6;
+wall_neck_d = 4.6;
+wall_slide = 8;
+// Panel-mount 5.5 x 2.1 mm DC jack in the left wall, low (DC-022: 11 mm
+// thread). On a table and on a wall, its cable leaves from the side.
 jack_d = 11.4;
-// Ventilation slots in the back under the Raspberry Pi, in the top wall and
-// in the right wall
-vent = [3, 30];
+// Ventilation slots in the back under the Raspberry Pi and in the left wall
+vent = [3, 20];
 
 $fn = 32;
 
@@ -204,31 +214,25 @@ module strip_notches(h) {
             cube([2 * wall_t + 2, strip_w, strip_notch_h + 0.01]);
 }
 
-// Margin channels between the outer wall and the first or last row wall,
-// as [y_min, y_max].
-top_channel = [line_y(0) + wall_t / 2, panel_h - outer_t];
+// Margin channel between the outer wall and the last row wall, [y_min, y_max].
 bottom_channel = [outer_t, line_y(rows) - wall_t / 2];
 
-// Locked position of a pin in a channel: the keyhole slot, from the locked
-// neck up to the wide entry, sits in the middle of the channel.
-function lock_y(channel) = (channel[0] + channel[1]) / 2 - pin_slide / 2;
-
-assert(
-    top_channel[1] - top_channel[0] > pin_slide + pin_head_d + 2 * pin_fit + 2,
-    "Margin too narrow for the keyhole slots: raise margin"
-);
-
 // Sides of the stand box, used by the grid for the pin slots.
-box_x0 = line_x(box_cols[0]) - box_overhang;
-box_x1 = line_x(box_cols[1]) + box_overhang;
+box_x0 = seam_x - box_w / 2;
+box_x1 = seam_x + box_w / 2;
 
-// Box pins near its side walls, in the top and bottom margins, clear of the
-// strip and the LEDs.
+// Box pins near its side walls, on the row lines. Each pin locks half a
+// slide below its row line and enters half a slide above it.
 pin_xs = [
     box_x0 + box_wall + pin_column_d / 2 + 1,
     box_x1 - box_wall - pin_column_d / 2 - 1,
 ];
-function box_pins() = [for (x = pin_xs, channel = [top_channel, bottom_channel]) [x, lock_y(channel)]];
+function box_pins() = [for (x = pin_xs, k = pin_lines) [x, line_y(k) - pin_slide / 2]];
+
+assert(
+    pin_slide / 2 + pin_head_d / 2 + pin_fit < pitch / 2 - strip_w / 2,
+    "Pin heads would reach the strip: shorten pin_slide or the head"
+);
 
 // Keyhole slot in the back plate: wide entry at the top, narrow slot down
 // to the locked position.
@@ -246,10 +250,11 @@ module box_pin() {
     translate([0, 0, cone_z + pin_cone_h]) cylinder(d = pin_head_d, h = pin_cap_h);
 }
 
-// Cable hole in the top margin channel, inside the box, between the left
-// pin and the seam bolt block.
-cable_hole_x = (pin_xs[0] + pin_head_d / 2 + seam_x - bolt_block) / 2;
-cable_hole_y = (top_channel[0] + top_channel[1]) / 2;
+// Tunnel at the foot of a row wall, for a pin head sliding across it.
+module pin_tunnel() {
+    translate([-pin_head_d / 2 - 1, -wall_t / 2 - 1, back_t - 0.01])
+        cube([pin_head_d + 2, wall_t + 2, pin_fit + pin_cone_h + pin_cap_h + 0.6]);
+}
 
 module grid(h) {
     difference() {
@@ -264,8 +269,9 @@ module grid(h) {
         strip_notches(h);
         seam_holes();
         for (p = box_pins()) translate(p) pin_slot();
-        if (h == 0)
-            translate([cable_hole_x - cable_hole[0] / 2, cable_hole_y - cable_hole[1] / 2, -1])
+        for (x = pin_xs, k = pin_lines) translate([x, line_y(k)]) pin_tunnel();
+        for (dx = [-cable_hole_dx, cable_hole_dx])
+            translate([seam_x + dx - cable_hole[0] / 2, (bottom_channel[0] + bottom_channel[1] - cable_hole[1]) / 2, -1])
                 cube([cable_hole[0], cable_hole[1], back_t + 2]);
     }
 }
@@ -309,23 +315,24 @@ module face(h) {
 function table_y(z) = -z * tan(tilt);
 
 box_y0 = 0;
-box_y1 = panel_h;
+box_y1 = box_h;
 floor_z = -box_d + box_floor;
 
-// Raspberry Pi upright against the left wall, component side towards the
-// grid: the port edge faces the left wall, the microSD card end is at the
-// top, under the top pins, and the USB and Ethernet ports face down into
-// the wiring room.
-rpi_x0 = box_x0 + box_wall + rpi_gap;
-rpi_y1 = lock_y(top_channel) - pin_column_d / 2 - 4;
+// Raspberry Pi across the box, component side towards the grid: the port
+// edge at the top, the microSD card end on the right, clear of the right
+// pin columns, and the USB and Ethernet ports on the left.
+rpi_y1 = box_y1 - box_wall - rpi_gap;
+rpi_xsd = pin_xs[1] - pin_column_d / 2 - 3.5;
 rpi_bottom = floor_z + rpi_standoff_h;
 rpi_top = rpi_bottom + rpi_thick;
 
 // Board point [along the 85 mm side from the microSD end, along the 56 mm
 // side from the port edge] in front-view coordinates.
-function rpi_at(p) = [rpi_x0 + p[1], rpi_y1 - p[0]];
+function rpi_at(p) = [rpi_xsd - p[0], rpi_y1 - p[1]];
 
 assert(rpi_top + rpi_ports_h < -2, "Box too shallow for the Raspberry Pi: raise box_d");
+assert(rpi_xsd - rpi_board[0] - 2 > pin_xs[0] + pin_column_d / 2, "Box too narrow for the Raspberry Pi: raise box_w");
+assert(line_y(pin_lines[1]) + pin_slide / 2 + pin_head_d / 2 < box_y1 - box_wall, "Box too low for the upper pins: raise box_h");
 
 module box_outline(grow = 0) {
     translate([box_x0 - grow, box_y0 - grow]) square([box_x1 - box_x0 + 2 * grow, box_y1 - box_y0 + 2 * grow]);
@@ -340,24 +347,24 @@ module above_table(lift = 0) {
         polygon([[table_y(z1) + lift, z1], [table_y(z0) + lift, z0], [panel_h + 1, z0], [panel_h + 1, z1]]);
 }
 
-// Lip on the left wall that holds the port edge of the board, over the
+// Lip on the top wall that holds the port edge of the board, over the
 // board span [from, to] along its 85 mm side.
 module rpi_lip(span) {
-    translate([box_x0 + box_wall - 0.01, rpi_y1 - span[1], rpi_top + 0.2])
-        cube([rpi_x0 - box_x0 - box_wall + lip_over + 0.01, span[1] - span[0], 2]);
+    translate([rpi_xsd - span[1], rpi_y1 - lip_over, rpi_top + 0.2])
+        cube([span[1] - span[0], box_y1 - box_wall - rpi_y1 + lip_over + 0.01, 2]);
 }
 
-// Snap hook on the right edge of the board: a flexible arm from the floor
+// Snap hook on the bottom edge of the board: a flexible arm from the floor
 // with a lip at the top and a ramp that pushes it out as the board goes in.
 module rpi_hook() {
-    x_in = rpi_x0 + rpi_board[1] + 0.3;
+    y_in = rpi_y1 - rpi_board[1] - 0.3;
     z0 = rpi_top + 0.2;
     z1 = z0 + 1;
     z_top = z1 + 2.5;
-    translate([0, rpi_y1 - hook_span[0], 0]) rotate([90, 0, 0]) linear_extrude(hook_span[1] - hook_span[0])
+    translate([rpi_xsd - hook_span[1], 0, 0]) rotate([90, 0, 90]) linear_extrude(hook_span[1] - hook_span[0])
         polygon([
-            [x_in, floor_z - 0.01], [x_in + hook_t, floor_z - 0.01], [x_in + hook_t, z_top], [x_in, z_top],
-            [x_in - hook_over - 0.3, z1], [x_in - hook_over - 0.3, z0], [x_in, z0],
+            [y_in, floor_z - 0.01], [y_in - hook_t, floor_z - 0.01], [y_in - hook_t, z_top], [y_in, z_top],
+            [y_in + hook_over + 0.3, z1], [y_in + hook_over + 0.3, z0], [y_in, z0],
         ]);
 }
 
@@ -388,23 +395,34 @@ module box_shell() {
     }
 }
 
+// Keyhole for a wall screw: wide entry at the bottom, narrow slot up, so
+// the box drops onto the screw head.
+module wall_keyhole() {
+    translate([0, 0, -box_d - 1]) {
+        cylinder(d = wall_head_d, h = box_floor + 2);
+        hull() for (dy = [0, wall_slide]) translate([0, dy, 0]) cylinder(d = wall_neck_d, h = box_floor + 2);
+    }
+}
+
 module box() {
-    mid_x = (box_x0 + box_x1) / 2;
     mid_y = (box_y0 + box_y1) / 2;
-    rpi_x1 = rpi_x0 + rpi_board[1];
     difference() {
         box_shell();
-        // Window in the left wall for the micro-USB and HDMI plugs
-        translate([box_x0 - 1, rpi_y1 - port_window[1], rpi_top - 4])
-            cube([box_wall + 1.5, port_window[1] - port_window[0], port_window_h]);
-        // DC jack in the back, low, right of the Raspberry Pi
-        translate([(rpi_x1 + hook_t + box_x1) / 2, 45, -box_d - 1]) cylinder(d = jack_d, h = box_floor + 2);
-        // Vents in the back under the Raspberry Pi, in the top wall and in
-        // the right wall
-        for (i = [0:4])
-            translate([rpi_x0 + 8 + i * 9, rpi_y1 - 42.5 - vent[1] / 2, -box_d - 1]) cube([vent[0], vent[1], box_floor + 2]);
-        for (i = [-3:3]) translate([mid_x + i * 10 - vent[0] / 2, box_y1 - box_wall - 1, floor_z + 4]) cube([vent[0], box_wall + 2, 14]);
-        for (i = [-3:3]) translate([box_x1 - box_wall - 1, mid_y + i * 10 - vent[0] / 2, floor_z + 4]) cube([box_wall + 2, vent[0], 14]);
+        // Window in the top wall for the micro-USB and HDMI plugs
+        translate([rpi_xsd - port_window[1], box_y1 - box_wall - 1, rpi_top - 4])
+            cube([port_window[1] - port_window[0], box_wall + 2, port_window_h]);
+        // Slot in the right wall to reach the microSD card under the board
+        translate([box_x1 - box_wall - 1, rpi_y1 - 28 - sd_slot[0] / 2, rpi_bottom - sd_slot[1] + 2])
+            cube([box_wall + 2, sd_slot[0], sd_slot[1]]);
+        // DC jack in the left wall, low
+        translate([box_x0 - 1, 25, -box_d / 2]) rotate([0, 90, 0]) cylinder(d = jack_d, h = box_wall + 2);
+        // Wall keyholes
+        for (dx = [-wall_keyhole_dx / 2, wall_keyhole_dx / 2]) translate([seam_x + dx, rpi_y1 - 40, 0]) wall_keyhole();
+        // Vents in the back under the Raspberry Pi and in the left wall
+        for (dx = [-10, 0, 10])
+            translate([seam_x + dx - vent[0] / 2, rpi_y1 - 38, -box_d - 1]) cube([vent[0], vent[1], box_floor + 2]);
+        for (y = [mid_y + 10, mid_y + 16, mid_y + 22])
+            translate([box_x0 - 1, y - vent[0] / 2, floor_z + 4]) cube([box_wall + 2, vent[0], 14]);
     }
 }
 
