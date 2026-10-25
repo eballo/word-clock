@@ -7,6 +7,7 @@ from random import Random
 from typing import Protocol
 
 from wordclock.matrix.canvas import Canvas, Color
+from wordclock.matrix.clocks import BlocksClock, DialClock, TixClock
 from wordclock.matrix.font import FONT_HEIGHT, render_text
 
 WHITE: Color = (255, 255, 255)
@@ -207,6 +208,9 @@ SCENE_NAMES: tuple[str, ...] = (
     "show",
     "text",
     "clock",
+    "blocks",
+    "dial",
+    "tix",
     "ip",
     "rain",
     "rainbow",
@@ -235,6 +239,12 @@ def create_scene(name: str, text: str = "HOLA", color: Color | None = None) -> S
         return TextScene(text, **extra)
     if name == "clock":
         return ClockScene(**extra)
+    if name == "blocks":
+        return BlocksClock()
+    if name == "dial":
+        return DialClock()
+    if name == "tix":
+        return TixClock()
     if name == "ip":
         return IpScene(**extra)
     if name == "rain":

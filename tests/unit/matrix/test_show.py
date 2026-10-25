@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from wordclock.matrix.canvas import Canvas
+from wordclock.matrix.clocks import BlocksClock, DialClock, TixClock
 from wordclock.matrix.font import GLYPHS, fold_char
 from wordclock.matrix.scenes import (
     ClockScene,
@@ -29,6 +30,9 @@ from wordclock.matrix.show import (
     greeting,
     load_personal,
 )
+
+# Every kind of clock the show plays.
+CLOCKS = (ClockScene, BlocksClock, DialClock, TixClock)
 
 # 24 October 2026 is a Saturday.
 SATURDAY = datetime(2026, 10, 24, 10, 0)
@@ -158,9 +162,18 @@ class TestShowScene:
         # When: long enough for one round
         seen = self.play(scene, 120 + EFFECT_SECONDS + ICON_SECONDS)
         # Then
-        assert seen[:3] == [IpScene, ClockScene, TextScene]
+        assert seen[0] is IpScene
+        assert seen[1] in CLOCKS and seen[2] is TextScene
         assert seen[3] in (RainbowScene, RainScene, SparkleScene)
-        assert seen[4:7] == [ClockScene, TextScene, IconScene]
+        assert seen[4] in CLOCKS and seen[5:7] == [TextScene, IconScene]
+
+    def test_uses_every_kind_of_clock(self) -> None:
+        # Given
+        scene = ShowScene(seed=1, clock=lambda: SATURDAY)
+        # When
+        kinds = {type(scene._clock_scene()) for _ in range(100)}
+        # Then
+        assert kinds == set(CLOCKS)
 
     def test_shows_the_zzz_at_night(self) -> None:
         # Given

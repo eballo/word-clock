@@ -466,6 +466,9 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 | `show` | The default: every scene in turn, with new colours each time (section 9) |
 | `text` | Scrolling text (`--text`), 3 × 5 pixel font on the bottom five rows, accents folded (`à` → `A`) |
 | `clock` | The time as `HH:MM`, scrolling |
+| `blocks` | The time by counting cells (section 8.1) |
+| `dial` | The matrix as a clock face: 60 cells, one per minute and per second (section 8.1) |
+| `tix` | TIX style: each digit a block of colour with that many cells lit (section 8.1) |
 | `ip` | The local IP address, scrolling |
 | `rain` | Green drops with fading trails, like Matrix rain |
 | `rainbow` | A rainbow sliding diagonally |
@@ -485,6 +488,52 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 
 The scenes draw on a cell canvas of any size (`--width`, `--height`), so
 the same code runs on the 16 × 16 word clock later.
+
+### 8.1 Clocks
+
+Three scenes show the time with colours instead of digits. The examples
+are at 3:17:42 in the afternoon.
+
+**`blocks`** — count the cells, top to bottom:
+
+```
+ row 0  ■ ■ ■ · · · · · · ·   hours: 3 (12-hour clock; blue in the
+ row 1  · · · · · · · · · ·          morning, violet in the afternoon)
+ row 2  ■ ■ ■ · · · · · · ·   blocks of 5 minutes: 3 → 15
+ row 3  · · · · · · · · · ·
+ row 4  ■ ■ · · · · · · · ·   minutes left over: 2 → 17
+ row 5  ■ ■ ■ ■ ■ ■ ■ ▫ · ·   one cell per 6 s: 42 s
+```
+
+**`dial`** — the matrix as a clock face. The 60 cells are the 60 minutes,
+in reading order, and fill up through the hour: every row is ten
+minutes. The twelve half rows are the twelve hours of a dial, and the one
+for the hour glows. A white dot with a short trail runs over every cell
+once a minute.
+
+```
+ row 0  ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   minutes 0-9
+ row 1  ■ ■ ■ ■ ■ ■ ■ ◆ ◆ ◆   minutes 10-16; right half glows: 3 o'clock
+ row 2  · · · · · · · · · ·
+ row 3  · · · · · · · · · ·
+ row 4  · · ○ · · · · · · ·   the dot at cell 42: 42 s
+ row 5  · · · · · · · · · ·
+```
+
+**`tix`** — after the TIX clock: four blocks, one per digit of `HH:MM`
+(24-hour), each with as many cells lit as the digit, at random places
+that change every 4 s. The unlit cells of each block glow faintly, so the
+blocks are easy to tell apart. The bottom row fills with the seconds.
+
+```
+        H H H H   M M M M M
+ row 1  ■ · ■ · · ■ · ■ · ■     red: 1   green: 5
+ row 2  · ■ ■ ■ · · · · ■ ·     blue: 1  red: 7
+ row 3  · · · ■ · · · ■ ■ ■
+```
+
+The `show` scene plays one of the four clocks (`clock`, `blocks`, `dial`
+or `tix`) each time, at random.
 
 ### Web simulator
 

@@ -10,6 +10,7 @@ from pathlib import Path
 from random import Random
 
 from wordclock.matrix.canvas import Canvas, Color
+from wordclock.matrix.clocks import BlocksClock, DialClock, TixClock
 from wordclock.matrix.scenes import (
     ClockScene,
     IpScene,
@@ -234,10 +235,10 @@ class ShowScene:
     """
     Play the other scenes one after another, with new colours every time.
 
-    The show starts with the IP address, then repeats forever: the clock, a
-    text, an effect (rainbow, rain or sparkles), the clock, a text and a
-    drawing. Texts play one full pass; effects and drawings play a fixed
-    time. Each scene fades in and out.
+    The show starts with the IP address, then repeats forever: a clock (the
+    scrolling time, blocks, dial or TIX), a text, an effect (rainbow, rain or
+    sparkles), a clock, a text and a drawing. Texts play one full pass;
+    the other scenes play a fixed time. Each scene fades in and out.
     """
 
     def __init__(
@@ -282,6 +283,13 @@ class ShowScene:
         return IconScene(ICONS[name], RED if name == "heart" else self._color())
 
     def _clock_scene(self) -> Scene:
+        kind = self._random.choice(("text", "blocks", "dial", "tix"))
+        if kind == "blocks":
+            return BlocksClock(clock=self._clock)
+        if kind == "dial":
+            return DialClock(clock=self._clock)
+        if kind == "tix":
+            return TixClock(clock=self._clock)
         return ClockScene(color=self._color(), rainbow=self._random.random() < 0.3)
 
     def _text_scene(self) -> Scene:
