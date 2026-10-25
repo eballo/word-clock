@@ -32,6 +32,7 @@ enclosure, assembly and the software.
 | Screw with a head up to 8 mm, and wall plug | 2 | Only to hang the matrix on a wall |
 | Lever connectors (Wago 221), 3-way | 2 | 5V and GND joints inside the box |
 | Camera, OV5647 5 MP (Raspberry Pi Camera v1.3 size) | 1 | Behind one face rivet; optional |
+| Tactile switch, 6 × 6 mm, 5 mm tall (Freenove kit) | 1 | Behind the button rivet |
 | Camera flat cable, 15-pin, 30 cm | 1 | From the camera, through the cable hole next to it, to the Pi; the 15 cm cable of the camera may just reach |
 | Tracing paper | 1 A3 sheet | Diffuser between the face and the grid |
 | PLA, white | about 250 g | Tray and light grid |
@@ -117,7 +118,7 @@ opening, so the grid cannot come out.
 To open it, pull the face skirt off at one corner, then lift the grid:
 the rim gives way a little and lets the bumps out.
 
-### Wires and camera
+### Wires, camera and button
 
 The strip input wires run in the margins, hidden behind the face border:
 from the start of row 0 down the side margin, then along the bottom margin
@@ -132,6 +133,25 @@ straight through the hole into the stand box, a few centimetres away. The board 
 positions and lens position are parameters (`cam_*` in
 `wordclock/cad/matrix.scad`), set for the Raspberry Pi Camera v1.3:
 measure your board before printing the tray.
+
+The bottom rivet on the other side, mirroring the camera, is a button: a
+small printed cap sits in a through window of the face, held by a flange
+behind it, and presses a 6 × 6 mm tactile switch on a pillar in the tray.
+It looks like every other rivet. The switch legs hang free beside the
+pillar, so the two wires are easy to solder, and they go through the right
+cable hole to the Pi: one to GPIO 3 (pin 5), one to GND (pin 9). The
+switch sizes are parameters too (`btn_*`): measure yours before printing.
+
+```
+   section through the button rivet
+
+   face       ▄▄▄▄▄ ▐▀▀▌ ▄▄▄▄▄   cap, flush with the other rivets
+                  ▀▀▀▀▀▀▀▀        flange behind the face
+                     ██           stem
+                   ▐████▌         tactile switch, legs beside the pillar
+                   ▕████▏         pillar with low sides
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━   tray
+```
 
 ```
    front view, left half
@@ -288,7 +308,7 @@ It writes four Bambu Studio projects, one part per plate:
 | `build/bambu/matrix_tray.3mf` | `tray_left`, `tray_right` | White PLA, 3 walls, 15 % infill | Back plate on the bed |
 | `build/bambu/matrix_grid.3mf` | `grid_left`, `grid_right` | White PLA, 3 walls, 15 % infill | Upside down: bridges on the bed |
 | `build/bambu/matrix_face.3mf` | `face_left`, `face_right` | Black PLA, 100 % infill | Front on the bed, skirt up |
-| `build/bambu/matrix_box.3mf` | `box` | Black PLA, 3 walls, 15 % infill | Floor on the bed |
+| `build/bambu/matrix_box.3mf` | `box`, `button` | Black PLA, 3 walls, 15 % infill | Box floor on the bed; button cap front on the bed |
 
 To change a size, edit the parameters at the top of
 `wordclock/cad/matrix.scad` (wall height, margin, notch width, box depth,
@@ -397,20 +417,24 @@ so the limit can stay at 1,5 A.
 4. Optional: press the camera board onto the pegs of its four posts in the
    bottom margin, lens up, and pass its flat cable through the cable hole
    next to it.
-5. Click the two grid halves into the tray: lower each half straight
+5. Optional: put the tactile switch on its pillar in the bottom margin,
+   solder two wires to its legs and pass them through the right cable hole.
+   Drop the button cap into its rivet window from the back of the right
+   face half, flange inside.
+6. Click the two grid halves into the tray: lower each half straight
    down, the strip under the wall notches, until the four bumps click into
    the rim.
-6. Lay the tracing paper over the grid, cut to the outer edge of the
+7. Lay the tracing paper over the grid, cut to the outer edge of the
    grid walls, so it does not cover the margins or the camera.
-7. Press the two face halves onto the tray until their skirts click over
+8. Press the two face halves onto the tray until their skirts click over
    the rim.
-8. Click the Raspberry Pi into the stand box (section 4) and fit the DC
+9. Click the Raspberry Pi into the stand box (section 4) and fit the DC
    jack in the side wall. Wire the strip input wires inside the box
    (section 4), with about 2 cm of slack for the 10 mm slide.
-9. Lay the matrix face down. Put the four pin heads into the wide ends of
-   the keyhole slots and slide the box 10 mm down, towards the bottom edge,
-   until its base lines up with the bottom of the tray.
-10. Stand the matrix on the table, or hang it on the wall (section 4), and
+10. Lay the matrix face down. Put the four pin heads into the wide ends of
+    the keyhole slots and slide the box 10 mm down, towards the bottom edge,
+    until its base lines up with the bottom of the tray.
+11. Stand the matrix on the table, or hang it on the wall (section 4), and
     plug in the power cable.
 
 ---
@@ -571,6 +595,7 @@ sudo systemctl status wordclock-matrix
 - [ ] `rainbow` scene shows the right colours
 - [ ] Grid clicked in, tracing paper cut to the grid, face clicked on
 - [ ] Optional: camera on its posts, lens behind the rivet window
+- [ ] Optional: switch on its pillar, wired to GPIO 3 and GND, button cap in its rivet
 - [ ] `text`, `clock`, `ip` and `rain` scenes running
 - [ ] `wordclock-matrix` service enabled: the show starts when the matrix is plugged in
 - [ ] Matrix on the table or on the wall, only the power cable showing

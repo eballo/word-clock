@@ -10,6 +10,7 @@ from wordclock.cad import (
     MATRIX_HALVES,
     MATRIX_PARTS,
     MATRIX_SCAD_FILE,
+    MATRIX_SINGLE_PARTS,
     OPTIONAL_PARTS,
     SCAD_FILE,
     TEST_TILE,
@@ -185,13 +186,14 @@ class TestWriteBambuProjects:
 
 
 class TestMatrix:
-    def test_plans_both_halves_of_grid_and_face_and_the_box(self) -> None:
+    def test_plans_both_halves_of_each_layer_and_the_single_parts(self) -> None:
         # Given
         out = Path("build/stl")
         # When
         jobs = plan_matrix_jobs(out)
         # Then
-        assert len(jobs) == len(MATRIX_PARTS) * len(MATRIX_HALVES) + 1
+        assert len(jobs) == len(MATRIX_PARTS) * len(MATRIX_HALVES) + len(MATRIX_SINGLE_PARTS)
+        assert RenderJob("button", out / "matrix" / "button.stl", scad=MATRIX_SCAD_FILE) in jobs
         assert RenderJob(MATRIX_BOX_PART, out / "matrix" / "box.stl", scad=MATRIX_SCAD_FILE) in jobs
         assert (
             RenderJob("face", out / "matrix" / "face_right.stl", half=1, scad=MATRIX_SCAD_FILE)
@@ -211,7 +213,7 @@ class TestMatrix:
 
     def test_box_command_has_no_half(self) -> None:
         # Given
-        job = plan_matrix_jobs(Path("build"))[-1]
+        job = next(job for job in plan_matrix_jobs(Path("build")) if job.part == MATRIX_BOX_PART)
         # When
         cmd = scad_command(job)
         # Then
@@ -227,7 +229,7 @@ class TestMatrix:
         assert "pitch = 1000 / 30;" in scad
 
     def test_writes_one_project_per_part(self, tmp_path: Path) -> None:
-        # Given: a tiny STL for every half and the box
+        # Given: a tiny STL for every half, the box and the button
         stl = "\n".join(
             ["solid s", "facet normal 0 0 1", "outer loop", "vertex 0 0 0", "vertex 1 0 0"]
             + ["vertex 0 1 0", "endloop", "endfacet", "endsolid s", ""]
@@ -248,3 +250,19 @@ class TestMatrix:
         with zipfile.ZipFile(projects[0]) as zf:
             settings = zf.read("Metadata/model_settings.config").decode()
         assert settings.count("<plate>") == 2
+
+    def test_box_project_holds_the_box_and_the_button(self, tmp_path: Path) -> None:
+        # Given
+        stl = "\n".join(
+            ["solid s", "facet normal 0 0 1", "outer loop", "vertex 0 0 0", "vertex 1 0 0"]
+            + ["vertex 0 1 0", "endloop", "endfacet", "endsolid s", ""]
+        )
+        (tmp_path / "stl" / "matrix").mkdir(parents=True)
+        for job in plan_matrix_jobs(tmp_path / "stl"):
+            job.output.write_text(stl, encoding="ascii")
+        # When
+        projects = write_matrix_projects(tmp_path / "stl", tmp_path / "bambu")
+        # Then: one plate each
+        with zipfile.ZipFile(projects[-1]) as zf:
+            settings = zf.read("Metadata/model_settings.config").decode()
+        assert settings.count("<plate>") == len(MATRIX_SINGLE_PARTS)

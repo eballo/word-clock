@@ -13,6 +13,8 @@
 //   face  one window per cell and decorative rivets around the border, one
 //         of them a window for the camera; its skirt clicks onto the rim
 //
+// Another rivet is a printed button cap that presses a tactile switch.
+//
 //   openscad -o grid_left.stl -D 'part="grid"' -D 'half=0' matrix.scad
 //
 // A compact box slides onto the back. Its base is cut at an angle, so the
@@ -23,7 +25,7 @@
 // Prefer `uv run wordclock-cad --matrix`, which renders every part.
 
 /* [Part selection] */
-// tray | grid | face | box | assembly | standing | none (library use)
+// tray | grid | face | box | button | assembly | standing | none (library use)
 part = "assembly";
 // 0 = left half, 1 = right half
 half = 0;
@@ -116,6 +118,24 @@ cam_hole_d = 2.2;
 cam_post_d = 4.5;
 // Bottom rivet with the camera, counted from the left
 cam_rivet = 6;
+
+/* [Button] */
+// 6 x 6 mm tactile switch on a pillar in the bottom margin, behind the
+// bottom rivet that mirrors the camera. That rivet is a printed cap: press
+// it and it presses the switch. Measure your switch and adjust.
+btn_body = 6;
+// From the base of the switch body to the top of its plunger
+btn_h = 5;
+// Legs on the two sides along x, 6.5 mm apart: the pillar is narrower, so
+// they hang free for soldering.
+btn_pillar = [5, 6];
+btn_side_h = 1.5;
+btn_cap_d = 5.6;
+btn_flange_d = 9;
+btn_flange_t = 1;
+btn_stem_d = 3;
+btn_stem_l = 3;
+btn_gap = 0.2;
 
 /* [Stand box] */
 // Box at the bottom of the back, centred on the seam. On a table its
@@ -263,6 +283,43 @@ assert(
     "Camera board over the cable hole: change cam_rivet"
 );
 
+// Button behind the bottom rivet that mirrors the camera, its cap flush with
+// the other rivets.
+btn_xy = [rivet_x(rivet_nx - cam_rivet), rivet_bottom];
+btn_cap_front = rim_h + face_t - rivet_depth;
+btn_flange_z = rim_h - btn_flange_t;
+btn_base = btn_flange_z - btn_stem_l - btn_gap - btn_h;
+
+assert(
+    btn_xy[0] - btn_flange_d / 2 > seam_x + cable_hole_dx + cable_hole[0] / 2 + 1,
+    "Button over the cable hole: change cam_rivet"
+);
+
+// Pillar for the switch, with low sides along x that keep it in place.
+module btn_pillar() {
+    translate([btn_xy[0], btn_xy[1], 0]) {
+        translate([-btn_pillar[0] / 2, -btn_pillar[1] / 2, 0]) cube([btn_pillar[0], btn_pillar[1], btn_base]);
+        for (side = [-1, 1])
+            translate([-btn_pillar[0] / 2, side > 0 ? btn_body / 2 + 0.2 : -btn_body / 2 - 1.4, 0])
+                cube([btn_pillar[0], 1.2, btn_base + btn_side_h]);
+    }
+}
+
+// Button cap in place: front in the rivet window, flange behind the face,
+// stem down to the switch.
+module button() {
+    translate([btn_xy[0], btn_xy[1], 0]) {
+        translate([0, 0, rim_h]) cylinder(d = btn_cap_d, h = btn_cap_front - rim_h);
+        translate([0, 0, btn_flange_z]) cylinder(d = btn_flange_d, h = btn_flange_t);
+        translate([0, 0, btn_flange_z - btn_stem_l]) cylinder(d = btn_stem_d, h = btn_stem_l + 0.01);
+    }
+}
+
+// Printed front down.
+module button_print() {
+    translate([0, 0, btn_cap_front]) mirror([0, 0, 1]) translate([-btn_xy[0], -btn_xy[1], 0]) button();
+}
+
 module cam_posts() {
     for (hole = cam_holes) translate([cam_x0 + hole[0], cam_y0 + hole[1], 0]) {
         cylinder(d = cam_post_d, h = cam_z);
@@ -303,6 +360,7 @@ module tray(h) {
                 linear_extrude(rim_h) rim_2d();
                 seam_blocks(h);
                 cam_posts();
+                btn_pillar();
             }
             translate([0, 0, -1]) linear_extrude(rim_h + 2) half_rect(h);
         }
@@ -439,7 +497,7 @@ module face_body(h) {
             }
             translate([0, 0, -1]) linear_extrude(face_t + 2) windows_2d(h);
             for (r = rivets()) translate([r[0], r[1], -1]) cylinder(d = rivet_d, h = rivet_depth + 1);
-            translate([cam_lens_xy[0], cam_lens_xy[1], -1]) cylinder(d = rivet_d, h = face_t + 2);
+            for (xy = [cam_lens_xy, btn_xy]) translate([xy[0], xy[1], -1]) cylinder(d = rivet_d, h = face_t + 2);
         }
         translate([0, 0, -1]) linear_extrude(face_t + skirt_h + 2) half_rect(h, skirt_out);
     }
@@ -588,6 +646,7 @@ module assembly() {
         color("#222") translate([0, 0, rim_h + face_t + explode]) mirror([0, 0, 1]) face_body(h);
     }
     color("#333") translate([0, 0, -explode]) box();
+    color("#222") translate([0, 0, explode]) button();
 }
 
 module standing_assembly() {
@@ -598,5 +657,6 @@ if (part == "tray") tray(half);
 else if (part == "grid") grid_print(half);
 else if (part == "face") face(half);
 else if (part == "box") box_print();
+else if (part == "button") button_print();
 else if (part == "assembly") assembly();
 else if (part == "standing") standing_assembly();
