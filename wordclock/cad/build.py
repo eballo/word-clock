@@ -40,9 +40,9 @@ EXTRA_PARTS: tuple[str, ...] = ("screenfront", "screenback", "screenhanger")
 # Raspberry Pi Zero 2 W tray for a clock without the screen module.
 OPTIONAL_PARTS: tuple[str, ...] = ("spacer", "recess", "pitray")
 
-# Mini 10x6 matrix for the 30 LEDs/metre strip: the grid and the face in two
-# halves, and one back box for the Raspberry Pi and the wiring.
-MATRIX_PARTS: tuple[str, ...] = ("grid", "face")
+# Mini 10x6 matrix for the 30 LEDs/metre strip: the tray, the grid and the
+# face in two halves, and one stand box for the Raspberry Pi and the wiring.
+MATRIX_PARTS: tuple[str, ...] = ("tray", "grid", "face")
 MATRIX_HALVES: dict[str, int] = {"left": 0, "right": 1}
 MATRIX_BOX_PART = "box"
 
@@ -201,9 +201,9 @@ def write_matrix_projects(stl_dir: Path, out_dir: Path) -> list[Path]:
     """
     Group the mini matrix STL files into Bambu Studio projects.
 
-    Writes ``matrix_grid.3mf`` and ``matrix_face.3mf``, one half per plate,
-    and ``matrix_box.3mf``, so each project carries the print settings of its
-    part.
+    Writes ``matrix_tray.3mf``, ``matrix_grid.3mf`` and ``matrix_face.3mf``,
+    one half per plate, and ``matrix_box.3mf``, so each project carries the
+    print settings of its part.
 
     Args:
         stl_dir: Directory with the rendered STL files.
@@ -212,7 +212,7 @@ def write_matrix_projects(stl_dir: Path, out_dir: Path) -> list[Path]:
     Returns:
         Paths of the written projects.
     """
-    settings = {"grid": GRID_SETTINGS, "face": FACE_SETTINGS}
+    settings = {"tray": GRID_SETTINGS, "grid": GRID_SETTINGS, "face": FACE_SETTINGS}
     projects = []
     for part in MATRIX_PARTS:
         halves = [stl_dir / "matrix" / f"{part}_{name}.stl" for name in MATRIX_HALVES]

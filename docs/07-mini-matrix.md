@@ -7,8 +7,11 @@ Tremex WS2812B strip (30 LEDs/metre, 60 LEDs) already at hand. Every cell
 sits over one LED, so the matrix uses the whole strip. It runs the same
 scene software the big clock will use (scrolling text, time, IP address,
 animations) and tests the Raspberry Pi, the wiring and the printed
-grid-and-face design on a small scale. This doc covers the parts, cutting
-and wiring the strip, printing the enclosure, assembly and the software.
+grid-and-face design on a small scale. The enclosure is three layers that
+click together: a flat tray where the strip is stuck and soldered, the
+cell grid and the face, with a camera behind one of the face rivets. This
+doc covers the parts, cutting and wiring the strip, printing the
+enclosure, assembly and the software.
 
 ---
 
@@ -24,12 +27,14 @@ and wiring the strip, printing the enclosure, assembly and the software.
 | 220 Ω resistor | 1 | In the data line (Freenove kit) |
 | Rectifier diode | 1 | Only if the 3,3V data is not read reliably (Freenove kit) |
 | Wire, 22 AWG, three colours | about 1 m | 5 joints between rows, about 6 cm each |
-| M3 × 16 mm bolt and nut | 2 | Join the two grid halves |
+| M3 × 16 mm bolt and nut | 2 | Join the two tray halves |
 | Panel-mount DC jack, 5.5 × 2.1 mm (DC-022, 11 mm hole) | 1 | Power input in the side of the stand box |
 | Screw with a head up to 8 mm, and wall plug | 2 | Only to hang the matrix on a wall |
 | Lever connectors (Wago 221), 3-way | 2 | 5V and GND joints inside the box |
+| Camera, OV5647 5 MP (Raspberry Pi Camera v1.3 size) | 1 | Behind one face rivet; optional |
+| Camera flat cable, 15-pin, 50 cm | 1 | From the camera, along the margins, to the Pi |
 | Tracing paper | 1 A3 sheet | Diffuser between the face and the grid |
-| PLA, white | about 150 g | Light grid |
+| PLA, white | about 250 g | Tray and light grid |
 | PLA, black | about 250 g | Front face and stand box |
 
 ---
@@ -39,12 +44,12 @@ and wiring the strip, printing the enclosure, assembly and the software.
 ```
                  37,7 cm
 ┌──────────────────────────────────────┐
-│  margin 2,2 cm on every side         │
+│ ○  ○  ○  ○  ○  ○  ◉  ○  ○  ○  ○  ○ ○ │  top margin 2,8 cm: camera (◉)
 │ ┌──────────────────────────────────┐ │
-│ │ 10 × 6 cells, 3,33 cm pitch      │ │ 24,4 cm
-│ │ matrix 33,3 × 20,0 cm            │ │
+│ │ 10 × 6 cells, 3,33 cm pitch      │ │ 25,0 cm
+○ │ matrix 33,3 × 20,0 cm            │ ○
 │ └──────────────────────────────────┘ │
-│  row joints and input wires          │
+│ ○  ○  ○  ○  ○  ○  ○  ○  ○  ○  ○  ○ ○ │  margins 2,2 cm: wires
 └──────────────────────────────────────┘
         left half │ right half   (split after column 5)
 ```
@@ -53,53 +58,90 @@ and wiring the strip, printing the enclosure, assembly and the software.
 |-------------|-------|
 | Cell pitch | 3,33 cm (one LED of a 30 LEDs/metre strip) |
 | Matrix | 33,3 × 20,0 cm |
-| Grid panel | 37,7 × 24,4 cm |
-| Margin | 2,2 cm on every side: a 19 mm channel inside the outer wall, wide enough for a soldering iron |
-| Face (with its skirt) | 38,1 × 24,8 cm |
+| Tray | 37,7 × 25,0 cm |
+| Margins | 2,2 cm at the sides and bottom: a 19 mm channel inside the rim, wide enough for a soldering iron; 2,8 cm at the top for the camera board |
+| Face (with its skirt) | 38,1 × 25,4 cm |
 | Depth | about 2,6 cm (2 mm back plate, 22 mm walls, paper, 2 mm face), plus 4,0 cm of stand box |
-| Printed halves | Grid 18,9 × 24,4 cm, face 19,1 × 24,8 cm: each fits the 25,6 cm bed of the Bambu Lab A1 |
+| Printed halves | Tray 18,9 × 25,0 cm, grid 18,7 × 24,7 cm, face 19,1 × 25,4 cm: each fits the 25,6 cm bed of the Bambu Lab A1 |
 | Stand box | 12,0 × 10,1 × 4,0 cm, at the bottom of the back, centred |
 | Tilt on the table | 15° backwards |
 | Face windows | 3,03 × 3,03 cm, 3 mm bars |
+| Rivets | Ø6 mm, 1 mm deep, about 2,1 cm apart around the border |
 
 ---
 
-## 3. Layer stack
+## 3. Layers
 
 ```
    viewer
      │
      ▼
-┌──────────────────────────────┐  face, black PLA, 2 mm, one window per cell
-│ ▓▓  ▓▓  ▓▓  ▓▓  ▓▓  ▓▓  ▓▓   │  skirt (6 mm) hugs the grid outer wall
-├──────────────────────────────┤  tracing paper
-│ │    │    │    │    │    │   │  light grid, white PLA, 22 mm walls
-│ │ ●  │ ●  │ ●  │ ●  │ ●  │ ● │  one WS2812B LED per cell
-└──────────────────────────────┘  back plate 2 mm, strip stuck on it
-        ┌──────────────┐          stand box, 40 mm: Raspberry Pi, DC jack,
-        │  Pi   ▣ jack │          wiring
-        └──────────────┘
+┌──────────────────────────────┐  face, black PLA, 2 mm: one window per cell,
+│ ▓▓  ▓▓  ▓▓  ▓▓  ▓▓  ▓▓  ▓▓   │  rivets; the skirt clicks onto the tray rim
+├──────────────────────────────┤  tracing paper, cut to the grid
+│ │    │    │    │    │    │   │  grid, white PLA: the 22 mm walls only,
+│ │    │    │    │    │    │   │  clicks into the tray rim
+│ ●    ●    ●    ●    ●    ●   │  one WS2812B LED per cell
+└──────────────────────────────┘  tray, white PLA: 2 mm back plate and rim,
+        ┌──────────────┐          the strip stuck on the plate
+        │  Pi   ◯ jack │          stand box, 40 mm: Raspberry Pi, DC jack,
+        └──────────────┘          wiring
 ```
 
-The strip runs along the centre of every row, under the column walls
-through 13 mm notches. The ends of each row come out into the side
-margins, where the wires that join the rows run. Each side margin is a
-19 mm channel, so the soldering iron reaches the pads.
+The tray is open while you work on the strip: stick the rows on the flat
+plate, between two shallow guide grooves per row, and solder every joint
+with nothing in the way. Then the grid goes on top: the strip passes under
+the walls through 13 mm notches, and the row ends come out into the side
+margins, where the joints are.
 
-The strip input wires also run in the margins, hidden behind the face
-border: from the start of row 0 down the side margin, then along the
-bottom margin to one of two 20 × 12 mm holes in the back plate, one on
-each side of the seam. The holes sit behind the stand box, so the wires
-go straight into it.
+### Click fit
+
+Nothing is glued or screwed, except the two M3 bolts that join the tray
+halves. Eight bridges reach from the top of the grid across the margins to
+the rim, two on each side; a bump at the end of each bridge clicks into a
+2,6 mm hole in the rim. The face skirt has its own bumps that click into
+the same holes from outside, and once it is on, it stops the rim from
+opening, so the grid cannot come out.
+
+```
+   section through the rim at a click point
+
+        face ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+                              █ ← skirt
+   grid  ┃▀▀▀▀ bridge ▀▀▀▀●○● ║ ← bump in the rim hole, from both sides
+         ┃                  ║ █
+         ┃   margin         ║
+   ━━━━━━┻━━━━━━━━━━━━━━━━━━╝   tray: back plate and rim
+```
+
+To open it, pull the face skirt off at one corner, then lift the grid:
+the rim gives way a little and lets the bumps out.
+
+### Wires and camera
+
+The strip input wires run in the margins, hidden behind the face border:
+from the start of row 0 down the side margin, then along the bottom margin
+to one of two 20 × 12 mm holes in the back plate, one on each side of the
+seam. The holes sit behind the stand box, so the wires go straight into
+it.
+
+The camera board sits on four posts in the top margin, its lens against
+the back of the face, behind one of the top rivets, which is a through
+window. Its flat cable runs the same way as the wires, down the side
+margin and along the bottom margin, to the Pi. The board size, hole
+positions and lens position are parameters (`cam_*` in
+`wordclock/cad/matrix.scad`), set for the Raspberry Pi Camera v1.3:
+measure your board before printing the tray.
 
 ```
    front view, left half
 
    ┌──────────────────────────────────────
+   │  ○    ○    ○    ○   [◉ camera]   ○
    │ ║┌──────┬──────┬──────┬──────┬───
    │ ║│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ row 0 strip, DIN on the left
    │ ║┼──────┼──────┼──────┼──────┼───
-   │ ║   ⋮      wires down the side margin
+   │ ║   ⋮      wires and camera cable down the side margin
    │ ║└──────┴──────┴──────┴──────┴───
    │ ╚══════════════════════▣  ← 20 × 12 mm hole, behind the box
    └──────────────────────────────────────
@@ -114,7 +156,7 @@ wiring. The same box works on a table and on a wall:
 
 | Where | How it holds |
 |-------|--------------|
-| Table | The base of the box is cut at 15°: the matrix leans back, on the bottom edge of the grid and the base of the box |
+| Table | The base of the box is cut at 15°: the matrix leans back, on the bottom edge of the tray and the base of the box |
 | Wall | Two keyholes in the back of the box hang on two screws; the back of the box rests flat on the wall, 4 cm behind the grid |
 
 Only the power cable comes out, from the side of the box, in both cases.
@@ -136,12 +178,12 @@ Only the power cable comes out, from the side of the box, in both cases.
 
 ### Slide lock
 
-The box slides onto the grid, without screws or clips. Four pins on
+The box slides onto the tray, without screws or clips. Four pins on
 columns of the box have a wide conical head. They go through the wide end
-of four keyhole slots in the grid back plate, on the row lines between
+of four keyhole slots in the tray back plate, on the row lines between
 rows 3, 4 and 5, and the box slides 10 mm down. The heads then hold the
 box against the back plate, and the cones pull it tight. Each slot crosses
-under its row wall through a 3,8 mm tunnel, and the heads stay between the
+under a grid row wall through a 3,8 mm tunnel, and the heads stay between the
 strips, 1 mm clear of the 13 mm strip notch.
 
 ```
@@ -149,7 +191,7 @@ strips, 1 mm clear of the 13 mm strip notch.
 
         ╭───╮                           ▄███▄  head Ø8, cone under it
         │   │  ← head goes in here        ▀█▀
-   ═════╰┐ ┌╯═════ row wall,          ════█════  grid back plate (2 mm)
+   ═════╰┐ ┌╯═════ row wall,          ════█════  tray back plate (2 mm)
          │ │       tunnel under it         █
          │ │  ← box slides 10 mm down      █    column Ø10
          ╰─╯     and stays locked       ▀▀▀▀▀▀▀  floor of the stand box
@@ -207,7 +249,7 @@ snap hook holds the bottom edge.
 | Port window, 41 × 15 mm | Top wall | Micro-USB and HDMI plugs: power the Pi straight from a USB charger, or plug a screen in |
 | microSD slot, 16 × 8 mm | Other side wall | Reach the card with a fingernail or tweezers |
 | Wall keyholes, 60 mm apart | Back | Two screws with heads up to 8 mm |
-| Cable holes, 20 × 12 mm | Grid back plate, bottom margin, inside the box | Strip input wires, never outside |
+| Cable holes, 20 × 12 mm | Tray back plate, bottom margin, inside the box | Strip input wires and camera cable, never outside |
 | Vents | Back under the Pi, and a side wall | Air for the Raspberry Pi |
 
 To hang it on a wall, drive two screws 60 mm apart on a level line, with
@@ -240,11 +282,12 @@ with double-sided tape.
 uv run wordclock-cad --matrix    # STL files in build/stl/matrix/
 ```
 
-It writes three Bambu Studio projects, one part per plate:
+It writes four Bambu Studio projects, one part per plate:
 
 | Project | Parts | Filament | Orientation |
 |---------|-------|----------|-------------|
-| `build/bambu/matrix_grid.3mf` | `grid_left`, `grid_right` | White PLA, 3 walls, 15 % infill | Back plate on the bed |
+| `build/bambu/matrix_tray.3mf` | `tray_left`, `tray_right` | White PLA, 3 walls, 15 % infill | Back plate on the bed |
+| `build/bambu/matrix_grid.3mf` | `grid_left`, `grid_right` | White PLA, 3 walls, 15 % infill | Upside down: bridges on the bed |
 | `build/bambu/matrix_face.3mf` | `face_left`, `face_right` | Black PLA, 100 % infill | Front on the bed, skirt up |
 | `build/bambu/matrix_box.3mf` | `box` | Black PLA, 3 walls, 15 % infill | Floor on the bed |
 
@@ -276,13 +319,16 @@ to left, so each row joins the next at alternating ends.
 1. Check the arrows printed on the strip: they point away from DIN. Start
    from the DIN end.
 2. Cut 6 pieces of 10 LEDs (33,3 cm each) on the copper cut marks.
-3. Stick each piece along the centre of its row, through the wall notches,
+3. Bolt the two tray halves together (section 7, step 1), so the rows run
+   straight across the seam.
+4. Stick each piece on the tray, between the two guide grooves of its row,
    arrows pointing in the direction of the row (right on rows 0, 2 and 4,
-   left on rows 1, 3 and 5).
-4. Solder three wires (5V, data, GND) from the DOUT end of each row to the
+   left on rows 1, 3 and 5). The grid is not on yet: the plate is flat.
+5. Solder three wires (5V, data, GND) from the DOUT end of each row to the
    DIN end of the next one, in the side margin. Keep the colours the same
-   on every joint.
-5. Solder the input wires to the DIN end of row 0, about 40 cm long. Run
+   on every joint, and keep the joints flat on the plate, clear of the
+   grid walls.
+6. Solder the input wires to the DIN end of row 0, about 40 cm long. Run
    them down the side margin and along the bottom margin, and pass them
    through the nearest 20 × 12 mm hole in the back plate.
 
@@ -344,23 +390,29 @@ so the limit can stay at 1,5 A.
 
 ## 7. Assemble
 
-1. Bolt the two grid halves together with the two M3 bolts, one in the
-   top margin and one in the bottom margin. The stand box pins sit in both
-   halves, so the box also holds the seam.
-2. Stick the strip rows and solder the joints (section 6).
-3. Click the Raspberry Pi into the stand box (section 4) and fit the DC
-   jack in the side wall.
-4. Wire the strip input wires, which come out of the cable hole, inside
-   the box (section 4). Leave about 2 cm of slack for the 10 mm slide.
-5. Lay the matrix face down. Put the four pin heads into the wide ends of
+1. Bolt the two tray halves together with the two M3 bolts, in the blocks
+   in the top and bottom margins.
+2. Stick the strip rows and solder the joints on the open tray (section 6).
+3. Run the `wiring` scene (section 8) and check that the cells light in
+   order. A bad joint is still easy to reach.
+4. Optional: press the camera board onto the pegs of its four posts, lens
+   up, and run its flat cable down the side margin and along the bottom
+   margin to the cable hole.
+5. Click the two grid halves into the tray: lower each half straight
+   down, the strip under the wall notches, until the four bumps click into
+   the rim.
+6. Lay the tracing paper over the grid, cut to the outer edge of the
+   grid walls, so it does not cover the margins or the camera.
+7. Press the two face halves onto the tray until their skirts click over
+   the rim.
+8. Click the Raspberry Pi into the stand box (section 4) and fit the DC
+   jack in the side wall. Wire the strip input wires inside the box
+   (section 4), with about 2 cm of slack for the 10 mm slide.
+9. Lay the matrix face down. Put the four pin heads into the wide ends of
    the keyhole slots and slide the box 10 mm down, towards the bottom edge,
-   until its base lines up with the bottom of the grid.
-6. Run the `wiring` scene (section 8) and check that the cells light in
-   order before closing.
-7. Lay the tracing paper over the grid, cut to the outer edge of the walls.
-8. Press the two face halves onto the grid: the skirt hugs the outer wall.
-9. Stand the matrix on the table, or hang it on the wall (section 4), and
-   plug in the power cable.
+   until its base lines up with the bottom of the tray.
+10. Stand the matrix on the table, or hang it on the wall (section 4), and
+    plug in the power cable.
 
 ---
 
@@ -509,16 +561,17 @@ sudo systemctl status wordclock-matrix
 
 ## 10. Build checklist
 
-- [ ] Grid halves, face halves and stand box printed (`uv run wordclock-cad --matrix`)
-- [ ] Grid halves bolted together with two M3 × 16 mm bolts
-- [ ] Raspberry Pi clicked into the stand box, DC jack fitted, box slid onto the grid
-- [ ] Strip cut into 6 pieces of 10 LEDs, stuck in a snake, arrows checked
+- [ ] Tray, grid and face halves and the stand box printed (`uv run wordclock-cad --matrix`)
+- [ ] Tray halves bolted together with two M3 × 16 mm bolts
+- [ ] Raspberry Pi clicked into the stand box, DC jack fitted, box slid onto the tray
+- [ ] Strip cut into 6 pieces of 10 LEDs, stuck on the open tray in a snake, arrows checked
 - [ ] Five row joints soldered, input wires along the margins and through the hole behind the box
 - [ ] Quick test powered from the Pi (section 6.4): `wiring` scene with `--max-ma 600`
 - [ ] Safety check of [06 — Bench Test](06-bench-test.md) done before powering up
 - [ ] `wiring` scene lights the 60 cells in order
 - [ ] `rainbow` scene shows the right colours
-- [ ] Tracing paper and face fitted
+- [ ] Grid clicked in, tracing paper cut to the grid, face clicked on
+- [ ] Optional: camera on its posts, lens behind the rivet window
 - [ ] `text`, `clock`, `ip` and `rain` scenes running
 - [ ] `wordclock-matrix` service enabled: the show starts when the matrix is plugged in
 - [ ] Matrix on the table or on the wall, only the power cable showing

@@ -205,7 +205,7 @@ class TestMatrix:
         # When
         cmd = scad_command(job)
         # Then
-        assert 'part="grid"' in cmd
+        assert 'part="tray"' in cmd
         assert "half=0" in cmd
         assert cmd[-1] == str(MATRIX_SCAD_FILE)
 
@@ -240,6 +240,7 @@ class TestMatrix:
         projects = write_matrix_projects(tmp_path / "stl", tmp_path / "bambu")
         # Then
         assert projects == [
+            tmp_path / "bambu" / "matrix_tray.3mf",
             tmp_path / "bambu" / "matrix_grid.3mf",
             tmp_path / "bambu" / "matrix_face.3mf",
             tmp_path / "bambu" / "matrix_box.3mf",

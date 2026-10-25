@@ -3,8 +3,15 @@
 // A quick build before the word clock: one LED per cell, 33.3 mm pitch, the
 // 2 m Tremex strip cut into 6 rows of 10 and wired in a snake. All sizes are
 // in millimetres, in "front view" coordinates: x to the right, y up, row 0
-// at the top. The panel is 37.7 cm wide, so the grid and the face are split
-// into a left and a right half for the 25 cm bed of the Bambu Lab A1.
+// at the top. The panel is 37.7 cm wide, so every layer is split into a left
+// and a right half for the 25 cm bed of the Bambu Lab A1.
+//
+// Three layers click together, no glue:
+//   tray  flat back plate with a rim: the strip is stuck and soldered on it
+//         with nothing in the way
+//   grid  the cell walls only; bridges at the top click into the tray rim
+//   face  one window per cell and decorative rivets around the border, one
+//         of them a window for the camera; its skirt clicks onto the rim
 //
 //   openscad -o grid_left.stl -D 'part="grid"' -D 'half=0' matrix.scad
 //
@@ -16,7 +23,7 @@
 // Prefer `uv run wordclock-cad --matrix`, which renders every part.
 
 /* [Part selection] */
-// grid | face | box | assembly | standing | none (library use)
+// tray | grid | face | box | assembly | standing | none (library use)
 part = "assembly";
 // 0 = left half, 1 = right half
 half = 0;
@@ -37,25 +44,45 @@ wall_t = 1.2;
 // spread the light of a single LED more evenly over its cell.
 grid_h = 22;
 back_t = 2;
+// Tray rim, the outer wall of the matrix
 outer_t = 2;
-// Space between the matrix and the outer wall. The side margins take the
-// wires that join the rows, with room for a soldering iron; the bottom
-// margin takes the strip input wires to the box.
+// Space between the matrix and the rim. The side margins take the wires
+// that join the rows, with room for a soldering iron; the bottom margin
+// takes the strip input wires to the box. The top margin is wider for the
+// camera board.
 margin = 22;
+margin_top = 28;
 // Notch at the bottom of every wall the strip passes under
 strip_w = 13;
 strip_notch_h = 3;
-// Holes in the back plate for the strip input wires, in the bottom margin
-// behind the box, one on each side of the seam. The wires run from the
-// start of row 0 along the margins, hidden behind the face border.
+// Shallow grooves in the tray along both edges of every strip, to line the
+// strip up before the grid is on
+guide_w = 0.8;
+guide_depth = 0.4;
+// Holes in the back plate for the strip input wires and the camera cable,
+// in the bottom margin behind the box, one on each side of the seam. The
+// wires run along the margins, hidden behind the face border.
 cable_hole = [20, 12];
 cable_hole_dx = 25;
 
+/* [Click fit] */
+// Bridges from the grid across the margin, at the top of the walls, end in
+// a bump that clicks into a hole in the tray rim. The face skirt clicks
+// into the same holes from outside, and then holds the rim in.
+bridge_w = 6;
+bridge_h = 5;
+bump_d = 2.4;
+grid_bump = 1;
+face_bump = 0.6;
+click_hole_d = 2.6;
+rim_gap = 0.3;
+
 /* [Seam bolts] */
-// M3 bolts that join the two grid halves: one in the top margin and one in
-// the bottom margin, where the bolt heads and nuts can be reached
+// M3 bolts that join the two tray halves, in blocks in the top and bottom
+// margins
 bolt_d = 3.4;
 bolt_block = 6;
+bolt_block_h = 10;
 
 /* [Front face] */
 // Black face with one square window per cell, printed front side down
@@ -63,22 +90,42 @@ face_t = 2;
 // Width of the bars between the windows
 bar_w = 3;
 window_r = 1.5;
-// Skirt that hugs the grid outer wall and holds the face in place
+// Skirt that hugs the tray rim and clicks onto it
 skirt_t = 1.6;
 skirt_h = 6;
 fit = 0.2;
-// Paper diffuser between the face and the grid (assembly view only)
+// Rivets: round recesses around the border, about rivet_pitch apart
+rivet_d = 6;
+rivet_depth = 1;
+rivet_pitch = 21;
+// Paper diffuser between the face and the grid, cut to the grid
 paper_t = 0.3;
+
+/* [Camera] */
+// OV5647 camera board in the top margin, its lens behind one of the top
+// rivets, which is a through window. Sizes of the Raspberry Pi Camera v1.3:
+// measure your board and adjust.
+cam_board = [25, 24];
+cam_holes = [[2, 2], [23, 2], [2, 14.5], [23, 14.5]];
+// Lens centre on the board, from its lower left corner, and the height of
+// the lens above the board
+cam_lens = [12.5, 14.5];
+cam_lens_h = 6;
+cam_board_t = 1;
+cam_hole_d = 2.2;
+cam_post_d = 4.5;
+// Top rivet with the camera, counted from the left
+cam_rivet = 7;
 
 /* [Stand box] */
 // Box at the bottom of the back, centred on the seam. On a table its
-// slanted base and the bottom edge of the grid rest on the table; on a wall
+// slanted base and the bottom edge of the tray rest on the table; on a wall
 // it hangs from two screws through keyholes in its back.
 box_w = 120;
 box_h = 101;
 // The matrix leans back by this angle when it stands on the table
 tilt = 15;
-// Depth from the back plate of the grid to the back of the box. It sets the
+// Depth from the back plate of the tray to the back of the box. It sets the
 // depth of the base on the table, and so how stable the matrix stands.
 box_d = 40;
 box_wall = 2.4;
@@ -146,13 +193,14 @@ vent = [3, 20];
 $fn = 32;
 
 panel_w = cols * pitch + 2 * margin;
-panel_h = rows * pitch + 2 * margin;
+panel_h = rows * pitch + margin + margin_top;
+rim_h = back_t + grid_h + paper_t;
 seam_x = line_x(split_col);
 skirt_out = fit + skirt_t;
 
 // Position of grid line k: the line between cell k-1 and k.
 function line_x(k) = margin + k * pitch;
-function line_y(k) = panel_h - margin - k * pitch;
+function line_y(k) = panel_h - margin_top - k * pitch;
 function cell_x(c) = line_x(c) + pitch / 2;
 function cell_y(r) = line_y(r) - pitch / 2;
 
@@ -162,6 +210,109 @@ function half_x1(h, grow = 0) = h == 0 ? seam_x : panel_w + grow;
 
 module half_rect(h, grow = 0) {
     translate([half_x0(h, grow), -grow]) square([half_x1(h, grow) - half_x0(h, grow), panel_h + 2 * grow]);
+}
+
+// Margin channels between the rim and the grid frame, as [y_min, y_max].
+top_channel = [line_y(0) + wall_t / 2, panel_h - outer_t];
+bottom_channel = [outer_t, line_y(rows) - wall_t / 2];
+
+// --- Click points ------------------------------------------------------------
+
+// Click points of half h: [point on the outer face of the rim, outward
+// direction]. Two on each side, on the grid lines next to the corners.
+function clicks(h) = h == 0
+    ? [[[0, line_y(1)], [-1, 0]], [[0, line_y(rows - 1)], [-1, 0]], [[line_x(1), panel_h], [0, 1]], [[line_x(1), 0], [0, -1]]]
+    : [[[panel_w, line_y(1)], [1, 0]], [[panel_w, line_y(rows - 1)], [1, 0]], [[line_x(cols - 1), panel_h], [0, 1]], [[line_x(cols - 1), 0], [0, -1]]];
+
+click_z = back_t + grid_h - bridge_h / 2;
+
+// Place children at a click point, local +x pointing out of the rim.
+module at_click(c) {
+    translate(c[0]) rotate([0, 0, atan2(c[1][1], c[1][0])]) children();
+}
+
+// Distance from the outer face of the rim to the grid frame at a click.
+function click_margin(c) = c[1][1] > 0 ? margin_top : margin;
+
+// --- Camera -----------------------------------------------------------------
+
+// Rivet centres: rows in the top and bottom margins, columns in the side
+// margins, sharing the corners. The top row is level with the camera lens.
+rivet_x0 = margin / 2;
+rivet_x1 = panel_w - margin / 2;
+rivet_nx = round((rivet_x1 - rivet_x0) / rivet_pitch);
+cam_y0 = top_channel[0] + 0.4;
+rivet_top = cam_y0 + cam_lens[1];
+rivet_ny = round((rivet_top - margin / 2) / rivet_pitch);
+function rivet_x(i) = rivet_x0 + i * (rivet_x1 - rivet_x0) / rivet_nx;
+function rivet_y(j) = margin / 2 + j * (rivet_top - margin / 2) / rivet_ny;
+function rivets() = concat(
+    [for (i = [0:rivet_nx]) [rivet_x(i), rivet_top]],
+    [for (i = [0:rivet_nx]) [rivet_x(i), margin / 2]],
+    [for (x = [rivet_x0, rivet_x1], j = [1:rivet_ny - 1]) [x, rivet_y(j)]]
+);
+cam_lens_xy = [rivet_x(cam_rivet), rivet_top];
+cam_x0 = cam_lens_xy[0] - cam_lens[0];
+// Board back, on posts that bring the lens up to the back of the face.
+cam_z = rim_h - cam_lens_h - cam_board_t;
+
+assert(cam_y0 + cam_board[1] < top_channel[1] - 0.2, "Camera board too tall for the top margin: raise margin_top");
+assert(cam_x0 + cam_board[0] < seam_x - bolt_block, "Camera board over the seam bolt: change cam_rivet");
+
+module cam_posts() {
+    for (hole = cam_holes) translate([cam_x0 + hole[0], cam_y0 + hole[1], 0]) {
+        cylinder(d = cam_post_d, h = cam_z);
+        cylinder(d = cam_hole_d - 0.2, h = cam_z + cam_board_t + 1);
+    }
+}
+
+// --- Tray -------------------------------------------------------------------
+
+// Bolt positions along the seam: middle of the top and bottom channels.
+bolt_ys = [(top_channel[0] + top_channel[1]) / 2, (bottom_channel[0] + bottom_channel[1]) / 2];
+bolt_z = back_t + bolt_block_h / 2;
+
+module seam_blocks(h) {
+    side = h == 0 ? -bolt_block : 0;
+    for (channel = [top_channel, bottom_channel])
+        translate([seam_x + side, channel[0] + rim_gap, 0])
+            cube([bolt_block, channel[1] - channel[0] - rim_gap, back_t + bolt_block_h]);
+}
+
+module seam_holes() {
+    for (y = bolt_ys)
+        translate([seam_x - bolt_block - 1, y, bolt_z]) rotate([0, 90, 0]) cylinder(d = bolt_d, h = 2 * bolt_block + 2);
+}
+
+module rim_2d() {
+    difference() {
+        square([panel_w, panel_h]);
+        translate([outer_t, outer_t]) square([panel_w - 2 * outer_t, panel_h - 2 * outer_t]);
+    }
+}
+
+module tray(h) {
+    difference() {
+        intersection() {
+            union() {
+                cube([panel_w, panel_h, back_t]);
+                linear_extrude(rim_h) rim_2d();
+                seam_blocks(h);
+                cam_posts();
+            }
+            translate([0, 0, -1]) linear_extrude(rim_h + 2) half_rect(h);
+        }
+        seam_holes();
+        for (r = [0:rows - 1], side = [-1, 1])
+            translate([line_x(0), cell_y(r) + side * strip_w / 2 - guide_w / 2, back_t - guide_depth])
+                cube([cols * pitch, guide_w, guide_depth + 1]);
+        for (p = box_pins()) translate(p) pin_slot();
+        for (dx = [-cable_hole_dx, cable_hole_dx])
+            translate([seam_x + dx - cable_hole[0] / 2, (bottom_channel[0] + bottom_channel[1] - cable_hole[1]) / 2, -1])
+                cube([cable_hole[0], cable_hole[1], back_t + 2]);
+        for (c = clicks(h))
+            at_click(c) translate([-outer_t - 1, 0, click_z]) rotate([0, 90, 0]) cylinder(d = click_hole_d, h = outer_t + 2);
+    }
 }
 
 // --- Light grid -------------------------------------------------------------
@@ -180,30 +331,18 @@ module row_wall(k, h) {
 }
 
 module walls_2d(h) {
-    difference() {
-        square([panel_w, panel_h]);
-        translate([outer_t, outer_t]) square([panel_w - 2 * outer_t, panel_h - 2 * outer_t]);
-    }
     cols_in_half = h == 0 ? [0:split_col] : [split_col:cols];
     for (k = cols_in_half) column_wall(k, h);
     for (k = [0:rows]) row_wall(k, h);
 }
 
-// Bolt positions along the seam: top margin and bottom margin.
-bolt_ys = [panel_h - margin / 2, margin / 2];
-bolt_z = back_t + grid_h / 2;
-
-module seam_blocks(h) {
-    side = h == 0 ? -bolt_block : 0;
-    // Margin blocks span the full height, from the matrix to the outer wall.
-    for (y = bolt_ys)
-        translate([seam_x + side, y - (margin - outer_t) / 2, 0])
-            cube([bolt_block, margin - outer_t, back_t + grid_h]);
-}
-
-module seam_holes() {
-    for (y = bolt_ys)
-        translate([seam_x - bolt_block - 1, y, bolt_z]) rotate([0, 90, 0]) cylinder(d = bolt_d, h = 2 * bolt_block + 2);
+// Bridge across the margin at a click point, with its bump.
+module bridge(c) {
+    m = click_margin(c);
+    at_click(c) {
+        translate([-m, -bridge_w / 2, click_z - bridge_h / 2]) cube([m - outer_t - rim_gap, bridge_w, bridge_h]);
+        translate([-outer_t - rim_gap - (bump_d / 2 - grid_bump), 0, click_z]) sphere(d = bump_d);
+    }
 }
 
 // Strip notches under every column wall, at the centre of each row.
@@ -213,9 +352,6 @@ module strip_notches(h) {
         translate([line_x(k) - wall_t - 1, cell_y(r) - strip_w / 2, back_t - 0.01])
             cube([2 * wall_t + 2, strip_w, strip_notch_h + 0.01]);
 }
-
-// Margin channel between the outer wall and the last row wall, [y_min, y_max].
-bottom_channel = [outer_t, line_y(rows) - wall_t / 2];
 
 // Sides of the stand box, used by the grid for the pin slots.
 box_x0 = seam_x - box_w / 2;
@@ -256,24 +392,21 @@ module pin_tunnel() {
         cube([pin_head_d + 2, wall_t + 2, pin_fit + pin_cone_h + pin_cap_h + 0.6]);
 }
 
+// Grid in place: on the tray back plate, from z = back_t up.
 module grid(h) {
     difference() {
-        intersection() {
-            union() {
-                cube([panel_w, panel_h, back_t]);
-                translate([0, 0, back_t]) linear_extrude(grid_h) walls_2d(h);
-                seam_blocks(h);
-            }
-            translate([0, 0, -1]) linear_extrude(back_t + grid_h + 2) half_rect(h);
+        union() {
+            translate([0, 0, back_t]) linear_extrude(grid_h) walls_2d(h);
+            for (c = clicks(h)) bridge(c);
         }
         strip_notches(h);
-        seam_holes();
-        for (p = box_pins()) translate(p) pin_slot();
         for (x = pin_xs, k = pin_lines) translate([x, line_y(k)]) pin_tunnel();
-        for (dx = [-cable_hole_dx, cable_hole_dx])
-            translate([seam_x + dx - cable_hole[0] / 2, (bottom_channel[0] + bottom_channel[1] - cable_hole[1]) / 2, -1])
-                cube([cable_hole[0], cable_hole[1], back_t + 2]);
     }
+}
+
+// Printed upside down: the bridges lie on the bed.
+module grid_print(h) {
+    translate([0, panel_h, back_t + grid_h]) rotate([180, 0, 0]) grid(h);
 }
 
 // --- Front face -------------------------------------------------------------
@@ -288,16 +421,23 @@ module windows_2d(h) {
 
 // Face in body coordinates: front at z = 0, skirt towards the back (+z).
 module face_body(h) {
-    linear_extrude(face_t) difference() {
-        half_rect(h, skirt_out);
-        windows_2d(h);
-    }
-    translate([0, 0, face_t]) linear_extrude(skirt_h) intersection() {
+    // Depth of the click points behind the front of the face.
+    click_zb = rim_h + face_t - click_z;
+    intersection() {
         difference() {
-            translate([-skirt_out, -skirt_out]) square([panel_w + 2 * skirt_out, panel_h + 2 * skirt_out]);
-            translate([-fit, -fit]) square([panel_w + 2 * fit, panel_h + 2 * fit]);
+            union() {
+                linear_extrude(face_t) half_rect(h, skirt_out);
+                translate([0, 0, face_t]) linear_extrude(skirt_h) difference() {
+                    translate([-skirt_out, -skirt_out]) square([panel_w + 2 * skirt_out, panel_h + 2 * skirt_out]);
+                    translate([-fit, -fit]) square([panel_w + 2 * fit, panel_h + 2 * fit]);
+                }
+                for (c = clicks(h)) at_click(c) translate([fit + bump_d / 2 - face_bump, 0, click_zb]) sphere(d = bump_d);
+            }
+            translate([0, 0, -1]) linear_extrude(face_t + 2) windows_2d(h);
+            for (r = rivets()) translate([r[0], r[1], -1]) cylinder(d = rivet_d, h = rivet_depth + 1);
+            translate([cam_lens_xy[0], cam_lens_xy[1], -1]) cylinder(d = rivet_d, h = face_t + 2);
         }
-        half_rect(h, skirt_out);
+        translate([0, 0, -1]) linear_extrude(face_t + skirt_h + 2) half_rect(h, skirt_out);
     }
 }
 
@@ -310,7 +450,7 @@ module face(h) {
 
 // The box sits behind the grid, from z = -box_d (its back) to z = 0 (the
 // back plate), in front-view coordinates. On the table, the bottom edge of
-// the grid back plate (y = 0, z = 0) and the slanted base of the box lie on
+// the tray back plate (y = 0, z = 0) and the slanted base of the box lie on
 // one plane: y = table_y(z).
 function table_y(z) = -z * tan(tilt);
 
@@ -435,11 +575,13 @@ module box_print() {
 
 module assembly() {
     for (h = [0, 1]) {
-        color("white") grid(h);
+        color("white") tray(h);
+        color("white") translate([0, 0, explode / 3]) grid(h);
         top = back_t + grid_h;
-        color("ivory", 0.6) translate([0, 0, top + explode / 2]) cube([panel_w, panel_h, paper_t]);
-        // The face body has its front at z = 0: flip it onto the grid.
-        color("#222") translate([0, 0, top + paper_t + face_t + explode]) mirror([0, 0, 1]) face_body(h);
+        color("ivory", 0.6) translate([line_x(0), line_y(rows), top + explode * 2 / 3])
+            cube([cols * pitch, rows * pitch, paper_t]);
+        // The face body has its front at z = 0: flip it onto the tray.
+        color("#222") translate([0, 0, rim_h + face_t + explode]) mirror([0, 0, 1]) face_body(h);
     }
     color("#333") translate([0, 0, -explode]) box();
 }
@@ -448,7 +590,8 @@ module standing_assembly() {
     rotate([90 - tilt, 0, 0]) assembly();
 }
 
-if (part == "grid") grid(half);
+if (part == "tray") tray(half);
+else if (part == "grid") grid_print(half);
 else if (part == "face") face(half);
 else if (part == "box") box_print();
 else if (part == "assembly") assembly();
