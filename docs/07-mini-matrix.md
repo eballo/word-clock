@@ -25,7 +25,6 @@ and wiring the strip, printing the enclosure, assembly and the software.
 | Rectifier diode | 1 | Only if the 3,3V data is not read reliably (Freenove kit) |
 | Wire, 22 AWG, three colours | about 1 m | 5 joints between rows, about 6 cm each |
 | M3 × 16 mm bolt and nut | 2 | Join the two grid halves |
-| M2.5 × 6 mm self-tapping screw | 4 | Fix the Raspberry Pi in the stand box |
 | Panel-mount DC jack, 5.5 × 2.1 mm (DC-022, 11 mm hole) | 1 | Power input in the back of the stand box |
 | Lever connectors (Wago 221), 3-way | 2 | 5V and GND joints inside the box |
 | Tracing paper | 1 A3 sheet | Diffuser between the face and the grid |
@@ -37,14 +36,14 @@ and wiring the strip, printing the enclosure, assembly and the software.
 ## 2. Dimensions
 
 ```
-                 35,7 cm
+                 37,7 cm
 ┌──────────────────────────────────────┐
-│  margin 1,2 cm (wires between rows)  │
+│  margin 2,2 cm (pins, input wires)   │
 │ ┌──────────────────────────────────┐ │
-│ │ 10 × 6 cells, 3,33 cm pitch      │ │ 22,4 cm
+│ │ 10 × 6 cells, 3,33 cm pitch      │ │ 24,4 cm
 │ │ matrix 33,3 × 20,0 cm            │ │
 │ └──────────────────────────────────┘ │
-│                                      │
+│  side margins 2,2 cm: row joints     │
 └──────────────────────────────────────┘
         left half │ right half   (split after column 5)
 ```
@@ -53,11 +52,12 @@ and wiring the strip, printing the enclosure, assembly and the software.
 |-------------|-------|
 | Cell pitch | 3,33 cm (one LED of a 30 LEDs/metre strip) |
 | Matrix | 33,3 × 20,0 cm |
-| Grid panel | 35,7 × 22,4 cm |
-| Face (with its skirt) | 36,1 × 22,8 cm |
+| Grid panel | 37,7 × 24,4 cm |
+| Margin | 2,2 cm on every side: a 19 mm channel inside the outer wall, wide enough for a soldering iron |
+| Face (with its skirt) | 38,1 × 24,8 cm |
 | Depth | about 2,6 cm (2 mm back plate, 22 mm walls, paper, 2 mm face), plus 4,0 cm of stand box |
-| Printed halves | Grid 17,9 × 22,4 cm, face 18,1 × 22,8 cm: each fits the 25,6 cm bed of the Bambu Lab A1 |
-| Stand box | 14,3 × 18,4 × 4,0 cm, centred behind the matrix, down to its bottom edge |
+| Printed halves | Grid 18,9 × 24,4 cm, face 19,1 × 24,8 cm: each fits the 25,6 cm bed of the Bambu Lab A1 |
+| Stand box | 14,3 × 24,4 × 4,0 cm, centred behind the matrix, the full height of the panel |
 | Tilt on the table | 15° backwards |
 | Face windows | 3,03 × 3,03 cm, 3 mm bars |
 
@@ -81,19 +81,20 @@ and wiring the strip, printing the enclosure, assembly and the software.
 ```
 
 The strip runs along the centre of every row, under the column walls
-through 13 mm notches. The ends of each row come out into the margin,
-where the wires that join the rows run.
+through 13 mm notches. The ends of each row come out into the side
+margins, where the wires that join the rows run. Each side margin is a
+19 mm channel, so the soldering iron reaches the pads.
 
 The strip input wires also run in the margin, hidden behind the face
 border: from the start of row 0 up the left margin, then along the top
-margin to a 14 × 6 mm hole in the back plate. The hole sits behind the
+margin to a 20 × 12 mm hole in the back plate. The hole sits behind the
 stand box, so the wires go straight into it.
 
 ```
    front view, left half, top-left corner
 
    ┌───────────────────────────────────────── outer wall
-   │  ═══════════════════════▣  ← 14 × 6 mm hole, behind the box
+   │  ═══════════════════════▣  ← 20 × 12 mm hole, behind the box
    │ ║┌──────┬──────┬──────┬──────┬───
    │ ║│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ row 0 strip, DIN on the left
    │ ║┼──────┼──────┼──────┼──────┼───
@@ -111,9 +112,10 @@ power cable comes out, from the back.
 
 The box slides onto the grid, without screws or clips. Four pins on
 columns of the box have a wide conical head. They go through the wide end
-of four keyhole slots in the grid back plate, at cell corners hidden
-behind the face bars, and the box slides 8 mm down. The heads then hold
-the box against the back plate, and the cones pull it tight.
+of four keyhole slots in the top and bottom margins of the grid back
+plate, and the box slides 8 mm down. The heads then hold the box against
+the back plate, and the cones pull it tight. The slots are in the
+margins, so the heads never touch the strip or the LEDs.
 
 ```
    keyhole slot (front view)        pin of the box (side view)
@@ -148,32 +150,54 @@ down, slide the box 8 mm up and lift it.
           seen from the back
 
    ┌───────────────────────────────────┐  ← top edge of the grid
-   │                 ║║║║║║║  vents  ▣  │  ▣ strip wires from the
-   │ ◉                              ◉  │    cable hole (inside)
-   │                                   │
-   │        ┌──────────────────┐       │
-   │        │  Raspberry Pi 3B │       │
-   │        │   (vents behind) │       │
-   │        └──────────────────┘       │
-   │ ◉                              ◉  │
-   │                         ◯ DC jack │
+   │ ◉          ║║║║║║║          ▣  ◉ │  ▣ strip wires from the
+   │                     ┌───────────┐ │    cable hole (inside)
+   │                     │ microSD ↑ │ │
+ ═ │                     │           │ ╞═ window: micro-USB
+ ║ │                     │ Raspberry │ ║   and HDMI plugs
+ ║ │ (vents)             │  Pi 3B    │ ║
+ ║ │            ◯ jack   │ USB, Eth ↓│ │
+   │                     └───────────┘ │
    │      plug and wiring room         │
+   │ ◉                              ◉  │
    └───────────────────────────────────┘
    ▔▔▔▔▔▔▔▔▔▔▔▔ base on the table ▔▔▔▔▔▔▔▔
 ```
 
-The view is from the back, so the Pi sits on the left here and on the
-right in the model, which uses front-view coordinates.
+The view is from the back, so the Pi sits on the right here and against
+the left wall in the model, which uses front-view coordinates.
+
+The Raspberry Pi stands upright, with the micro-USB and HDMI ports facing
+a window in the side wall and the microSD card at the top. It clicks in
+without screws: four standoffs with short pegs go into its holes, two lips
+on the side wall hold the port edge, and a snap hook holds the other edge.
+
+```
+   click mount (seen from the top of the box)
+
+    side wall                          snap hook
+   ║ ▄▄ lip                       hook ▄ ║
+   ║ ▀█▄▄▄▄▄▄▄▄▄▄ board ▄▄▄▄▄▄▄▄▄▄▄▄▄▄ ▀█ ║
+   ║   ▐▌ peg                   peg ▐▌   █ ← arm flexes out
+   ║   ██ standoff         standoff ██   █
+   ╚═══════════════ floor ════════════════
+```
+
+1. Slide the port edge of the board under the two lips on the side wall,
+   ports towards the window.
+2. Lower the other edge onto the pegs and press until the hook clicks over
+   it.
+3. To take it out, push the hook away from the board and lift that edge.
 
 | Opening | Where | For |
 |---------|-------|-----|
-| DC jack, 11 mm | Back, low | The 5V supply: the only cable |
-| Cable hole, 14 × 6 mm | Grid back plate, top margin, inside the box | Strip input wires, never outside |
-| Vents | Back under the Pi, and top wall | Air for the Raspberry Pi |
+| DC jack, 11 mm | Back, low | The 5V supply: the only cable in the finished matrix |
+| Port window, 41 × 15 mm | Side wall, at the Pi | Micro-USB and HDMI plugs: power the Pi straight from a USB charger, or plug a screen in |
+| Cable hole, 20 × 12 mm | Grid back plate, top margin, inside the box | Strip input wires, never outside |
+| Vents | Back under the Pi, top wall and the other side wall | Air for the Raspberry Pi |
 
-There is no opening for the USB, Ethernet or HDMI ports: use the Pi over
-Wi-Fi and SSH. The microSD card faces into the box, so take the box off
-(slide it up and lift it) to change it.
+The microSD card is at the top end of the board: take the box off (slide
+it up and lift it) to change it.
 
 To make the matrix stand steeper or flatter, change `tilt`; a deeper box
 (`box_d`) gives a longer base and a steadier stand.
@@ -246,7 +270,7 @@ to left, so each row joins the next at alternating ends.
    on every joint.
 5. Solder the input wires to the DIN end of row 0, about 40 cm long. Run
    them up the left margin and along the top margin, and pass them through
-   the 14 × 6 mm hole in the back plate of the left half.
+   the 20 × 12 mm hole in the back plate of the left half.
 
 > ⚠️ Data goes from DOUT to DIN only. A row stuck the wrong way round stays
 > dark, and so does every row after it.
@@ -310,8 +334,8 @@ so the limit can stay at 1,5 A.
    top margin and one in the bottom margin. The stand box pins sit in both
    halves, so the box also holds the middle of the seam.
 2. Stick the strip rows and solder the joints (section 6).
-3. Screw the Raspberry Pi into the stand box (four M2.5 screws) and fit
-   the DC jack in the back.
+3. Click the Raspberry Pi into the stand box (section 4) and fit the DC
+   jack in the back.
 4. Wire the strip input wires, which come out of the cable hole, inside
    the box (section 4). Leave about 2 cm of slack for the 8 mm slide.
 5. Lay the matrix face down. Put the four pin heads into the wide ends of
@@ -472,7 +496,7 @@ sudo systemctl status wordclock-matrix
 
 - [ ] Grid halves, face halves and stand box printed (`uv run wordclock-cad --matrix`)
 - [ ] Grid halves bolted together with two M3 × 16 mm bolts
-- [ ] Raspberry Pi and DC jack fitted in the stand box, box slid onto the grid
+- [ ] Raspberry Pi clicked into the stand box, DC jack fitted, box slid onto the grid
 - [ ] Strip cut into 6 pieces of 10 LEDs, stuck in a snake, arrows checked
 - [ ] Five row joints soldered, input wires along the margins and through the hole behind the box
 - [ ] Quick test powered from the Pi (section 6.4): `wiring` scene with `--max-ma 600`
