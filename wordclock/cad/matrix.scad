@@ -48,10 +48,10 @@ back_t = 2;
 outer_t = 2;
 // Space between the matrix and the rim. The side margins take the wires
 // that join the rows, with room for a soldering iron; the bottom margin
-// takes the strip input wires to the box. The top margin is wider for the
-// camera board.
+// takes the strip input wires to the box, and is wider for the camera
+// board, close to the box.
 margin = 22;
-margin_top = 28;
+margin_bottom = 28;
 // Notch at the bottom of every wall the strip passes under
 strip_w = 13;
 strip_notch_h = 3;
@@ -102,27 +102,27 @@ rivet_pitch = 21;
 paper_t = 0.3;
 
 /* [Camera] */
-// OV5647 camera board in the top margin, its lens behind one of the top
-// rivets, which is a through window. Sizes of the Raspberry Pi Camera v1.3:
-// measure your board and adjust.
+// OV5647 camera board in the bottom margin, its lens behind one of the
+// bottom rivets, which is a through window, next to the cable hole to the
+// box. Sizes of the Raspberry Pi Camera v1.3: measure your board and adjust.
 cam_board = [25, 24];
 cam_holes = [[2, 2], [23, 2], [2, 14.5], [23, 14.5]];
-// Lens centre on the board, from its lower left corner, and the height of
-// the lens above the board
-cam_lens = [12.5, 14.5];
+// Lens centre on the board, from its lower left corner as mounted, and the
+// height of the lens above the board
+cam_lens = [12.5, 9.5];
 cam_lens_h = 6;
 cam_board_t = 1;
 cam_hole_d = 2.2;
 cam_post_d = 4.5;
-// Top rivet with the camera, counted from the left
-cam_rivet = 7;
+// Bottom rivet with the camera, counted from the left
+cam_rivet = 6;
 
 /* [Stand box] */
 // Box at the bottom of the back, centred on the seam. On a table its
 // slanted base and the bottom edge of the tray rest on the table; on a wall
 // it hangs from two screws through keyholes in its back.
 box_w = 120;
-box_h = 101;
+box_h = 107;
 // The matrix leans back by this angle when it stands on the table
 tilt = 15;
 // Depth from the back plate of the tray to the back of the box. It sets the
@@ -193,14 +193,14 @@ vent = [3, 20];
 $fn = 32;
 
 panel_w = cols * pitch + 2 * margin;
-panel_h = rows * pitch + margin + margin_top;
+panel_h = rows * pitch + margin + margin_bottom;
 rim_h = back_t + grid_h + paper_t;
 seam_x = line_x(split_col);
 skirt_out = fit + skirt_t;
 
 // Position of grid line k: the line between cell k-1 and k.
 function line_x(k) = margin + k * pitch;
-function line_y(k) = panel_h - margin_top - k * pitch;
+function line_y(k) = panel_h - margin - k * pitch;
 function cell_x(c) = line_x(c) + pitch / 2;
 function cell_y(r) = line_y(r) - pitch / 2;
 
@@ -232,32 +232,36 @@ module at_click(c) {
 }
 
 // Distance from the outer face of the rim to the grid frame at a click.
-function click_margin(c) = c[1][1] > 0 ? margin_top : margin;
+function click_margin(c) = c[1][1] < 0 ? margin_bottom : margin;
 
 // --- Camera -----------------------------------------------------------------
 
 // Rivet centres: rows in the top and bottom margins, columns in the side
-// margins, sharing the corners. The top row is level with the camera lens.
+// margins, sharing the corners. The bottom row is level with the camera lens.
 rivet_x0 = margin / 2;
 rivet_x1 = panel_w - margin / 2;
 rivet_nx = round((rivet_x1 - rivet_x0) / rivet_pitch);
-cam_y0 = top_channel[0] + 0.4;
-rivet_top = cam_y0 + cam_lens[1];
-rivet_ny = round((rivet_top - margin / 2) / rivet_pitch);
+cam_y0 = bottom_channel[0] + 0.4;
+rivet_bottom = cam_y0 + cam_lens[1];
+rivet_top = panel_h - margin / 2;
+rivet_ny = round((rivet_top - rivet_bottom) / rivet_pitch);
 function rivet_x(i) = rivet_x0 + i * (rivet_x1 - rivet_x0) / rivet_nx;
-function rivet_y(j) = margin / 2 + j * (rivet_top - margin / 2) / rivet_ny;
+function rivet_y(j) = rivet_bottom + j * (rivet_top - rivet_bottom) / rivet_ny;
 function rivets() = concat(
     [for (i = [0:rivet_nx]) [rivet_x(i), rivet_top]],
-    [for (i = [0:rivet_nx]) [rivet_x(i), margin / 2]],
+    [for (i = [0:rivet_nx]) [rivet_x(i), rivet_bottom]],
     [for (x = [rivet_x0, rivet_x1], j = [1:rivet_ny - 1]) [x, rivet_y(j)]]
 );
-cam_lens_xy = [rivet_x(cam_rivet), rivet_top];
+cam_lens_xy = [rivet_x(cam_rivet), rivet_bottom];
 cam_x0 = cam_lens_xy[0] - cam_lens[0];
 // Board back, on posts that bring the lens up to the back of the face.
 cam_z = rim_h - cam_lens_h - cam_board_t;
 
-assert(cam_y0 + cam_board[1] < top_channel[1] - 0.2, "Camera board too tall for the top margin: raise margin_top");
-assert(cam_x0 + cam_board[0] < seam_x - bolt_block, "Camera board over the seam bolt: change cam_rivet");
+assert(cam_y0 + cam_board[1] < bottom_channel[1] - 0.2, "Camera board too tall for the bottom margin: raise margin_bottom");
+assert(
+    cam_x0 + cam_board[0] < seam_x - cable_hole_dx - cable_hole[0] / 2 - 1,
+    "Camera board over the cable hole: change cam_rivet"
+);
 
 module cam_posts() {
     for (hole = cam_holes) translate([cam_x0 + hole[0], cam_y0 + hole[1], 0]) {

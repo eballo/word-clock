@@ -32,7 +32,7 @@ enclosure, assembly and the software.
 | Screw with a head up to 8 mm, and wall plug | 2 | Only to hang the matrix on a wall |
 | Lever connectors (Wago 221), 3-way | 2 | 5V and GND joints inside the box |
 | Camera, OV5647 5 MP (Raspberry Pi Camera v1.3 size) | 1 | Behind one face rivet; optional |
-| Camera flat cable, 15-pin, 50 cm | 1 | From the camera, along the margins, to the Pi |
+| Camera flat cable, 15-pin, 30 cm | 1 | From the camera, through the cable hole next to it, to the Pi; the 15 cm cable of the camera may just reach |
 | Tracing paper | 1 A3 sheet | Diffuser between the face and the grid |
 | PLA, white | about 250 g | Tray and light grid |
 | PLA, black | about 250 g | Front face and stand box |
@@ -44,12 +44,12 @@ enclosure, assembly and the software.
 ```
                  37,7 cm
 ┌──────────────────────────────────────┐
-│ ○  ○  ○  ○  ○  ○  ◉  ○  ○  ○  ○  ○ ○ │  top margin 2,8 cm: camera (◉)
+│ ○  ○  ○  ○  ○  ○  ○  ○  ○  ○  ○  ○ ○ │  margins 2,2 cm: wires
 │ ┌──────────────────────────────────┐ │
 │ │ 10 × 6 cells, 3,33 cm pitch      │ │ 25,0 cm
 ○ │ matrix 33,3 × 20,0 cm            │ ○
 │ └──────────────────────────────────┘ │
-│ ○  ○  ○  ○  ○  ○  ○  ○  ○  ○  ○  ○ ○ │  margins 2,2 cm: wires
+│ ○  ○  ○  ○  ○  ◉  ○  ○  ○  ○  ○  ○ ○ │  bottom margin 2,8 cm: camera (◉)
 └──────────────────────────────────────┘
         left half │ right half   (split after column 5)
 ```
@@ -59,11 +59,11 @@ enclosure, assembly and the software.
 | Cell pitch | 3,33 cm (one LED of a 30 LEDs/metre strip) |
 | Matrix | 33,3 × 20,0 cm |
 | Tray | 37,7 × 25,0 cm |
-| Margins | 2,2 cm at the sides and bottom: a 19 mm channel inside the rim, wide enough for a soldering iron; 2,8 cm at the top for the camera board |
+| Margins | 2,2 cm at the sides and top: a 19 mm channel inside the rim, wide enough for a soldering iron; 2,8 cm at the bottom for the camera board |
 | Face (with its skirt) | 38,1 × 25,4 cm |
 | Depth | about 2,6 cm (2 mm back plate, 22 mm walls, paper, 2 mm face), plus 4,0 cm of stand box |
 | Printed halves | Tray 18,9 × 25,0 cm, grid 18,7 × 24,7 cm, face 19,1 × 25,4 cm: each fits the 25,6 cm bed of the Bambu Lab A1 |
-| Stand box | 12,0 × 10,1 × 4,0 cm, at the bottom of the back, centred |
+| Stand box | 12,0 × 10,7 × 4,0 cm, at the bottom of the back, centred |
 | Tilt on the table | 15° backwards |
 | Face windows | 3,03 × 3,03 cm, 3 mm bars |
 | Rivets | Ø6 mm, 1 mm deep, about 2,1 cm apart around the border |
@@ -125,10 +125,10 @@ to one of two 20 × 12 mm holes in the back plate, one on each side of the
 seam. The holes sit behind the stand box, so the wires go straight into
 it.
 
-The camera board sits on four posts in the top margin, its lens against
-the back of the face, behind one of the top rivets, which is a through
-window. Its flat cable runs the same way as the wires, down the side
-margin and along the bottom margin, to the Pi. The board size, hole
+The camera board sits on four posts in the bottom margin, its lens
+against the back of the face, behind one of the bottom rivets, which is a
+through window. It is next to the left cable hole, so its flat cable goes
+straight through the hole into the stand box, a few centimetres away. The board size, hole
 positions and lens position are parameters (`cam_*` in
 `wordclock/cad/matrix.scad`), set for the Raspberry Pi Camera v1.3:
 measure your board before printing the tray.
@@ -137,13 +137,12 @@ measure your board before printing the tray.
    front view, left half
 
    ┌──────────────────────────────────────
-   │  ○    ○    ○    ○   [◉ camera]   ○
    │ ║┌──────┬──────┬──────┬──────┬───
    │ ║│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ row 0 strip, DIN on the left
    │ ║┼──────┼──────┼──────┼──────┼───
-   │ ║   ⋮      wires and camera cable down the side margin
+   │ ║   ⋮      wires down the side margin
    │ ║└──────┴──────┴──────┴──────┴───
-   │ ╚══════════════════════▣  ← 20 × 12 mm hole, behind the box
+   │ ╚═══════════════[◉ camera]▣  ← 20 × 12 mm hole, behind the box
    └──────────────────────────────────────
 ```
 
@@ -395,9 +394,9 @@ so the limit can stay at 1,5 A.
 2. Stick the strip rows and solder the joints on the open tray (section 6).
 3. Run the `wiring` scene (section 8) and check that the cells light in
    order. A bad joint is still easy to reach.
-4. Optional: press the camera board onto the pegs of its four posts, lens
-   up, and run its flat cable down the side margin and along the bottom
-   margin to the cable hole.
+4. Optional: press the camera board onto the pegs of its four posts in the
+   bottom margin, lens up, and pass its flat cable through the cable hole
+   next to it.
 5. Click the two grid halves into the tray: lower each half straight
    down, the strip under the wall notches, until the four bumps click into
    the rim.
