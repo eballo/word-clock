@@ -528,7 +528,7 @@ blocks are easy to tell apart. The bottom row fills with the seconds.
 ```
         H H H H   M M M M M
  row 1  ■ · ■ · · ■ · ■ · ■     red: 1   green: 5
- row 2  · ■ ■ ■ · · · · ■ ·     blue: 1  red: 7
+ row 2  · ■ ■ ■ · · · ■ ■ ·     blue: 1  red: 7
  row 3  · · · ■ · · · ■ ■ ■
 ```
 
