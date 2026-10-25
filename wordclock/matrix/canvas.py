@@ -70,19 +70,28 @@ class Canvas:
         """
         return [self._cells[y * self.width : (y + 1) * self.width] for y in range(self.height)]
 
-    def to_strip(self, snake: bool = True) -> list[Color]:
+    def to_strip(
+        self, snake: bool = True, rotate: bool = False, mirror: bool = False
+    ) -> list[Color]:
         """
         Order the cells as the LEDs along the strip.
 
         Args:
             snake: Odd rows run right to left (snake wiring). False when every
                    row runs left to right.
+            rotate: The matrix is mounted upside down: turn the picture 180°.
+            mirror: Flip the picture left to right.
 
         Returns:
             One colour per LED, LED 0 first.
         """
+        rows = self.rows()
+        if rotate:
+            rows = [list(reversed(row)) for row in reversed(rows)]
+        if mirror:
+            rows = [list(reversed(row)) for row in rows]
         colors: list[Color] = []
-        for y, row in enumerate(self.rows()):
+        for y, row in enumerate(rows):
             colors.extend(reversed(row) if snake and y % 2 == 1 else row)
         return colors
 
