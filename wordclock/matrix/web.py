@@ -18,13 +18,12 @@ from PIL import UnidentifiedImageError
 from pydantic import BaseModel
 
 from wordclock.led.controller import BaseLedController
-from wordclock.matrix.button import ButtonHandler
+from wordclock.matrix.button import ButtonAction, ButtonHandler
 from wordclock.matrix.canvas import Color, hex_to_color, strip_to_canvas
+from wordclock.matrix.catalog import Catalog
 from wordclock.matrix.control import ControlledScene
 from wordclock.matrix.photo import pixelate
 from wordclock.matrix.runner import MatrixRunner
-from wordclock.matrix.scenes import SCENE_NAMES, Scene, create_scene
-from wordclock.matrix.show import Personal, ShowScene
 
 logger = getLogger(__name__)
 
@@ -114,13 +113,7 @@ class WebLedController(BaseLedController):
         self._pixels = [(0, 0, 0)] * self.num_leds
         self.show()
 
-    def frame(self) -> list[Color]:
-        """
-        Return the colours on the strip.
-
-        Returns:
-            One colour per LED, LED 0 first.
-        """
+    def get_state(self) -> list[Color]:
         with self._lock:
             return list(self._frame)
 
@@ -135,6 +128,10 @@ class ButtonRequest(BaseModel):
     down: bool
 
 
+class PressRequest(BaseModel):
+    action: ButtonAction = ButtonAction.TOGGLE
+
+
 class BrightnessRequest(BaseModel):
     brightness: int
 
@@ -143,57 +140,71 @@ class PhotoRequest(BaseModel):
     image: str
 
 
-class Simulator:
-    """State shared by the play loop and the web requests."""
+class MatrixService:
+    """
+    State shared by the play loop and the web requests: the simulator on
+    the Mac, and the remote control on the Raspberry Pi.
+    """
 
     def __init__(
-        self, runner: MatrixRunner, controller: WebLedController, personal: Personal
+        self,
+        runner: MatrixRunner,
+        controller: BaseLedController,
+        catalog: Catalog,
+        shutdown: Callable[[], None] | None = None,
     ) -> None:
         self.runner = runner
         self.controller = controller
-        self.personal = personal
+        self.catalog = catalog
         self.button = ButtonHandler()
         self.scene_name = "show"
         self.capture_id = 0
         self.last_action = "none"
         self.control = ControlledScene(
-            ShowScene(personal), capture=self.request_capture, shutdown=self.shutdown
+            catalog.build("show"),
+            capture=self.request_capture,
+            shutdown=shutdown or self.simulated_shutdown,
         )
 
     def request_capture(self) -> None:
         """Ask the browser for a webcam frame."""
         self.capture_id += 1
 
-    def shutdown(self) -> None:
-        """A real matrix would shut down here; the simulator only says so."""
+    def simulated_shutdown(self) -> None:
+        """Without a real shutdown, only say so."""
         logger.info("Shutdown requested (simulated)")
 
-    def build_scene(self, request: SceneRequest) -> Scene:
+    def play(self, request: SceneRequest) -> None:
         """
-        Build the scene a request asks for.
+        Switch to the scene a request asks for.
 
         Args:
             request: Scene name, text and colour.
 
-        Returns:
-            The new scene.
-
         Raises:
             ValueError: If the scene or the colour is not valid.
         """
-        if request.name == "show":
-            return ShowScene(self.personal)
         color = hex_to_color(request.color) if request.color else None
-        return create_scene(request.name, text=request.text, color=color)
+        self.control.set_base(self.catalog.build(request.name, text=request.text, color=color))
+        self.scene_name = request.name
+
+    def press(self, action: ButtonAction) -> None:
+        """
+        Do what a button press asks for.
+
+        Args:
+            action: The action of the press.
+        """
+        self.control.handle(action)
+        self.last_action = action.value
 
 
-def create_matrix_app(simulator: Simulator) -> FastAPI:
+def create_matrix_app(service: MatrixService) -> FastAPI:
     """
-    Build the web simulator: a page that draws the matrix and an API that
-    drives it.
+    Build the web page that draws the matrix and the API that drives it.
 
     Args:
-        simulator: The shared simulator state.
+        service: The shared matrix state.
 
     Returns:
         The FastAPI app.
@@ -201,7 +212,7 @@ def create_matrix_app(simulator: Simulator) -> FastAPI:
     app = FastAPI()
     templates = Jinja2Templates(directory=_WEB_DIR / "templates")
     app.mount("/static", StaticFiles(directory=_WEB_DIR / "static"), name="static")
-    runner = simulator.runner
+    runner = service.runner
     canvas = runner.canvas
 
     @app.get("/", response_class=HTMLResponse)
@@ -209,14 +220,16 @@ def create_matrix_app(simulator: Simulator) -> FastAPI:
         return templates.TemplateResponse(
             request,
             "matrix.html",
-            {"face": scad_params(MATRIX_SCAD, FACE_PARAMS), "scenes": SCENE_NAMES},
+            {
+                "face": scad_params(MATRIX_SCAD, FACE_PARAMS),
+                "scenes": service.catalog.available(),
+            },
         )
 
     @app.get("/api/matrix/frame")
     def frame() -> dict:
-        controller = simulator.controller
         picture = strip_to_canvas(
-            controller.frame(),
+            service.controller.get_state(),
             canvas.width,
             canvas.height,
             runner.snake,
@@ -227,37 +240,44 @@ def create_matrix_app(simulator: Simulator) -> FastAPI:
             "width": canvas.width,
             "height": canvas.height,
             "cells": picture.rows(),
-            "brightness": controller.brightness,
-            "lights": simulator.control.lights_on,
-            "scene": simulator.scene_name,
-            "capture": simulator.capture_id,
-            "action": simulator.last_action,
+            "brightness": service.controller.brightness,
+            "lights": service.control.lights_on,
+            "scene": service.scene_name,
+            "capture": service.capture_id,
+            "action": service.last_action,
         }
+
+    @app.get("/api/matrix/scenes")
+    def scenes() -> dict:
+        return {"scenes": list(service.catalog.available()), "scene": service.scene_name}
 
     @app.post("/api/matrix/scene")
     def scene(request: SceneRequest) -> dict:
         try:
-            simulator.control.set_base(simulator.build_scene(request))
+            service.play(request)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
-        simulator.scene_name = request.name
         return {"scene": request.name}
 
     @app.post("/api/matrix/button")
     def button(request: ButtonRequest) -> dict:
         if request.down:
-            simulator.button.press()
+            service.button.press()
             return {"action": "none"}
-        action = simulator.button.release()
-        simulator.control.handle(action)
-        simulator.last_action = action.value
+        action = service.button.release()
+        service.press(action)
         return {"action": action.value}
+
+    @app.post("/api/matrix/press")
+    def press(request: PressRequest) -> dict:
+        service.press(request.action)
+        return {"action": request.action.value}
 
     @app.post("/api/matrix/brightness")
     def brightness(request: BrightnessRequest) -> dict:
         if not 0 <= request.brightness <= 255:
             raise HTTPException(status_code=400, detail="brightness must be 0-255")
-        simulator.controller.brightness = request.brightness
+        service.controller.brightness = request.brightness
         return {"brightness": request.brightness}
 
     @app.post("/api/matrix/photo")
@@ -267,24 +287,24 @@ def create_matrix_app(simulator: Simulator) -> FastAPI:
             pixels = pixelate(base64.b64decode(data), canvas.width, canvas.height)
         except (ValueError, UnidentifiedImageError) as exc:
             raise HTTPException(status_code=400, detail="image must be a JPEG or PNG") from exc
-        simulator.control.show_photo(pixels, canvas.width)
+        service.control.show_photo(pixels, canvas.width)
         return {"cells": len(pixels)}
 
     return app
 
 
-def serve(simulator: Simulator, host: str, port: int, play: Callable[[], None]) -> None:
+def serve(service: MatrixService, host: str, port: int, play: Callable[[], None]) -> None:
     """
-    Play the matrix in the background and serve the simulator page.
+    Play the matrix in the background and serve the page and the API.
 
     Args:
-        simulator: The shared simulator state.
+        service: The shared matrix state.
         host: Address to listen on.
         port: Port to listen on.
         play: The play loop, run in a background thread.
     """
     Thread(target=play, name="matrix-play", daemon=True).start()
-    logger.info("Simulator at http://%s:%d", host, port)
+    logger.info("Matrix page and API at http://%s:%d", host, port)
     uvicorn.run(
-        create_matrix_app(simulator), host=host, port=port, log_level="warning", log_config=None
+        create_matrix_app(service), host=host, port=port, log_level="warning", log_config=None
     )

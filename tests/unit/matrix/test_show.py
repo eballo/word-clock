@@ -95,6 +95,34 @@ class TestDayTexts:
 
 
 class TestLoadPersonal:
+    @pytest.fixture(autouse=True)
+    def no_token_in_the_environment(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+
+    def test_reads_the_weather_city_and_the_github_account(self, tmp_path: Path) -> None:
+        # Given
+        path = tmp_path / "matrix.toml"
+        path.write_text(
+            '[weather]\ncity = "Girona"\n[github]\nuser = "eballo"\ntoken = "secret"\n',
+            encoding="utf-8",
+        )
+        # When
+        personal = load_personal(path)
+        # Then
+        assert personal.city == "Girona"
+        assert (personal.github_user, personal.github_token) == ("eballo", "secret")
+        assert "secret" not in repr(personal)
+
+    def test_token_from_the_environment(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Given
+        monkeypatch.setenv("GITHUB_TOKEN", "from-env")
+        path = tmp_path / "matrix.toml"
+        path.write_text('[github]\nuser = "eballo"\n', encoding="utf-8")
+        # When / Then
+        assert load_personal(path).github_token == "from-env"
+
     def test_reads_messages_and_dates(self, tmp_path: Path) -> None:
         # Given
         path = tmp_path / "matrix.toml"

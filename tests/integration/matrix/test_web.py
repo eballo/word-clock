@@ -8,12 +8,14 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 from wordclock.matrix.canvas import Canvas
+from wordclock.matrix.catalog import Catalog
 from wordclock.matrix.runner import MatrixRunner
+from wordclock.matrix.screens import PomodoroScene
 from wordclock.matrix.show import Personal
 from wordclock.matrix.web import (
     FACE_PARAMS,
     MATRIX_SCAD,
-    Simulator,
+    MatrixService,
     WebLedController,
     create_matrix_app,
     scad_params,
@@ -21,15 +23,15 @@ from wordclock.matrix.web import (
 
 
 @pytest.fixture()
-def simulator() -> Simulator:
+def service() -> MatrixService:
     controller = WebLedController(num_leds=60, brightness=40)
     runner = MatrixRunner(Canvas(10, 6), controller, max_ma=1500)
-    return Simulator(runner, controller, Personal())
+    return MatrixService(runner, controller, Catalog(Personal()))
 
 
 @pytest.fixture()
-def client(simulator: Simulator) -> TestClient:
-    with TestClient(create_matrix_app(simulator)) as c:
+def client(service: MatrixService) -> TestClient:
+    with TestClient(create_matrix_app(service)) as c:
         yield c
 
 
@@ -72,11 +74,11 @@ class TestPage:
 
 class TestFrame:
     def test_returns_the_picture_as_seen_from_the_front(
-        self, client: TestClient, simulator: Simulator
+        self, client: TestClient, service: MatrixService
     ) -> None:
         # Given: the first LED of row 1, which runs right to left
-        simulator.controller.set_pixel(10, 1, 2, 3)
-        simulator.controller.show()
+        service.controller.set_pixel(10, 1, 2, 3)
+        service.controller.show()
         # When
         r = client.get("/api/matrix/frame")
         # Then: it is the last cell of row 1
@@ -86,21 +88,23 @@ class TestFrame:
 
 
 class TestControls:
-    def test_short_press_toggles_the_lights(self, client: TestClient, simulator: Simulator) -> None:
+    def test_short_press_toggles_the_lights(
+        self, client: TestClient, service: MatrixService
+    ) -> None:
         # Given / When
         client.post("/api/matrix/button", json={"down": True})
         r = client.post("/api/matrix/button", json={"down": False})
         # Then
         assert r.status_code == 200
         assert r.json() == {"action": "toggle"}
-        assert simulator.control.lights_on is False
+        assert service.control.lights_on is False
 
-    def test_switches_the_scene(self, client: TestClient, simulator: Simulator) -> None:
+    def test_switches_the_scene(self, client: TestClient, service: MatrixService) -> None:
         # Given / When
         r = client.post("/api/matrix/scene", json={"name": "text", "text": "HI", "color": "ff0000"})
         # Then
         assert r.status_code == 200
-        assert simulator.scene_name == "text"
+        assert service.scene_name == "text"
 
     @pytest.mark.parametrize(
         "body", [{"name": "tetris"}, {"name": "text", "color": "red"}], ids=["scene", "colour"]
@@ -111,14 +115,50 @@ class TestControls:
         # Then
         assert r.status_code == 400
 
-    def test_sets_the_brightness(self, client: TestClient, simulator: Simulator) -> None:
+    def test_sets_the_brightness(self, client: TestClient, service: MatrixService) -> None:
         # Given / When
         r = client.post("/api/matrix/brightness", json={"brightness": 120})
         bad = client.post("/api/matrix/brightness", json={"brightness": 300})
         # Then
         assert r.status_code == 200
-        assert simulator.controller.brightness == 120
+        assert service.controller.brightness == 120
         assert bad.status_code == 400
+
+
+class TestRemoteControl:
+    def test_lists_the_scenes_that_can_play(self, client: TestClient) -> None:
+        # Given: no city and no GitHub account
+        # When
+        r = client.get("/api/matrix/scenes")
+        # Then
+        assert r.status_code == 200
+        assert "pomodoro" in r.json()["scenes"]
+        assert "weather" not in r.json()["scenes"]
+        assert r.json()["scene"] == "show"
+
+    def test_weather_needs_a_city(self, client: TestClient) -> None:
+        # Given / When
+        r = client.post("/api/matrix/scene", json={"name": "weather"})
+        # Then
+        assert r.status_code == 400
+        assert "city" in r.json()["detail"]
+
+    def test_press_pauses_the_pomodoro(self, client: TestClient, service: MatrixService) -> None:
+        # Given
+        client.post("/api/matrix/scene", json={"name": "pomodoro"})
+        # When
+        r = client.post("/api/matrix/press", json={})
+        # Then: the press went to the pomodoro, the lights stay on
+        assert r.json() == {"action": "toggle"}
+        pomodoro = service.control._base.scene
+        assert isinstance(pomodoro, PomodoroScene) and pomodoro.paused
+        assert service.control.lights_on is True
+
+    def test_press_can_ask_for_a_photo(self, client: TestClient) -> None:
+        # Given / When
+        r = client.post("/api/matrix/press", json={"action": "photo"})
+        # Then
+        assert r.json() == {"action": "photo"}
 
 
 class TestPhoto:
@@ -136,10 +176,10 @@ class TestPhoto:
         assert r.status_code == 400
         assert r.json() == {"detail": "image must be a JPEG or PNG"}
 
-    def test_countdown_asks_the_browser_for_a_frame(self, simulator: Simulator) -> None:
+    def test_countdown_asks_the_browser_for_a_frame(self, service: MatrixService) -> None:
         # Given
-        before = simulator.capture_id
+        before = service.capture_id
         # When
-        simulator.request_capture()
+        service.request_capture()
         # Then
-        assert simulator.capture_id == before + 1
+        assert service.capture_id == before + 1

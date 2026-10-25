@@ -469,6 +469,10 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 | `blocks` | The time by counting cells (section 8.1) |
 | `dial` | The matrix as a clock face: 60 cells, one per minute and per second (section 8.1) |
 | `tix` | TIX style: each digit a block of colour with that many cells lit (section 8.1) |
+| `pomodoro` | 25 min of work, 5 of rest: the cells empty as time runs out (section 8.2) |
+| `life` | Conway's Game of Life, wrapping around the edges |
+| `weather` | Animated weather icon, then `18° PLUJA` (section 8.2; needs a city) |
+| `commits` | GitHub contributions of the last 60 days, one cell per day (section 8.2; needs a GitHub account) |
 | `ip` | The local IP address, scrolling |
 | `rain` | Green drops with fading trails, like Matrix rain |
 | `rainbow` | A rainbow sliding diagonally |
@@ -534,6 +538,60 @@ blocks are easy to tell apart. The bottom row fills with the seconds.
 
 The `show` scene plays one of the four clocks (`clock`, `blocks`, `dial`
 or `tix`) each time, at random.
+
+### 8.2 Pomodoro, weather and commits
+
+**`pomodoro`** — the 60 cells are the time left, red for 25 minutes of
+work, then green for 5 of rest, again and again; the last lit cell blinks
+and the matrix flashes when a phase ends. While it plays, a short press of
+the button pauses and resumes it (instead of switching the lights), and
+the paused cells breathe. Start it again from the top by choosing the
+scene again.
+
+**`weather`** — the weather now, from [Open-Meteo](https://open-meteo.com)
+(free, no key): an animated icon for 6 s (sun or moon and stars, clouds,
+fog, drizzle, rain, snow, storm), then the temperature and a word scroll
+past (`21° SOL`). It refreshes every 15 minutes.
+
+**`commits`** — the GitHub contributions of the last 60 days, one cell
+per day in reading order, oldest top left, today bottom right and
+breathing. The greens follow GitHub: brighter for busier days. Then the
+total scrolls past (`1907 COMMITS`). It refreshes every 30 minutes.
+
+Both read their settings from `matrix.toml` (section 9). Until the first
+answer arrives they show three grey dots; red dots mean the last request
+failed (`journalctl` says why). Without the settings, the two scenes are
+not offered, and the show leaves them out.
+
+### 8.3 Remote control
+
+`--api` lights the LEDs and serves the same page as the simulator, so
+the matrix can be watched and driven from a phone or a computer on the
+same network; `--host 0.0.0.0` opens it to the network. There is no
+password: keep it on the home network.
+
+```bash
+sudo .venv/bin/wordclock-matrix show --api --host 0.0.0.0 --rotate --max-ma 600
+# then open http://wordclock.local:8001 on the phone
+```
+
+| Request | What it does |
+|---------|--------------|
+| `GET /api/matrix/scenes` | Scenes that can play now, and the current one |
+| `POST /api/matrix/scene` `{"name": "pomodoro"}` | Play a scene; `text` and `color` (`"ff8800"`) for the scenes that use them |
+| `POST /api/matrix/press` `{}` | A short press of the button (`{"action": "photo"}` for a long one) |
+| `POST /api/matrix/brightness` `{"brightness": 80}` | Brightness, 0-255 |
+| `GET /api/matrix/frame` | The colours on the matrix now |
+
+```bash
+curl -X POST wordclock.local:8001/api/matrix/scene \
+     -H 'Content-Type: application/json' -d '{"name": "pomodoro"}'
+curl -X POST wordclock.local:8001/api/matrix/press \
+     -H 'Content-Type: application/json' -d '{}'     # pause / resume
+```
+
+A long press of 10 s, from the button or the API, shuts the Pi down
+(`systemctl poweroff`); in the simulator it is only logged.
 
 ### Web simulator
 
@@ -613,7 +671,21 @@ messages = ["HOLA ENRIC", "♥ CASA ♥"]
 [dates]
 "03-14" = "FELICITATS ANNA!"
 "12-25" = ["BON NADAL!", "♥ ♥ ♥"]
+
+# City for the weather scene
+[weather]
+city = "Barcelona"
+
+# GitHub account for the commits scene. A fine-grained token with no
+# permissions is enough for public contributions.
+[github]
+user = "eballo"
+token = "github_pat_..."
 ```
+
+The token stays in this file on the Pi only. On the Mac, the simulator
+also takes it from `GITHUB_TOKEN`
+(`GITHUB_TOKEN=$(gh auth token) uv run wordclock-matrix commits --web`).
 
 The show reads the file when it starts: restart the service after editing
 it. A missing or broken file only leaves the personal texts out
@@ -635,7 +707,7 @@ After=network-online.target
 Type=simple
 User=root
 WorkingDirectory=/home/eballo/word-clock
-ExecStart=/home/eballo/word-clock/.venv/bin/wordclock-matrix show
+ExecStart=/home/eballo/word-clock/.venv/bin/wordclock-matrix show --api --host 0.0.0.0
 Restart=on-failure
 RestartSec=5
 

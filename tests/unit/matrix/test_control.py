@@ -90,3 +90,18 @@ class TestControlledScene:
         scene.render(canvas, 1)
         # Then
         assert lit(canvas) == 1
+
+    def test_short_press_goes_to_an_interactive_scene(self) -> None:
+        # Given: a scene with on_press, like the pomodoro
+        pressed: list[int] = []
+
+        class Interactive(RainbowScene):
+            def on_press(self) -> None:
+                pressed.append(1)
+
+        scene = ControlledScene(Interactive())
+        # When
+        scene.handle(ButtonAction.TOGGLE)
+        # Then: the scene got it, the lights stay on
+        assert pressed == [1]
+        assert scene.lights_on is True

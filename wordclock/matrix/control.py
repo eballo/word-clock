@@ -62,9 +62,10 @@ class ControlledScene:
 
     It plays a base scene and handles the button actions: the lights go off
     and on, a photo is taken after a countdown and shown for a while, and a
-    long press asks for a shutdown. The same object runs on the Raspberry Pi
-    and in the web simulator; only the camera and the shutdown differ, and
-    they come in as callbacks.
+    long press asks for a shutdown. A base scene with an ``on_press`` method,
+    such as the pomodoro, takes the short presses instead of the lights.
+    The same object runs on the Raspberry Pi and in the web simulator; only
+    the camera and the shutdown differ, and they come in as callbacks.
     """
 
     def __init__(
@@ -106,7 +107,10 @@ class ControlledScene:
             action: The action of the press.
         """
         logger.info("Button: %s", action)
-        if action == ButtonAction.TOGGLE:
+        on_press = getattr(self._base.scene, "on_press", None)
+        if action == ButtonAction.TOGGLE and self.lights_on and callable(on_press):
+            on_press()
+        elif action == ButtonAction.TOGGLE:
             self.lights_on = not self.lights_on
         elif action == ButtonAction.PHOTO:
             self.lights_on = True

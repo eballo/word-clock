@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import tomllib
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
@@ -11,6 +12,7 @@ from random import Random
 
 from wordclock.matrix.canvas import Canvas, Color
 from wordclock.matrix.clocks import BlocksClock, DialClock, TixClock
+from wordclock.matrix.feeds import Feed, Weather
 from wordclock.matrix.scenes import (
     ClockScene,
     IpScene,
@@ -21,6 +23,7 @@ from wordclock.matrix.scenes import (
     TextScene,
     hue_color,
 )
+from wordclock.matrix.screens import CommitsScene, LifeScene, WeatherScene
 
 logger = getLogger(__name__)
 
@@ -156,11 +159,25 @@ def day_texts(now: datetime) -> list[str]:
 
 @dataclass(frozen=True)
 class Personal:
-    """Personal texts, kept out of the public repository."""
+    """Personal texts and accounts, kept out of the public repository."""
 
     messages: tuple[str, ...] = ()
     # Texts for one day of every year, keyed by "MM-DD".
     dates: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    # City for the weather screen
+    city: str | None = None
+    # GitHub login and token for the commits screen
+    github_user: str | None = None
+    github_token: str | None = field(default=None, repr=False)
+
+
+def _optional_text(table: object, key: str) -> str | None:
+    if not isinstance(table, dict):
+        raise ValueError(f"Expected a table, got {table!r}")
+    value = table.get(key)
+    if value is not None and not isinstance(value, str):
+        raise ValueError(f"Expected text for {key!r}, got {value!r}")
+    return value
 
 
 def _texts(value: object) -> tuple[str, ...]:
@@ -175,9 +192,11 @@ def load_personal(path: Path) -> Personal:
     """
     Read the personal texts from a TOML file.
 
-    The file has a ``messages`` list and a ``[dates]`` table that maps
-    ``"MM-DD"`` to a text or a list of texts. A missing or broken file
-    gives no personal texts, so the show still runs.
+    The file has a ``messages`` list, a ``[dates]`` table that maps
+    ``"MM-DD"`` to a text or a list of texts, a ``[weather]`` table with a
+    ``city`` and a ``[github]`` table with a ``user`` and a ``token``. A
+    missing or broken file gives no personal settings, so the show still
+    runs. Without a token in the file, ``GITHUB_TOKEN`` is used.
 
     Args:
         path: The TOML file.
@@ -187,16 +206,25 @@ def load_personal(path: Path) -> Personal:
     """
     if not path.is_file():
         logger.info("No personal texts at %s", path)
-        return Personal()
+        return Personal(github_token=os.environ.get("GITHUB_TOKEN"))
     try:
         data = tomllib.loads(path.read_text(encoding="utf-8"))
         messages = _texts(data.get("messages", []))
         dates = {str(day): _texts(texts) for day, texts in data.get("dates", {}).items()}
+        city = _optional_text(data.get("weather", {}), "city")
+        github_user = _optional_text(data.get("github", {}), "user")
+        github_token = _optional_text(data.get("github", {}), "token")
     except (tomllib.TOMLDecodeError, ValueError, AttributeError) as exc:
         logger.warning("Ignoring personal texts in %s: %s", path, exc)
-        return Personal()
+        return Personal(github_token=os.environ.get("GITHUB_TOKEN"))
     logger.info("Loaded %d messages and %d dates from %s", len(messages), len(dates), path)
-    return Personal(messages, dates)
+    return Personal(
+        messages,
+        dates,
+        city=city,
+        github_user=github_user,
+        github_token=github_token or os.environ.get("GITHUB_TOKEN"),
+    )
 
 
 class IconScene:
@@ -236,8 +264,9 @@ class ShowScene:
     Play the other scenes one after another, with new colours every time.
 
     The show starts with the IP address, then repeats forever: a clock (the
-    scrolling time, blocks, dial or TIX), a text, an effect (rainbow, rain or
-    sparkles), a clock, a text and a drawing. Texts play one full pass;
+    scrolling time, blocks, dial or TIX), a text, an effect (rainbow, rain,
+    sparkles, the Game of Life, and the weather and the commits when they
+    are set up), a clock, a text and a drawing. Texts play one full pass;
     the other scenes play a fixed time. Each scene fades in and out.
     """
 
@@ -247,9 +276,13 @@ class ShowScene:
         fps: float = 30,
         clock: Callable[[], datetime] = datetime.now,
         seed: int | None = None,
+        weather: Feed[Weather] | None = None,
+        commits: Feed[list[int]] | None = None,
     ) -> None:
         self.fps = fps
         self.personal = personal or Personal()
+        self.weather = weather
+        self.commits = commits
         self._clock = clock
         self._random = Random(seed)
         self._items: Iterator[Callable[[], Scene]] = self._playlist()
@@ -269,7 +302,18 @@ class ShowScene:
         return self._random.choice(day_texts(now) + list(self.personal.messages))
 
     def _effect(self) -> Scene:
-        kind = self._random.choice(("rainbow", "rain", "sparkle"))
+        kinds = ["rainbow", "rain", "sparkle", "life"]
+        if self.weather is not None:
+            kinds.append("weather")
+        if self.commits is not None:
+            kinds.append("commits")
+        kind = self._random.choice(kinds)
+        if kind == "weather" and self.weather is not None:
+            return WeatherScene(self.weather)
+        if kind == "commits" and self.commits is not None:
+            return CommitsScene(self.commits)
+        if kind == "life":
+            return LifeScene(seed=self._random.randrange(2**32))
         if kind == "rainbow":
             return RainbowScene(speed=self._random.choice((0.005, 0.01, 0.02)))
         if kind == "rain":

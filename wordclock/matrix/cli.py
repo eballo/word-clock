@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import subprocess
 from enum import StrEnum
-from logging import DEBUG, INFO, basicConfig
+from logging import DEBUG, INFO, basicConfig, getLogger
 from pathlib import Path
 from signal import SIGTERM, signal
 from types import FrameType
@@ -12,14 +13,15 @@ import typer
 from wordclock.config import MATRIX_BRIGHTNESS, MATRIX_HEIGHT, MATRIX_MAX_MA, MATRIX_WIDTH
 from wordclock.led.controller import create_controller
 from wordclock.matrix.canvas import Canvas, Color, hex_to_color
+from wordclock.matrix.catalog import ALL_SCENES, Catalog
 from wordclock.matrix.runner import MatrixRunner
-from wordclock.matrix.scenes import SCENE_NAMES, create_scene
-from wordclock.matrix.show import ShowScene, load_personal
-from wordclock.matrix.web import Simulator, WebLedController, serve
+from wordclock.matrix.show import load_personal
+from wordclock.matrix.web import MatrixService, WebLedController, serve
 
-SceneName = StrEnum("SceneName", {name: name for name in SCENE_NAMES})
+SceneName = StrEnum("SceneName", {name: name for name in ALL_SCENES})
 
 app = typer.Typer()
+logger = getLogger(__name__)
 
 
 def parse_color(value: str) -> Color:
@@ -39,6 +41,12 @@ def parse_color(value: str) -> Color:
         return hex_to_color(value)
     except ValueError as exc:
         raise typer.BadParameter(f"Expected a hex colour like ff8800, got {value!r}") from exc
+
+
+def power_off() -> None:
+    """Shut the Raspberry Pi down, after a long press of the button."""
+    logger.warning("Shutting down")
+    subprocess.run(["systemctl", "poweroff"], check=False)
 
 
 def stop_on_sigterm(signum: int, frame: FrameType | None) -> None:
@@ -70,15 +78,20 @@ def main(
     seconds: Annotated[float | None, typer.Option(help="Stop after this many seconds")] = None,
     mock: Annotated[bool, typer.Option(help="No LEDs: draw the matrix in the terminal")] = False,
     preview: Annotated[bool | None, typer.Option(help="Draw the matrix in the terminal")] = None,
-    config: Annotated[Path, typer.Option(help="Personal texts for the show, a TOML file")] = Path(
+    config: Annotated[Path, typer.Option(help="Personal texts and accounts, a TOML file")] = Path(
         "matrix.toml"
     ),
     web: Annotated[
         bool,
         typer.Option(help="No LEDs: simulate the matrix in a web page, with button and webcam"),
     ] = False,
-    host: Annotated[str, typer.Option(help="Simulator address")] = "127.0.0.1",
-    port: Annotated[int, typer.Option(help="Simulator port")] = 8001,
+    api: Annotated[
+        bool, typer.Option(help="Light the LEDs and serve the same page and API to control them")
+    ] = False,
+    host: Annotated[
+        str, typer.Option(help="Page and API address; 0.0.0.0 for the whole network")
+    ] = "127.0.0.1",
+    port: Annotated[int, typer.Option(help="Page and API port")] = 8001,
     debug: bool = False,
 ) -> None:
     """Play a scene on the mini LED matrix."""
@@ -94,19 +107,19 @@ def main(
         ctrl,
         max_ma=max_ma,
         snake=snake,
-        preview=(mock if preview is None else preview) and not web,
+        preview=(mock if preview is None else preview) and not (web or api),
         rotate=rotate,
         mirror=mirror,
     )
-    if web:
-        simulator = Simulator(runner, ctrl, load_personal(config))
-        if scene != SceneName.show:
-            simulator.control.set_base(create_scene(scene.value, text=text, color=rgb))
-            simulator.scene_name = scene.value
-        serve(simulator, host, port, play=lambda: runner.play(simulator.control, seconds=seconds))
+    catalog = Catalog(load_personal(config))
+    try:
+        player = catalog.build(scene.value, text=text, color=rgb)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if web or api:
+        service = MatrixService(runner, ctrl, catalog, shutdown=None if web else power_off)
+        service.control.set_base(player)
+        service.scene_name = scene.value
+        serve(service, host, port, play=lambda: runner.play(service.control, seconds=seconds))
         return
-    if scene == SceneName.show:
-        player = ShowScene(load_personal(config))
-    else:
-        player = create_scene(scene.value, text=text, color=rgb)
     runner.play(player, seconds=seconds)
