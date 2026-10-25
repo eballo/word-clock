@@ -486,6 +486,37 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 The scenes draw on a cell canvas of any size (`--width`, `--height`), so
 the same code runs on the 16 × 16 word clock later.
 
+### Web simulator
+
+`--web` draws the matrix in a browser page instead of lighting LEDs, as it
+will look once printed: the face with its windows, the rivets, the camera
+and the button. The scenes, the button and the photo are the same Python
+code that runs on the Raspberry Pi; only the LEDs, the switch and the
+camera are simulated.
+
+```bash
+uv run wordclock-matrix --web            # http://127.0.0.1:8001
+uv run wordclock-matrix rain --web --port 8002
+```
+
+| In the page | What it does |
+|-------------|--------------|
+| The rivet with a dot, bottom right | The button: click to switch the lights off and on, hold 3 s for a photo, 10 s for a shutdown (only logged) |
+| Hold bar | How long the button is held, and which action it will do |
+| Webcam as camera | Uses the Mac webcam for the photo: a 3, 2, 1 countdown, a white flash, then the photo pixelated to 10 × 6 |
+| Scene, Text, Colour, Brightness | Switch the scene live |
+
+The page draws the LED light as the eye sees it (LED values are linear,
+so it applies the inverse gamma), and it reads the face sizes from
+`wordclock/cad/matrix.scad`, so a change to the model shows up in the
+simulator too.
+
+| Button press | Action |
+|--------------|--------|
+| Short | Lights off or on; the Pi and the scene keep running |
+| 3 s | Countdown, white flash, photo shown for 8 s, cell by cell |
+| 10 s | Shut down (`sudo poweroff` on the Pi, to come) |
+
 ---
 
 ## 9. Start the show on boot

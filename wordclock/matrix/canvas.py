@@ -8,6 +8,25 @@ BLACK: Color = (0, 0, 0)
 MA_PER_CHANNEL: float = 20.0
 
 
+def hex_to_color(value: str) -> Color:
+    """
+    Parse a hex colour such as ``ff8800`` or ``#ff8800``.
+
+    Args:
+        value: Six hex digits, with or without ``#``.
+
+    Returns:
+        The RGB colour.
+
+    Raises:
+        ValueError: If the value is not a hex colour.
+    """
+    digits = value.removeprefix("#")
+    if len(digits) != 6:
+        raise ValueError(f"Expected a hex colour like ff8800, got {value!r}")
+    return (int(digits[0:2], 16), int(digits[2:4], 16), int(digits[4:6], 16))
+
+
 class Canvas:
     """
     A grid of coloured cells that scenes draw on, one colour per cell.
@@ -94,6 +113,42 @@ class Canvas:
         for y, row in enumerate(rows):
             colors.extend(reversed(row) if snake and y % 2 == 1 else row)
         return colors
+
+
+def strip_to_canvas(
+    colors: list[Color],
+    width: int,
+    height: int,
+    snake: bool = True,
+    rotate: bool = False,
+    mirror: bool = False,
+) -> Canvas:
+    """
+    Turn LED colours back into the picture they show: the inverse of
+    :meth:`Canvas.to_strip`.
+
+    Args:
+        colors: One colour per LED, LED 0 first.
+        width: Cells per row.
+        height: Number of rows.
+        snake: Odd rows run right to left.
+        rotate: The matrix is mounted upside down.
+        mirror: The picture is flipped left to right.
+
+    Returns:
+        A canvas with the picture as seen from the front.
+    """
+    rows = [list(colors[y * width : (y + 1) * width]) for y in range(height)]
+    rows = [list(reversed(row)) if snake and y % 2 == 1 else row for y, row in enumerate(rows)]
+    if mirror:
+        rows = [list(reversed(row)) for row in rows]
+    if rotate:
+        rows = [list(reversed(row)) for row in reversed(rows)]
+    canvas = Canvas(width, height)
+    for y, row in enumerate(rows):
+        for x, color in enumerate(row):
+            canvas.set(x, y, color)
+    return canvas
 
 
 def estimate_current_ma(colors: list[Color], brightness: int = 255) -> float:

@@ -11,10 +11,11 @@ import typer
 
 from wordclock.config import MATRIX_BRIGHTNESS, MATRIX_HEIGHT, MATRIX_MAX_MA, MATRIX_WIDTH
 from wordclock.led.controller import create_controller
-from wordclock.matrix.canvas import Canvas, Color
+from wordclock.matrix.canvas import Canvas, Color, hex_to_color
 from wordclock.matrix.runner import MatrixRunner
 from wordclock.matrix.scenes import SCENE_NAMES, create_scene
 from wordclock.matrix.show import ShowScene, load_personal
+from wordclock.matrix.web import Simulator, WebLedController, serve
 
 SceneName = StrEnum("SceneName", {name: name for name in SCENE_NAMES})
 
@@ -34,11 +35,8 @@ def parse_color(value: str) -> Color:
     Raises:
         typer.BadParameter: If the value is not a hex colour.
     """
-    digits = value.removeprefix("#")
     try:
-        if len(digits) != 6:
-            raise ValueError(value)
-        return (int(digits[0:2], 16), int(digits[2:4], 16), int(digits[4:6], 16))
+        return hex_to_color(value)
     except ValueError as exc:
         raise typer.BadParameter(f"Expected a hex colour like ff8800, got {value!r}") from exc
 
@@ -75,22 +73,38 @@ def main(
     config: Annotated[Path, typer.Option(help="Personal texts for the show, a TOML file")] = Path(
         "matrix.toml"
     ),
+    web: Annotated[
+        bool,
+        typer.Option(help="No LEDs: simulate the matrix in a web page, with button and webcam"),
+    ] = False,
+    host: Annotated[str, typer.Option(help="Simulator address")] = "127.0.0.1",
+    port: Annotated[int, typer.Option(help="Simulator port")] = 8001,
     debug: bool = False,
 ) -> None:
     """Play a scene on the mini LED matrix."""
     basicConfig(level=DEBUG if debug else INFO, format="%(asctime)s %(levelname)-8s %(message)s")
     signal(SIGTERM, stop_on_sigterm)
     rgb = parse_color(color) if color else None
-    ctrl = create_controller(mock=mock, num_leds=width * height, brightness=brightness)
+    if web:
+        ctrl = WebLedController(num_leds=width * height, brightness=brightness)
+    else:
+        ctrl = create_controller(mock=mock, num_leds=width * height, brightness=brightness)
     runner = MatrixRunner(
         Canvas(width, height),
         ctrl,
         max_ma=max_ma,
         snake=snake,
-        preview=mock if preview is None else preview,
+        preview=(mock if preview is None else preview) and not web,
         rotate=rotate,
         mirror=mirror,
     )
+    if web:
+        simulator = Simulator(runner, ctrl, load_personal(config))
+        if scene != SceneName.show:
+            simulator.control.set_base(create_scene(scene.value, text=text, color=rgb))
+            simulator.scene_name = scene.value
+        serve(simulator, host, port, play=lambda: runner.play(simulator.control, seconds=seconds))
+        return
     if scene == SceneName.show:
         player = ShowScene(load_personal(config))
     else:

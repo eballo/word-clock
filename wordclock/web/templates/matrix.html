@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Mini Matrix Simulator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/matrix.css">
+</head>
+<body>
+  <main>
+    <h1 class="title">Mini Matrix</h1>
+
+    <div class="stage">
+      <canvas id="matrix" aria-label="LED matrix"></canvas>
+      <p class="hint">Press the rivet with the dot: tap to switch the lights, hold 3 s for a photo, 10 s to shut down.</p>
+    </div>
+
+    <div class="hold" aria-hidden="true">
+      <div id="hold-bar" class="hold-bar"></div>
+      <span class="hold-mark" style="left: 30%">photo</span>
+      <span class="hold-mark" style="left: 100%">off</span>
+    </div>
+
+    <form id="controls" class="controls">
+      <label>Scene
+        <select id="scene">
+          {% for name in scenes %}<option value="{{ name }}">{{ name }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Text <input id="text" type="text" value="HOLA" maxlength="40"></label>
+      <label>Colour <input id="color" type="color" value="#ffffff"></label>
+      <label>Brightness <input id="brightness" type="range" min="5" max="255" value="40"></label>
+      <label class="check"><input id="webcam" type="checkbox"> Webcam as camera</label>
+    </form>
+
+    <p id="status" class="status" aria-live="polite">Connecting…</p>
+    <video id="video" playsinline muted hidden></video>
+  </main>
+
+  <script>window.FACE = {{ face | tojson }};</script>
+  <script src="/static/js/matrix.js"></script>
+</body>
+</html>
