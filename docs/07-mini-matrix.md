@@ -365,6 +365,8 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 | `--max-ma` | 1500 | Software current limit in mA |
 | `--seconds` | none | Stop after this time |
 | `--no-snake` | | Every row wired left to right |
+| `--rotate` | | Turn the picture 180°, when the matrix is mounted upside down |
+| `--mirror` | | Flip the picture left to right |
 | `--preview` | with `--mock` | Also draw the matrix in the terminal |
 
 The scenes draw on a cell canvas of any size (`--width`, `--height`), so
@@ -447,8 +449,10 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-Replace `/home/eballo` with your user's home directory. Enable and start
-it:
+Replace `/home/eballo` with your user's home directory. If the text reads
+upside down (the strip starts at the bottom-right corner instead of the
+top-left), add `--rotate` to `ExecStart`; if it reads mirrored, add
+`--mirror`. Enable and start it:
 
 ```bash
 sudo systemctl daemon-reload
