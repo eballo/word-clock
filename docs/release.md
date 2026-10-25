@@ -2,6 +2,7 @@
 
 | Version | Date       | Description         |
 |---------|------------|---------------------|
+| v0.12.0 | 2026-10-25 | Feature/matrix v2 |
 | v0.11.0 | 2026-10-25 | Matrix: rotate and mirror options |
 | v0.10.0 | 2026-10-24 | Matrix show: texts for the day and week, drawings and personal texts |
 | v0.9.0 | 2026-10-24 | Add a 10x6 mini matrix for the 30 LEDs/metre strip |
