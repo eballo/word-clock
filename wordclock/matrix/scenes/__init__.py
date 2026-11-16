@@ -15,7 +15,7 @@ from collections.abc import Callable
 
 from wordclock.matrix.canvas import Color
 from wordclock.matrix.scenes.base import Scene
-from wordclock.matrix.scenes.clocks import BlocksClock, CounterClock, DialClock, TixClock
+from wordclock.matrix.scenes.clocks import BlocksClock, CounterScene, DialClock, TixClock
 from wordclock.matrix.scenes.effects.bounce import BounceScene
 from wordclock.matrix.scenes.effects.fire import FireScene
 from wordclock.matrix.scenes.effects.layers import LayersScene
@@ -45,7 +45,7 @@ SCENES: dict[str, SceneFactory] = {
     "blocks": lambda text, color: BlocksClock(),
     "dial": lambda text, color: DialClock(),
     "tix": lambda text, color: TixClock(),
-    "counter": lambda text, color: CounterClock(),
+    "counter": lambda text, color: CounterScene(),
     "ip": lambda text, color: IpScene(**_color(color)),
     "rain": lambda text, color: RainScene(**_color(color)),
     "rainbow": lambda text, color: RainbowScene(),

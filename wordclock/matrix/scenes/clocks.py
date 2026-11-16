@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 from collections.abc import Callable
 from datetime import datetime
 from random import Random
@@ -155,45 +154,43 @@ class TixClock:
         )
 
 
-class CounterClock:
+class CounterScene:
     """
-    The time as a counter. The minutes are two digits on the left; the
-    hours are squares in the two right columns, filled from the bottom,
-    one per hour of a 12-hour clock (blue in the morning, violet in the
-    afternoon). On start the minutes count up quickly from 00 to the
-    current minute, one number every 0.2 s; then they follow the clock. The digits change colour
-    every hour, and the newest square breathes.
+    A stopwatch. The seconds count up as two digits on the left, from 00
+    to 59, one a second. Every full minute lights one more square in the
+    two right columns, from the bottom, up to 12; the next square glows a
+    little more as its minute goes by, and a new one flashes white. After
+    the last square it starts again. The digits change colour every minute.
     """
 
-    # Time on each number while counting up: 0 to 59 takes 12 s.
-    COUNT_STEP_SECONDS = 0.2
-    HOUR_COLUMNS = 2
+    COLUMNS = 2
+    SQUARES = 12
+    SQUARE: Color = (255, 170, 0)
 
-    def __init__(self, fps: float = 15, clock: Callable[[], datetime] = datetime.now) -> None:
+    def __init__(self, fps: float = 10) -> None:
         self.fps = fps
-        self._clock = clock
 
     def render(self, canvas: Canvas, frame: int) -> None:
-        now = self._clock()
         elapsed = frame / self.fps
-        minute = now.minute
-        minute = min(minute, int(elapsed / self.COUNT_STEP_SECONDS))
+        squares = min(self.SQUARES, self.COLUMNS * canvas.height)
+        minutes, seconds = divmod(int(elapsed), 60)
+        minutes %= squares + 1
         canvas.clear()
-        digits = hue_color(now.hour * 5 / 12 + 0.08)
+        digits = hue_color(0.55 + minutes * 0.13)
         top = canvas.height - FONT_HEIGHT
-        for x, column in enumerate(render_text(f"{minute:02d}")):
+        for x, column in enumerate(render_text(f"{seconds:02d}")):
             for y, lit in enumerate(column):
                 if lit:
                     canvas.set(x, top + y, digits)
-        hours = now.hour % 12 or 12
-        color = hour_color(now.hour)
-        left = canvas.width - self.HOUR_COLUMNS
-        cells = self.HOUR_COLUMNS * canvas.height
-        breath = 0.55 + 0.45 * math.sin(elapsed * 3)
-        for i in range(min(cells, 12)):
-            x = left + i % self.HOUR_COLUMNS
-            y = canvas.height - 1 - i // self.HOUR_COLUMNS
-            if i < hours:
-                canvas.set(x, y, scale(color, breath) if i == hours - 1 else color)
+        left = canvas.width - self.COLUMNS
+        progress = (elapsed % 60) / 60
+        for i in range(squares):
+            x = left + i % self.COLUMNS
+            y = canvas.height - 1 - i // self.COLUMNS
+            if i < minutes:
+                fresh = i == minutes - 1 and seconds < 1
+                canvas.set(x, y, (255, 255, 255) if fresh else self.SQUARE)
+            elif i == minutes:
+                canvas.set(x, y, scale(self.SQUARE, 0.07 + 0.3 * progress))
             else:
-                canvas.set(x, y, scale(color, 0.07))
+                canvas.set(x, y, scale(self.SQUARE, 0.07))

@@ -469,7 +469,7 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 | `blocks` | The time by counting cells (section 8.1) |
 | `dial` | The matrix as a clock face: 60 cells, one per minute and per second (section 8.1) |
 | `tix` | TIX style: each digit a block of colour with that many cells lit (section 8.1) |
-| `counter` | Minutes as two digits, hours as squares on the right (section 8.1) |
+| `counter` | A stopwatch: seconds as two digits, one square per minute (section 8.1) |
 | `pomodoro` | 25 min of work, 5 of rest: the cells empty as time runs out (section 8.2) |
 | `life` | Conway's Game of Life, wrapping around the edges |
 | `weather` | Animated weather icon, then `18° PLUJA` (section 8.2; needs a city) |
@@ -509,26 +509,26 @@ the same code runs on the 16 × 16 word clock later.
 Three scenes show the time with colours instead of digits. The examples
 are at 3:17:42 in the afternoon.
 
-**`counter`** — the time as a counter, as the show plays it every 5
-minutes. The minutes are two digits on the left; the hours are squares in
-the two right columns, filled from the bottom, one per hour of a 12-hour
-clock (blue in the morning, violet in the afternoon; the empty ones glow
-faintly). On start the minutes count up from `00`, one number every
-0,2 s (up to 12 s for `59`); then they follow the clock. The digits change colour every hour and the newest
-square breathes. At 3:37 in the afternoon:
+**`counter`** — a stopwatch, as the show plays it every 5 minutes. The
+seconds count up as two digits on the left, `00` to `59`, one a second.
+Every full minute lights one more square in the two right columns, from
+the bottom, up to 12 (the empty ones glow faintly; the next one glows a
+little more as its minute goes by, and a new one flashes white). After
+the twelfth it starts again. The digits change colour every minute. At
+3 minutes 59 seconds:
 
 ```
  col    0 1 2 3 4 5 6 7 8 9
  row 0  · · · · · · · · ▫ ▫
- row 1  ■ ■ · · ■ ■ ■ · ▫ ▫
- row 2  · · ■ · · · ■ · ▫ ▫
- row 3  · ■ · · · ■ · · ▫ ▫
- row 4  · · ■ · · ■ · · ◆ ▫     ◆ third hour, breathing
- row 5  ■ ■ · · · ■ · · ■ ■     two full hours
+ row 1  ■ ■ ■ · ■ ■ ■ · ▫ ▫
+ row 2  ■ · · · ■ · ■ · ▫ ▫
+ row 3  ■ ■ ■ · ■ ■ ■ · ▫ ▫
+ row 4  · · ■ · · · ■ · ■ ▫     third minute
+ row 5  ■ ■ ■ · ■ ■ ■ · ■ ■     first and second minutes
 ```
 
-`HH:MM` in the 3 × 5 font needs 17 columns, so it only fits scrolling
-(`clock`).
+`HH:MM` in the 3 × 5 font needs 17 columns, so the time of day only fits
+scrolling (`clock`) or as colours (`blocks`, `dial`, `tix`).
 
 **`blocks`** — count the cells, top to bottom:
 
@@ -568,8 +568,8 @@ blocks are easy to tell apart. The bottom row fills with the seconds.
  row 3  · · · ■ · · · ■ ■ ■
 ```
 
-The `show` scene plays the clock every 5 minutes, for one minute (section
-9): `counter` for 30 s, then `blocks`, `dial` or `tix` at random.
+The `show` scene plays `counter` every 5 minutes, for one minute (section
+9).
 
 ### 8.2 Pomodoro, weather and commits
 
@@ -804,8 +804,8 @@ starts with the IP address once, then repeats forever:
                    any of 8.6,                    heart, smile,
                    weather, forecast, commits     ZZZ at night
 
-   at :00, :05, :10 … :55  ──►  counter (30 s) ──► blocks, dial or tix
-                                until the minute ends, then back
+   at :00, :05, :10 … :55  ──►  counter until the minute ends
+                                and its first square lights, then back
 ```
 
 | Part | Content | Time |
@@ -813,7 +813,7 @@ starts with the IP address once, then repeats forever:
 | Text | One text that fits the moment (table below), or a personal one | One pass across the matrix |
 | Effect | One of the effects of section 8.6 at random, and `weather`, `forecast` and `commits` when they are set up | 15 s; `worms`, `snake`, `maze`, `stack` and `forecast` up to 30 s, or less when they end on their own |
 | Drawing | A red heart or a smile; `ZZZ` from 23:00 to 06:59. It pulses like a heartbeat | 6 s |
-| Clock | Every 5 minutes, on the minute, it cuts in: `counter` for 30 s, then `blocks`, `dial` or `tix` until the minute ends | 1 min |
+| Counter | Every 5 minutes, on the minute, it cuts in: the seconds count to 59 and the first square lights | 1 min and 2 s |
 
 Every scene fades in and out over 0,5 s.
 
@@ -932,7 +932,7 @@ sudo systemctl status wordclock-matrix
 - [ ] Optional: camera on its posts, lens behind the rivet window
 - [ ] Optional: switch on its pillar, wired to GPIO 3 and GND, button cap in its rivet
 - [ ] `text`, `clock`, `ip` and `rain` scenes running
-- [ ] Effects of section 8.6 checked on the matrix, and the `counter` clock at :00 or :05
+- [ ] Effects of section 8.6 checked on the matrix, and the `counter` at :00 or :05
 - [ ] Brightness checked by day and at night, `[brightness]` levels set in `matrix.toml` if needed
 - [ ] `wordclock-matrix` service enabled: the show starts when the matrix is plugged in
 - [ ] Matrix on the table or on the wall, only the power cable showing

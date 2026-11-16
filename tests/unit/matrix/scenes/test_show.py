@@ -10,12 +10,12 @@ from wordclock.matrix.dimmer import BrightnessLevels
 from wordclock.matrix.font import GLYPHS, fold_char
 from wordclock.matrix.languages import MatrixLanguage
 from wordclock.matrix.personal import Personal, load_personal
-from wordclock.matrix.scenes.clocks import BlocksClock, CounterClock, DialClock, TixClock
+from wordclock.matrix.scenes.clocks import BlocksClock, CounterScene, DialClock, TixClock
 from wordclock.matrix.scenes.effects.maze import MazeScene
 from wordclock.matrix.scenes.effects.rainbow import RainbowScene
 from wordclock.matrix.scenes.icons import ICONS, IconScene
 from wordclock.matrix.scenes.show import (
-    COUNTER_SECONDS,
+    COUNTER_EXTRA_SECONDS,
     EFFECT_SECONDS,
     EFFECTS,
     ICON_SECONDS,
@@ -27,7 +27,7 @@ from wordclock.matrix.scenes.text import ClockScene, IpScene, TextScene
 from wordclock.matrix.texts import TEXTS, Locale, date_text, day_texts, greeting
 
 # Every kind of clock the show plays.
-CLOCKS = (ClockScene, CounterClock, BlocksClock, DialClock, TixClock)
+CLOCKS = (ClockScene, CounterScene, BlocksClock, DialClock, TixClock)
 
 # 24 October 2026 is a Saturday.
 SATURDAY = datetime(2026, 10, 24, 10, 0)
@@ -245,8 +245,8 @@ class TestShowScene:
         scene.render(canvas, 1)
         # Then
         assert scene._item is not None
-        assert isinstance(scene._item.scene, CounterClock)
-        assert scene._item.seconds == COUNTER_SECONDS
+        assert isinstance(scene._item.scene, CounterScene)
+        assert scene._item.seconds == 60 + COUNTER_EXTRA_SECONDS
 
     def test_no_clock_between_the_slots(self) -> None:
         # Given: 10:06
@@ -256,16 +256,16 @@ class TestShowScene:
         # Then
         assert not set(seen) & set(CLOCKS)
 
-    def test_clock_minute_is_counter_then_a_colour_clock(self) -> None:
+    def test_counter_fills_the_rest_of_the_minute(self) -> None:
         # Given
         scene = ShowScene(seed=1)
         # When
-        items = scene.clock_items(datetime(2026, 10, 24, 10, 5, 0))
-        # Then
-        assert isinstance(items[0].scene, CounterClock)
-        assert type(items[1].scene) in (BlocksClock, DialClock, TixClock)
-        assert sum(item.seconds or 0 for item in items) == 60
-        assert all(item.clock for item in items)
+        items = scene.clock_items(datetime(2026, 10, 24, 10, 5, 20))
+        # Then: 40 s left, plus a little to see the first square
+        assert len(items) == 1
+        assert isinstance(items[0].scene, CounterScene)
+        assert items[0].seconds == 40 + COUNTER_EXTRA_SECONDS
+        assert items[0].clock
 
     def test_clock_plays_once_per_slot(self) -> None:
         # Given: the whole 10:05 minute
@@ -278,7 +278,7 @@ class TestShowScene:
             moment[0] = datetime(2026, 10, 24, 10, 5, 0) + timedelta(seconds=frame / scene.fps)
             before = scene._item
             scene.render(canvas, frame)
-            if scene._item is not before and isinstance(scene._item.scene, CounterClock):
+            if scene._item is not before and isinstance(scene._item.scene, CounterScene):
                 counters += 1
         # Then
         assert counters == 1

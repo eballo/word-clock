@@ -12,7 +12,7 @@ from wordclock.matrix.dimmer import is_night
 from wordclock.matrix.feeds import Feed, Weather
 from wordclock.matrix.personal import Personal
 from wordclock.matrix.scenes.base import Scene
-from wordclock.matrix.scenes.clocks import BlocksClock, CounterClock, DialClock, TixClock
+from wordclock.matrix.scenes.clocks import CounterScene
 from wordclock.matrix.scenes.effects.bounce import BounceScene
 from wordclock.matrix.scenes.effects.fire import FireScene
 from wordclock.matrix.scenes.effects.layers import LayersScene
@@ -42,8 +42,8 @@ FADE_SECONDS = 0.5
 DATE_TEXT_SHARE = 0.5
 # The clock plays for one minute at every multiple of this many minutes.
 CLOCK_EVERY_MINUTES = 5
-# Part of the clock minute for the counter; the rest is a colour clock.
-COUNTER_SECONDS = 30.0
+# The counter runs a little past the minute, to show its first square.
+COUNTER_EXTRA_SECONDS = 2.0
 
 # Effects the show picks from, on top of the weather, the forecast and the
 # commits when they are set up.
@@ -80,9 +80,8 @@ class ShowScene:
     The show starts with the IP address, then repeats forever: a text, an
     effect, a text, an effect and a drawing. Texts play one full pass, the
     effects a fixed time or until they end (a solved maze, a full screen
-    of worms). Every 5 minutes, on the minute, the clock takes over for
-    that minute: the counter, then a colour clock. Each scene fades in
-    and out.
+    of worms). Every 5 minutes, on the minute, the counter takes over for
+    that minute and lights its first square. Each scene fades in and out.
     """
 
     def __init__(
@@ -177,27 +176,19 @@ class ShowScene:
         scene = TextScene(self._text(), color=self._color(), rainbow=self._random.random() < 0.3)
         return ShowItem(scene, None)
 
-    def _colour_clock(self) -> Scene:
-        kind = self._random.choice((BlocksClock, DialClock, TixClock))
-        return kind(clock=self._clock)
-
     def clock_items(self, now: datetime) -> list[ShowItem]:
         """
-        Plan the clock for the rest of the minute.
+        Plan the counter for the rest of the minute.
 
         Args:
             now: The current time.
 
         Returns:
-            The counter for up to :data:`COUNTER_SECONDS`, then a colour
-            clock until the minute ends.
+            The counter until the minute ends and a little longer, so its
+            first square lights up.
         """
         left = 60 - now.second - now.microsecond / 1e6
-        counter = min(COUNTER_SECONDS, left)
-        items = [ShowItem(CounterClock(clock=self._clock), counter, clock=True)]
-        if left - counter > 2 * FADE_SECONDS:
-            items.append(ShowItem(self._colour_clock(), left - counter, clock=True))
-        return items
+        return [ShowItem(CounterScene(), left + COUNTER_EXTRA_SECONDS, clock=True)]
 
     def _clock_due(self, now: datetime) -> bool:
         if now.minute % CLOCK_EVERY_MINUTES:
