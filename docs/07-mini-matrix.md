@@ -466,6 +466,13 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 | `show` | The default: every scene in turn, with new colours each time (section 9) |
 | `text` | Scrolling text (`--text`), 3 × 5 pixel font on the bottom five rows, accents folded (`à` → `A`) |
 | `clock` | The time as `HH:MM`, scrolling |
+| `blocks` | The time by counting cells (section 8.1) |
+| `dial` | The matrix as a clock face: 60 cells, one per minute and per second (section 8.1) |
+| `tix` | TIX style: each digit a block of colour with that many cells lit (section 8.1) |
+| `pomodoro` | 25 min of work, 5 of rest: the cells empty as time runs out (section 8.2) |
+| `life` | Conway's Game of Life, wrapping around the edges |
+| `weather` | Animated weather icon, then `18° PLUJA` (section 8.2; needs a city) |
+| `commits` | GitHub contributions of the last 60 days, one cell per day (section 8.2; needs a GitHub account) |
 | `ip` | The local IP address, scrolling |
 | `rain` | Green drops with fading trails, like Matrix rain |
 | `rainbow` | A rainbow sliding diagonally |
@@ -485,6 +492,137 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 
 The scenes draw on a cell canvas of any size (`--width`, `--height`), so
 the same code runs on the 16 × 16 word clock later.
+
+### 8.1 Clocks
+
+Three scenes show the time with colours instead of digits. The examples
+are at 3:17:42 in the afternoon.
+
+**`blocks`** — count the cells, top to bottom:
+
+```
+ row 0  ■ ■ ■ · · · · · · ·   hours: 3 (12-hour clock; blue in the
+ row 1  · · · · · · · · · ·          morning, violet in the afternoon)
+ row 2  ■ ■ ■ · · · · · · ·   blocks of 5 minutes: 3 → 15
+ row 3  · · · · · · · · · ·
+ row 4  ■ ■ · · · · · · · ·   minutes left over: 2 → 17
+ row 5  ■ ■ ■ ■ ■ ■ ■ ▫ · ·   one cell per 6 s: 42 s
+```
+
+**`dial`** — the matrix as a clock face. The 60 cells are the 60 minutes,
+in reading order, and fill up through the hour: every row is ten
+minutes. The twelve half rows are the twelve hours of a dial, and the one
+for the hour glows. A white dot with a short trail runs over every cell
+once a minute.
+
+```
+ row 0  ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   minutes 0-9
+ row 1  ■ ■ ■ ■ ■ ■ ■ ◆ ◆ ◆   minutes 10-16; right half glows: 3 o'clock
+ row 2  · · · · · · · · · ·
+ row 3  · · · · · · · · · ·
+ row 4  · · ○ · · · · · · ·   the dot at cell 42: 42 s
+ row 5  · · · · · · · · · ·
+```
+
+**`tix`** — after the TIX clock: four blocks, one per digit of `HH:MM`
+(24-hour), each with as many cells lit as the digit, at random places
+that change every 4 s. The unlit cells of each block glow faintly, so the
+blocks are easy to tell apart. The bottom row fills with the seconds.
+
+```
+        H H H H   M M M M M
+ row 1  ■ · ■ · · ■ · ■ · ■     red: 1   green: 5
+ row 2  · ■ ■ ■ · · · ■ ■ ·     blue: 1  red: 7
+ row 3  · · · ■ · · · ■ ■ ■
+```
+
+The `show` scene plays one of the four clocks (`clock`, `blocks`, `dial`
+or `tix`) each time, at random.
+
+### 8.2 Pomodoro, weather and commits
+
+**`pomodoro`** — the 60 cells are the time left, red for 25 minutes of
+work, then green for 5 of rest, again and again; the last lit cell blinks
+and the matrix flashes when a phase ends. While it plays, a short press of
+the button pauses and resumes it (instead of switching the lights), and
+the paused cells breathe. Start it again from the top by choosing the
+scene again.
+
+**`weather`** — the weather now, from [Open-Meteo](https://open-meteo.com)
+(free, no key): an animated icon for 6 s (sun or moon and stars, clouds,
+fog, drizzle, rain, snow, storm), then the temperature and a word scroll
+past (`21° SOL`). It refreshes every 15 minutes.
+
+**`commits`** — the GitHub contributions of the last 60 days, one cell
+per day in reading order, oldest top left, today bottom right and
+breathing. The greens follow GitHub: brighter for busier days. Then the
+total scrolls past (`1907 COMMITS`). It refreshes every 30 minutes.
+
+Both read their settings from `matrix.toml` (section 9). Until the first
+answer arrives they show three grey dots; red dots mean the last request
+failed (`journalctl` says why). Without the settings, the two scenes are
+not offered, and the show leaves them out.
+
+### 8.3 Remote control
+
+`--api` lights the LEDs and serves the same page as the simulator, so
+the matrix can be watched and driven from a phone or a computer on the
+same network; `--host 0.0.0.0` opens it to the network. There is no
+password: keep it on the home network.
+
+```bash
+sudo .venv/bin/wordclock-matrix show --api --host 0.0.0.0 --rotate --max-ma 600
+# then open http://wordclock.local:8001 on the phone
+```
+
+| Request | What it does |
+|---------|--------------|
+| `GET /api/matrix/scenes` | Scenes that can play now, and the current one |
+| `POST /api/matrix/scene` `{"name": "pomodoro"}` | Play a scene; `text` and `color` (`"ff8800"`) for the scenes that use them |
+| `POST /api/matrix/press` `{}` | A short press of the button (`{"action": "photo"}` for a long one) |
+| `POST /api/matrix/brightness` `{"brightness": 80}` | Brightness, 0-255 |
+| `GET /api/matrix/frame` | The colours on the matrix now |
+
+```bash
+curl -X POST wordclock.local:8001/api/matrix/scene \
+     -H 'Content-Type: application/json' -d '{"name": "pomodoro"}'
+curl -X POST wordclock.local:8001/api/matrix/press \
+     -H 'Content-Type: application/json' -d '{}'     # pause / resume
+```
+
+A long press of 10 s, from the button or the API, shuts the Pi down
+(`systemctl poweroff`); in the simulator it is only logged.
+
+### Web simulator
+
+`--web` draws the matrix in a browser page instead of lighting LEDs, as it
+will look once printed: the face with its windows, the rivets, the camera
+and the button. The scenes, the button and the photo are the same Python
+code that runs on the Raspberry Pi; only the LEDs, the switch and the
+camera are simulated.
+
+```bash
+uv run wordclock-matrix --web            # http://127.0.0.1:8001
+uv run wordclock-matrix rain --web --port 8002
+```
+
+| In the page | What it does |
+|-------------|--------------|
+| The rivet with a dot, bottom right | The button: click to switch the lights off and on, hold 3 s for a photo, 10 s for a shutdown (only logged) |
+| Hold bar | How long the button is held, and which action it will do |
+| Webcam as camera | Uses the Mac webcam for the photo: a 3, 2, 1 countdown, a white flash, then the photo pixelated to 10 × 6 |
+| Scene, Text, Colour, Brightness | Switch the scene live |
+
+The page draws the LED light as the eye sees it (LED values are linear,
+so it applies the inverse gamma), and it reads the face sizes from
+`wordclock/cad/matrix.scad`, so a change to the model shows up in the
+simulator too.
+
+| Button press | Action |
+|--------------|--------|
+| Short | Lights off or on; the Pi and the scene keep running |
+| 3 s | Countdown, white flash, photo shown for 8 s, cell by cell |
+| 10 s | Shut down (`sudo poweroff` on the Pi, to come) |
 
 ---
 
@@ -533,7 +671,21 @@ messages = ["HOLA ENRIC", "♥ CASA ♥"]
 [dates]
 "03-14" = "FELICITATS ANNA!"
 "12-25" = ["BON NADAL!", "♥ ♥ ♥"]
+
+# City for the weather scene
+[weather]
+city = "Barcelona"
+
+# GitHub account for the commits scene. A fine-grained token with no
+# permissions is enough for public contributions.
+[github]
+user = "eballo"
+token = "github_pat_..."
 ```
+
+The token stays in this file on the Pi only. On the Mac, the simulator
+also takes it from `GITHUB_TOKEN`
+(`GITHUB_TOKEN=$(gh auth token) uv run wordclock-matrix commits --web`).
 
 The show reads the file when it starts: restart the service after editing
 it. A missing or broken file only leaves the personal texts out
@@ -555,7 +707,7 @@ After=network-online.target
 Type=simple
 User=root
 WorkingDirectory=/home/eballo/word-clock
-ExecStart=/home/eballo/word-clock/.venv/bin/wordclock-matrix show
+ExecStart=/home/eballo/word-clock/.venv/bin/wordclock-matrix show --api --host 0.0.0.0
 Restart=on-failure
 RestartSec=5
 

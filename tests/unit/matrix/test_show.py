@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from wordclock.matrix.canvas import Canvas
+from wordclock.matrix.clocks import BlocksClock, DialClock, TixClock
 from wordclock.matrix.font import GLYPHS, fold_char
 from wordclock.matrix.scenes import (
     ClockScene,
@@ -29,6 +30,9 @@ from wordclock.matrix.show import (
     greeting,
     load_personal,
 )
+
+# Every kind of clock the show plays.
+CLOCKS = (ClockScene, BlocksClock, DialClock, TixClock)
 
 # 24 October 2026 is a Saturday.
 SATURDAY = datetime(2026, 10, 24, 10, 0)
@@ -91,6 +95,34 @@ class TestDayTexts:
 
 
 class TestLoadPersonal:
+    @pytest.fixture(autouse=True)
+    def no_token_in_the_environment(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+
+    def test_reads_the_weather_city_and_the_github_account(self, tmp_path: Path) -> None:
+        # Given
+        path = tmp_path / "matrix.toml"
+        path.write_text(
+            '[weather]\ncity = "Girona"\n[github]\nuser = "eballo"\ntoken = "secret"\n',
+            encoding="utf-8",
+        )
+        # When
+        personal = load_personal(path)
+        # Then
+        assert personal.city == "Girona"
+        assert (personal.github_user, personal.github_token) == ("eballo", "secret")
+        assert "secret" not in repr(personal)
+
+    def test_token_from_the_environment(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Given
+        monkeypatch.setenv("GITHUB_TOKEN", "from-env")
+        path = tmp_path / "matrix.toml"
+        path.write_text('[github]\nuser = "eballo"\n', encoding="utf-8")
+        # When / Then
+        assert load_personal(path).github_token == "from-env"
+
     def test_reads_messages_and_dates(self, tmp_path: Path) -> None:
         # Given
         path = tmp_path / "matrix.toml"
@@ -158,9 +190,18 @@ class TestShowScene:
         # When: long enough for one round
         seen = self.play(scene, 120 + EFFECT_SECONDS + ICON_SECONDS)
         # Then
-        assert seen[:3] == [IpScene, ClockScene, TextScene]
+        assert seen[0] is IpScene
+        assert seen[1] in CLOCKS and seen[2] is TextScene
         assert seen[3] in (RainbowScene, RainScene, SparkleScene)
-        assert seen[4:7] == [ClockScene, TextScene, IconScene]
+        assert seen[4] in CLOCKS and seen[5:7] == [TextScene, IconScene]
+
+    def test_uses_every_kind_of_clock(self) -> None:
+        # Given
+        scene = ShowScene(seed=1, clock=lambda: SATURDAY)
+        # When
+        kinds = {type(scene._clock_scene()) for _ in range(100)}
+        # Then
+        assert kinds == set(CLOCKS)
 
     def test_shows_the_zzz_at_night(self) -> None:
         # Given

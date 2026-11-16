@@ -1,6 +1,14 @@
 from __future__ import annotations
 
-from wordclock.matrix.canvas import Canvas, estimate_current_ma, limit_current
+import pytest
+
+from wordclock.matrix.canvas import (
+    Canvas,
+    estimate_current_ma,
+    hex_to_color,
+    limit_current,
+    strip_to_canvas,
+)
 
 
 class TestCanvas:
@@ -126,3 +134,34 @@ class TestCurrentLimit:
         # Then
         assert estimate_current_ma(limited) <= 1500
         assert limited[0][0] > 0
+
+
+class TestStripToCanvas:
+    @pytest.mark.parametrize(
+        ("snake", "rotate", "mirror"),
+        [(s, r, m) for s in (True, False) for r in (True, False) for m in (True, False)],
+    )
+    def test_undoes_to_strip(self, snake: bool, rotate: bool, mirror: bool) -> None:
+        # Given: every cell a different colour
+        canvas = Canvas(10, 6)
+        for y in range(6):
+            for x in range(10):
+                canvas.set(x, y, (x, y, 1))
+        # When
+        strip = canvas.to_strip(snake, rotate, mirror)
+        back = strip_to_canvas(strip, 10, 6, snake, rotate, mirror)
+        # Then
+        assert back.rows() == canvas.rows()
+
+
+class TestHexToColor:
+    @pytest.mark.parametrize("value", ["ff8800", "#ff8800"])
+    def test_reads_hex(self, value: str) -> None:
+        # Given / When / Then
+        assert hex_to_color(value) == (255, 136, 0)
+
+    @pytest.mark.parametrize("value", ["fff", "orange!"])
+    def test_rejects_other_text(self, value: str) -> None:
+        # Given / When / Then
+        with pytest.raises(ValueError):
+            hex_to_color(value)
