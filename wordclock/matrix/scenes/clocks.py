@@ -161,11 +161,12 @@ class CounterClock:
     hours are squares in the two right columns, filled from the bottom,
     one per hour of a 12-hour clock (blue in the morning, violet in the
     afternoon). On start the minutes count up quickly from 00 to the
-    current minute; then they follow the clock. The digits change colour
+    current minute, one number every 0.2 s; then they follow the clock. The digits change colour
     every hour, and the newest square breathes.
     """
 
-    COUNT_SECONDS = 1.5
+    # Time on each number while counting up: 0 to 59 takes 12 s.
+    COUNT_STEP_SECONDS = 0.2
     HOUR_COLUMNS = 2
 
     def __init__(self, fps: float = 15, clock: Callable[[], datetime] = datetime.now) -> None:
@@ -176,8 +177,7 @@ class CounterClock:
         now = self._clock()
         elapsed = frame / self.fps
         minute = now.minute
-        if elapsed < self.COUNT_SECONDS:
-            minute = int(minute * elapsed / self.COUNT_SECONDS)
+        minute = min(minute, int(elapsed / self.COUNT_STEP_SECONDS))
         canvas.clear()
         digits = hue_color(now.hour * 5 / 12 + 0.08)
         top = canvas.height - FONT_HEIGHT

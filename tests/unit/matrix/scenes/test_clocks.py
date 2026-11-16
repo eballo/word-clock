@@ -131,7 +131,7 @@ class TestCounterClock:
         scene = CounterClock(fps=10, clock=at(datetime(2026, 10, 25, 15, 37)))
         canvas = Canvas(10, 6)
         # When
-        scene.render(canvas, 30)
+        scene.render(canvas, 200)
         # Then: "37" in columns 0-6, rows 1-5; column 7 and the top row dark
         assert any(any(canvas.get(x, y)) for x in range(7) for y in range(1, 6))
         assert not any(any(canvas.get(7, y)) for y in range(6))
@@ -147,7 +147,7 @@ class TestCounterClock:
         scene = CounterClock(fps=10, clock=at(datetime(2026, 10, 25, 12, 0)))
         canvas = Canvas(10, 6)
         # When
-        scene.render(canvas, 30)
+        scene.render(canvas, 200)
         # Then: every square is lit, the newest one breathing
         assert all(any(canvas.get(x, y)) for x in (8, 9) for y in range(6))
         assert sum(canvas.get(x, y) == PM_HOURS for x in (8, 9) for y in range(6)) >= 11
@@ -157,22 +157,24 @@ class TestCounterClock:
         scene = CounterClock(fps=10, clock=at(datetime(2026, 10, 25, 9, 10)))
         canvas = Canvas(10, 6)
         # When
-        scene.render(canvas, 30)
+        scene.render(canvas, 200)
         # Then
         assert canvas.get(8, 5) == AM_HOURS
 
-    def test_counts_up_to_the_minute(self) -> None:
-        # Given
+    def test_counts_up_one_number_at_a_time(self) -> None:
+        # Given: 37 minutes, at 10 frames per second
         scene = CounterClock(fps=10, clock=at(datetime(2026, 10, 25, 15, 37)))
         canvas = Canvas(10, 6)
         pictures = []
         # When
-        for frame in range(0, 20):
+        for frame in range(100):
             scene.render(canvas, frame)
-            pictures.append(canvas.rows())
-        # Then: the digits change while counting, then stay
-        assert len({str(p) for p in pictures[:15]}) > 5
-        assert pictures[16][1][:7] == pictures[19][1][:7]
+            pictures.append(str([row[:7] for row in canvas.rows()]))
+        # Then: a new number every 2 frames (0.2 s) until 37 at 7.4 s
+        changes = sum(a != b for a, b in zip(pictures, pictures[1:], strict=False))
+        assert changes == 37
+        assert pictures[74] == pictures[99]
+        assert pictures[72] != pictures[74]
 
     def test_digits_change_colour_every_hour(self) -> None:
         # Given
@@ -180,7 +182,7 @@ class TestCounterClock:
         colours = set()
         # When
         for hour in (14, 15):
-            CounterClock(fps=10, clock=at(datetime(2026, 10, 25, hour, 37))).render(canvas, 30)
+            CounterClock(fps=10, clock=at(datetime(2026, 10, 25, hour, 37))).render(canvas, 200)
             colours.add(next(c for c in canvas.rows()[5][:7] if any(c)))
         # Then
         assert len(colours) == 2

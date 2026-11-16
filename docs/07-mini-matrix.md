@@ -513,8 +513,8 @@ are at 3:17:42 in the afternoon.
 minutes. The minutes are two digits on the left; the hours are squares in
 the two right columns, filled from the bottom, one per hour of a 12-hour
 clock (blue in the morning, violet in the afternoon; the empty ones glow
-faintly). On start the minutes count up quickly from `00`; then they
-follow the clock. The digits change colour every hour and the newest
+faintly). On start the minutes count up from `00`, one number every
+0,2 s (up to 12 s for `59`); then they follow the clock. The digits change colour every hour and the newest
 square breathes. At 3:37 in the afternoon:
 
 ```
