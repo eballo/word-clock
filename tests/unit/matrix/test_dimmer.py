@@ -149,6 +149,39 @@ class TestDimmer:
         assert not dimmer.manual
 
 
+class TestSimulatedTime:
+    def test_replaces_the_real_time_of_day(self) -> None:
+        # Given: it is 13:00
+        dimmer = Dimmer(LEVELS, clock=FakeClock(at(13)))
+        # When
+        dimmer.simulate(time(2, 0))
+        # Then
+        assert dimmer.simulated
+        assert dimmer.now() == at(2)
+        assert dimmer.phase() == Phase.NIGHT
+        assert dimmer.brightness() == 6
+
+    def test_back_to_the_real_time(self) -> None:
+        # Given
+        dimmer = Dimmer(LEVELS, clock=FakeClock(at(13)))
+        dimmer.simulate(time(2, 0))
+        # When
+        dimmer.simulate(None)
+        # Then
+        assert not dimmer.simulated
+        assert dimmer.brightness() == 90
+
+    def test_drops_a_brightness_set_by_hand(self) -> None:
+        # Given
+        dimmer = Dimmer(LEVELS, clock=FakeClock(at(13)))
+        dimmer.set_manual(200)
+        # When
+        dimmer.simulate(time(13, 30))
+        # Then
+        assert not dimmer.manual
+        assert dimmer.brightness() == 90
+
+
 class TestRunnerWithDimmer:
     def test_sets_the_strip_brightness_every_frame(self) -> None:
         # Given

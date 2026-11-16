@@ -31,6 +31,11 @@
       <label>Colour <input id="color" type="color" value="#ffffff"></label>
       <label>Brightness <input id="brightness" type="range" min="5" max="255" value="40"></label>
       <label class="check"><input id="webcam" type="checkbox"> Webcam as camera</label>
+      <fieldset id="day" class="day" hidden>
+        <label>Time of day <input id="day-time" type="range" min="0" max="1435" step="5" value="720"></label>
+        <output id="day-label" for="day-time">--:--</output>
+        <button id="day-now" type="button">Now</button>
+      </fieldset>
     </form>
 
     <p id="status" class="status" aria-live="polite">Connecting…</p>

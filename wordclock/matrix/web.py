@@ -5,6 +5,7 @@ import base64
 import operator
 import re
 from collections.abc import Callable
+from datetime import time as day_time
 from logging import getLogger
 from pathlib import Path
 from threading import Lock, Thread
@@ -136,6 +137,11 @@ class BrightnessRequest(BaseModel):
     brightness: int
 
 
+class TimeRequest(BaseModel):
+    # "HH:MM", or None for the real time
+    time: str | None = None
+
+
 class PhotoRequest(BaseModel):
     image: str
 
@@ -226,6 +232,21 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
             },
         )
 
+    def day_state() -> dict:
+        dimmer = runner.dimmer
+        if dimmer is None:
+            return {"time": None, "simulated_time": False, "phase": None, "sun": None}
+        sun = dimmer.sun_times()
+        return {
+            "time": dimmer.now().strftime("%H:%M"),
+            "simulated_time": dimmer.simulated,
+            "phase": dimmer.phase().value,
+            "sun": {
+                "sunrise": sun.sunrise.strftime("%H:%M"),
+                "sunset": sun.sunset.strftime("%H:%M"),
+            },
+        }
+
     @app.get("/api/matrix/frame")
     def frame() -> dict:
         picture = strip_to_canvas(
@@ -242,6 +263,7 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
             "cells": picture.rows(),
             "brightness": service.controller.brightness,
             "auto_brightness": runner.dimmer is not None and not runner.dimmer.manual,
+            **day_state(),
             "lights": service.control.lights_on,
             "scene": service.scene_name,
             "capture": service.capture_id,
@@ -282,6 +304,20 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
             runner.dimmer.set_manual(request.brightness)
         service.controller.brightness = request.brightness
         return {"brightness": request.brightness}
+
+    @app.post("/api/matrix/time")
+    def simulated_time(request: TimeRequest) -> dict:
+        if runner.dimmer is None:
+            raise HTTPException(
+                status_code=400, detail="The brightness is fixed: start without --brightness"
+            )
+        try:
+            moment = day_time.fromisoformat(request.time) if request.time else None
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="time must be HH:MM") from exc
+        runner.dimmer.simulate(moment)
+        runner.controller.brightness = runner.dimmer.brightness()
+        return day_state()
 
     @app.post("/api/matrix/photo")
     def photo(request: PhotoRequest) -> dict:

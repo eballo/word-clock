@@ -97,4 +97,29 @@ main {
   background: #111;
 }
 
+.day {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.day[hidden] { display: none; }
+
+.day output { min-width: 9.5em; color: #aaa; font-variant-numeric: tabular-nums; }
+
+.day button {
+  background: #111;
+  color: #ddd;
+  border: 1px solid #2a2a2a;
+  border-radius: 3px;
+  padding: 0.3rem 0.7rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.day button:disabled { opacity: 0.4; cursor: default; }
+
 .status { font-size: 12px; color: #666; min-height: 1.2em; }

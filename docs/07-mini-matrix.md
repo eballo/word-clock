@@ -580,6 +580,7 @@ sudo .venv/bin/wordclock-matrix show --api --host 0.0.0.0 --rotate --max-ma 600
 | `GET /api/matrix/scenes` | Scenes that can play now, and the current one |
 | `POST /api/matrix/scene` `{"name": "pomodoro"}` | Play a scene; `text` and `color` (`"ff8800"`) for the scenes that use them |
 | `POST /api/matrix/press` `{}` | A short press of the button (`{"action": "photo"}` for a long one) |
+| `POST /api/matrix/time` `{"time": "23:30"}` | Simulate a time of day for the automatic brightness; `{"time": null}` for the real time (section 8.4) |
 | `POST /api/matrix/brightness` `{"brightness": 80}` | Brightness, 0-255; with the automatic brightness, it holds until the next change of phase (section 8.4) |
 | `GET /api/matrix/frame` | The colours on the matrix now |
 
@@ -625,6 +626,12 @@ until the next change of phase; then the automatic brightness takes over
 again. The page shows `(auto)` next to the brightness while it is
 automatic. `--brightness 40` turns the automatic brightness off.
 
+The **Time of day** slider of the page previews the brightness at any
+hour: it moves the time the brightness follows, shows the phase and the
+sun times, and **Now** goes back to the real time. Only the brightness
+follows it; the scenes keep the real time. It also works on the Pi with
+`--api`, to check the strip by day and at night.
+
 ### Web simulator
 
 `--web` draws the matrix in a browser page instead of lighting LEDs, as it
@@ -644,6 +651,7 @@ uv run wordclock-matrix rain --web --port 8002
 | Hold bar | How long the button is held, and which action it will do |
 | Webcam as camera | Uses the Mac webcam for the photo: a 3, 2, 1 countdown, a white flash, then the photo pixelated to 10 × 6 |
 | Scene, Text, Colour, Brightness | Switch the scene live |
+| Time of day, Now | Preview the automatic brightness at another hour (section 8.4) |
 
 The page draws the LED light as the eye sees it (LED values are linear,
 so it applies the inverse gamma), and it reads the face sizes from
