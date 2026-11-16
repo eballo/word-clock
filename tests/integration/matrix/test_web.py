@@ -202,6 +202,44 @@ class TestSimulatedTime:
         assert frame["time"] is None
 
 
+class TestLights:
+    def test_on_by_default(self, client: TestClient) -> None:
+        # Given / When
+        r = client.get("/api/matrix/lights")
+        # Then
+        assert r.status_code == 200
+        assert r.json() == {"on": True}
+
+    def test_turns_the_leds_off_and_on(self, client: TestClient, service: MatrixService) -> None:
+        # Given
+        canvas = Canvas(10, 6)
+        # When
+        off = client.post("/api/matrix/lights", json={"on": False})
+        service.control.render(canvas, 0)
+        dark = canvas.rows()
+        frame = client.get("/api/matrix/frame").json()
+        on = client.post("/api/matrix/lights", json={"on": True})
+        # Then
+        assert off.json() == {"on": False}
+        assert all(color == (0, 0, 0) for row in dark for color in row)
+        assert frame["lights"] is False
+        assert on.json() == {"on": True}
+        assert service.control.lights_on is True
+
+    def test_off_twice_stays_off(self, client: TestClient) -> None:
+        # Given / When: unlike a press of the button, it does not toggle
+        client.post("/api/matrix/lights", json={"on": False})
+        r = client.post("/api/matrix/lights", json={"on": False})
+        # Then
+        assert r.json() == {"on": False}
+
+    def test_rejects_a_missing_value(self, client: TestClient) -> None:
+        # Given / When
+        r = client.post("/api/matrix/lights", json={})
+        # Then
+        assert r.status_code == 422
+
+
 class TestLanguage:
     def test_catalan_by_default(self, client: TestClient) -> None:
         # Given / When
@@ -258,6 +296,7 @@ class TestApiDocs:
             "/api/matrix/button",
             "/api/matrix/press",
             "/api/matrix/brightness",
+            "/api/matrix/lights",
             "/api/matrix/language",
             "/api/matrix/time",
             "/api/matrix/photo",

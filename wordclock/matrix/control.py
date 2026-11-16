@@ -120,6 +120,17 @@ class ControlledScene:
         elif action == ButtonAction.SHUTDOWN and self._shutdown is not None:
             self._shutdown()
 
+    def set_lights(self, on: bool) -> None:
+        """
+        Switch the LEDs on or off; the scene keeps running while they are off.
+
+        Args:
+            on: True to light the LEDs, False to turn them off.
+        """
+        if on != self.lights_on:
+            logger.info("Lights %s", "on" if on else "off")
+        self.lights_on = on
+
     def show_photo(self, pixels: list[Color], width: int) -> None:
         """
         Show a pixelated photo for a while.

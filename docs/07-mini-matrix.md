@@ -619,6 +619,8 @@ sudo .venv/bin/wordclock-matrix show --api --host 0.0.0.0 --rotate --max-ma 600
 | `GET /api/matrix/scenes` | Scenes that can play now, and the current one |
 | `POST /api/matrix/scene` `{"name": "pomodoro"}` | Play a scene; `text` and `color` (`"ff8800"`) for the scenes that use them |
 | `POST /api/matrix/press` `{}` | A short press of the button (`{"action": "photo"}` for a long one) |
+| `POST /api/matrix/lights` `{"on": false}` | Turn the LEDs off, `{"on": true}` to light them again; the scene keeps running in the dark. Unlike a press, it does not toggle |
+| `GET /api/matrix/lights` | Whether the LEDs are lit |
 | `POST /api/matrix/language` `{"language": "english"}` | Switch the language of the texts live (section 8.5) |
 | `POST /api/matrix/time` `{"time": "23:30"}` | Simulate a time of day for the automatic brightness; `{"time": null}` for the real time (section 8.4) |
 | `POST /api/matrix/brightness` `{"brightness": 80}` | Brightness, 0-255; with the automatic brightness, it holds until the next change of phase (section 8.4) |
@@ -779,6 +781,7 @@ uv run wordclock-matrix rain --web --port 8002
 | Webcam as camera | Uses the Mac webcam for the photo: a 3, 2, 1 countdown, a white flash, then the photo pixelated to 10 × 6 |
 | Scene, Text, Colour, Brightness | Switch the scene live |
 | Time of day, Now | Preview the automatic brightness at another hour (section 8.4) |
+| Lights | Turn the LEDs off and on |
 | Language | Switch the language of the texts (section 8.5) |
 | API docs | The Swagger page with every endpoint |
 

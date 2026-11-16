@@ -43,6 +43,7 @@ const controls = {
   color: document.getElementById('color'),
   brightness: document.getElementById('brightness'),
   webcam: document.getElementById('webcam'),
+  lights: document.getElementById('lights'),
   day: document.getElementById('day'),
   dayTime: document.getElementById('day-time'),
   dayLabel: document.getElementById('day-label'),
@@ -246,6 +247,9 @@ function sendScene() {
 controls.scene.addEventListener('change', sendScene);
 controls.text.addEventListener('change', sendScene);
 controls.color.addEventListener('change', sendScene);
+controls.lights.addEventListener('change', () => {
+  post('/api/matrix/lights', { on: controls.lights.checked }).catch(showError);
+});
 controls.language.addEventListener('change', () => {
   post('/api/matrix/language', { language: controls.language.value }).catch(showError);
 });
@@ -301,6 +305,7 @@ async function poll() {
       capture();
     }
     if (document.activeElement !== controls.language) controls.language.value = frame.language;
+    controls.lights.checked = frame.lights;
     if (frame.auto_brightness && document.activeElement !== controls.brightness) {
       controls.brightness.value = frame.brightness;
     }
