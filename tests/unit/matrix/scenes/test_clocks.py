@@ -11,6 +11,7 @@ from wordclock.matrix.scenes.clocks import (
     MINUTES,
     PM_HOURS,
     BlocksClock,
+    CounterClock,
     DialClock,
     TixClock,
 )
@@ -122,3 +123,64 @@ class TestTixClock:
         TixClock(clock=at(datetime(2026, 1, 1, 8, 8, 1))).render(later, 0)
         # Then: only the seconds row may differ
         assert first.rows()[1:4] == later.rows()[1:4]
+
+
+class TestCounterClock:
+    def test_minutes_on_the_left_hours_on_the_right(self) -> None:
+        # Given: 3:37 in the afternoon, after the count-up
+        scene = CounterClock(fps=10, clock=at(datetime(2026, 10, 25, 15, 37)))
+        canvas = Canvas(10, 6)
+        # When
+        scene.render(canvas, 30)
+        # Then: "37" in columns 0-6, rows 1-5; column 7 and the top row dark
+        assert any(any(canvas.get(x, y)) for x in range(7) for y in range(1, 6))
+        assert not any(any(canvas.get(7, y)) for y in range(6))
+        assert not any(any(canvas.get(x, 0)) for x in range(7))
+        # Three hour squares, bottom up, in the afternoon colour; the third
+        # one breathes
+        full = [(x, y) for x in (8, 9) for y in range(6) if canvas.get(x, y) == PM_HOURS]
+        assert sorted(full) == [(8, 5), (9, 5)]
+        assert any(canvas.get(8, 4)) and canvas.get(8, 4) != PM_HOURS
+
+    def test_twelve_squares_at_noon(self) -> None:
+        # Given
+        scene = CounterClock(fps=10, clock=at(datetime(2026, 10, 25, 12, 0)))
+        canvas = Canvas(10, 6)
+        # When
+        scene.render(canvas, 30)
+        # Then: every square is lit, the newest one breathing
+        assert all(any(canvas.get(x, y)) for x in (8, 9) for y in range(6))
+        assert sum(canvas.get(x, y) == PM_HOURS for x in (8, 9) for y in range(6)) >= 11
+
+    def test_morning_squares_are_blue(self) -> None:
+        # Given
+        scene = CounterClock(fps=10, clock=at(datetime(2026, 10, 25, 9, 10)))
+        canvas = Canvas(10, 6)
+        # When
+        scene.render(canvas, 30)
+        # Then
+        assert canvas.get(8, 5) == AM_HOURS
+
+    def test_counts_up_to_the_minute(self) -> None:
+        # Given
+        scene = CounterClock(fps=10, clock=at(datetime(2026, 10, 25, 15, 37)))
+        canvas = Canvas(10, 6)
+        pictures = []
+        # When
+        for frame in range(0, 20):
+            scene.render(canvas, frame)
+            pictures.append(canvas.rows())
+        # Then: the digits change while counting, then stay
+        assert len({str(p) for p in pictures[:15]}) > 5
+        assert pictures[16][1][:7] == pictures[19][1][:7]
+
+    def test_digits_change_colour_every_hour(self) -> None:
+        # Given
+        canvas = Canvas(10, 6)
+        colours = set()
+        # When
+        for hour in (14, 15):
+            CounterClock(fps=10, clock=at(datetime(2026, 10, 25, hour, 37))).render(canvas, 30)
+            colours.add(next(c for c in canvas.rows()[5][:7] if any(c)))
+        # Then
+        assert len(colours) == 2

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from logging import getLogger
 from random import Random
 
@@ -12,44 +12,77 @@ from wordclock.matrix.dimmer import is_night
 from wordclock.matrix.feeds import Feed, Weather
 from wordclock.matrix.personal import Personal
 from wordclock.matrix.scenes.base import Scene
-from wordclock.matrix.scenes.clocks import BlocksClock, DialClock, TixClock
+from wordclock.matrix.scenes.clocks import BlocksClock, CounterClock, DialClock, TixClock
+from wordclock.matrix.scenes.effects.bounce import BounceScene
+from wordclock.matrix.scenes.effects.fire import FireScene
+from wordclock.matrix.scenes.effects.layers import LayersScene
 from wordclock.matrix.scenes.effects.life import LifeScene
+from wordclock.matrix.scenes.effects.maze import MazeScene
 from wordclock.matrix.scenes.effects.rain import RainScene
-from wordclock.matrix.scenes.effects.rainbow import RainbowScene
+from wordclock.matrix.scenes.effects.rainbow import RainbowScene, SpinScene
+from wordclock.matrix.scenes.effects.snake import SnakeScene
 from wordclock.matrix.scenes.effects.sparkle import SparkleScene
+from wordclock.matrix.scenes.effects.stack import StackScene
+from wordclock.matrix.scenes.effects.worms import WormsScene
 from wordclock.matrix.scenes.icons import ICONS, RED, IconScene
 from wordclock.matrix.scenes.screens.commits import CommitsScene
-from wordclock.matrix.scenes.screens.weather import WeatherScene
-from wordclock.matrix.scenes.text import ClockScene, IpScene, TextScene
+from wordclock.matrix.scenes.screens.weather import ForecastScene, WeatherScene
+from wordclock.matrix.scenes.text import IpScene, TextScene
 from wordclock.matrix.texts import Locale, day_texts
 
 logger = getLogger(__name__)
 
 
 EFFECT_SECONDS = 15.0
+# Effects that end on their own play up to this long, and stop when done.
+LONG_EFFECT_SECONDS = 30.0
 ICON_SECONDS = 6.0
 FADE_SECONDS = 0.5
 # On a personal date, this share of the texts is the date's own text.
 DATE_TEXT_SHARE = 0.5
+# The clock plays for one minute at every multiple of this many minutes.
+CLOCK_EVERY_MINUTES = 5
+# Part of the clock minute for the counter; the rest is a colour clock.
+COUNTER_SECONDS = 30.0
+
+# Effects the show picks from, on top of the weather, the forecast and the
+# commits when they are set up.
+EFFECTS: tuple[str, ...] = (
+    "rainbow",
+    "spin",
+    "rain",
+    "sparkle",
+    "fire",
+    "layers",
+    "bounce",
+    "life",
+    "worms",
+    "snake",
+    "maze",
+    "stack",
+)
+LONG_EFFECTS: frozenset[str] = frozenset({"worms", "snake", "maze", "stack", "forecast"})
 
 
 @dataclass
 class ShowItem:
-    """One scene of the show and how long it plays."""
+    """One scene of the show and how long it plays; None for one text pass."""
 
     scene: Scene
-    seconds: float
+    seconds: float | None
+    clock: bool = False
 
 
 class ShowScene:
     """
     Play the other scenes one after another, with new colours every time.
 
-    The show starts with the IP address, then repeats forever: a clock (the
-    scrolling time, blocks, dial or TIX), a text, an effect (rainbow, rain,
-    sparkles, the Game of Life, and the weather and the commits when they
-    are set up), a clock, a text and a drawing. Texts play one full pass;
-    the other scenes play a fixed time. Each scene fades in and out.
+    The show starts with the IP address, then repeats forever: a text, an
+    effect, a text, an effect and a drawing. Texts play one full pass, the
+    effects a fixed time or until they end (a solved maze, a full screen
+    of worms). Every 5 minutes, on the minute, the clock takes over for
+    that minute: the counter, then a colour clock. Each scene fades in
+    and out.
     """
 
     def __init__(
@@ -69,7 +102,9 @@ class ShowScene:
         self.commits = commits
         self._clock = clock
         self._random = Random(seed)
-        self._items: Iterator[Callable[[], Scene]] = self._playlist()
+        self._items: Iterator[Callable[[], ShowItem]] = self._playlist()
+        self._queue: list[ShowItem] = []
+        self._clock_slot: tuple[date, int, int] | None = None
         self._inner: Canvas | None = None
         self._item: ShowItem | None = None
         self._start = 0
@@ -78,6 +113,9 @@ class ShowScene:
     def _color(self) -> Color:
         return hue_color(self._random.random())
 
+    def _seed(self) -> int:
+        return self._random.randrange(2**32)
+
     def _text(self) -> str:
         now = self._clock()
         special = self.personal.dates.get(now.strftime("%m-%d"), ())
@@ -85,63 +123,101 @@ class ShowScene:
             return self._random.choice(special)
         return self._random.choice(day_texts(now, self.locale.texts) + list(self.personal.messages))
 
-    def _effect(self) -> Scene:
-        kinds = ["rainbow", "rain", "sparkle", "life"]
+    def effect_names(self) -> tuple[str, ...]:
+        """
+        List the effects the show can pick now.
+
+        Returns:
+            :data:`EFFECTS`, plus ``weather`` and ``forecast`` with a city
+            and ``commits`` with a GitHub account.
+        """
+        names = EFFECTS
         if self.weather is not None:
-            kinds.append("weather")
+            names += ("weather", "forecast")
         if self.commits is not None:
-            kinds.append("commits")
-        kind = self._random.choice(kinds)
-        if kind == "weather" and self.weather is not None:
+            names += ("commits",)
+        return names
+
+    def _build_effect(self, name: str) -> Scene:
+        builders: dict[str, Callable[[], Scene]] = {
+            "rainbow": lambda: RainbowScene(speed=self._random.choice((0.005, 0.01, 0.02))),
+            "spin": lambda: SpinScene(turn_seconds=self._random.choice((8.0, 12.0, 16.0))),
+            "rain": lambda: RainScene(color=self._color(), seed=self._seed()),
+            "sparkle": lambda: SparkleScene(seed=self._seed()),
+            "fire": lambda: FireScene(seed=self._seed()),
+            "layers": lambda: LayersScene(seed=self._seed()),
+            "bounce": lambda: BounceScene(seed=self._seed()),
+            "life": lambda: LifeScene(seed=self._seed()),
+            "worms": lambda: WormsScene(seed=self._seed()),
+            "snake": lambda: SnakeScene(seed=self._seed()),
+            "maze": lambda: MazeScene(seed=self._seed()),
+            "stack": lambda: StackScene(seed=self._seed()),
+        }
+        if name == "weather" and self.weather is not None:
             return WeatherScene(self.weather, locale=self.locale)
-        if kind == "commits" and self.commits is not None:
+        if name == "forecast" and self.weather is not None:
+            return ForecastScene(self.weather)
+        if name == "commits" and self.commits is not None:
             return CommitsScene(self.commits)
-        if kind == "life":
-            return LifeScene(seed=self._random.randrange(2**32))
-        if kind == "rainbow":
-            return RainbowScene(speed=self._random.choice((0.005, 0.01, 0.02)))
-        if kind == "rain":
-            return RainScene(color=self._color(), seed=self._random.randrange(2**32))
-        return SparkleScene(seed=self._random.randrange(2**32))
+        return builders[name]()
 
-    def _icon(self) -> Scene:
+    def _effect(self) -> ShowItem:
+        name = self._random.choice(self.effect_names())
+        seconds = LONG_EFFECT_SECONDS if name in LONG_EFFECTS else EFFECT_SECONDS
+        return ShowItem(self._build_effect(name), seconds)
+
+    def _icon(self) -> ShowItem:
         if is_night(self._clock().hour):
-            return IconScene(ICONS["zzz"], self._color())
+            return ShowItem(IconScene(ICONS["zzz"], self._color()), ICON_SECONDS)
         name = self._random.choice(("heart", "smile"))
-        return IconScene(ICONS[name], RED if name == "heart" else self._color())
+        color = RED if name == "heart" else self._color()
+        return ShowItem(IconScene(ICONS[name], color), ICON_SECONDS)
 
-    def _clock_scene(self) -> Scene:
-        kind = self._random.choice(("text", "blocks", "dial", "tix"))
-        if kind == "blocks":
-            return BlocksClock(clock=self._clock)
-        if kind == "dial":
-            return DialClock(clock=self._clock)
-        if kind == "tix":
-            return TixClock(clock=self._clock)
-        return ClockScene(color=self._color(), rainbow=self._random.random() < 0.3)
+    def _text_item(self) -> ShowItem:
+        scene = TextScene(self._text(), color=self._color(), rainbow=self._random.random() < 0.3)
+        return ShowItem(scene, None)
 
-    def _text_scene(self) -> Scene:
-        return TextScene(self._text(), color=self._color(), rainbow=self._random.random() < 0.3)
+    def _colour_clock(self) -> Scene:
+        kind = self._random.choice((BlocksClock, DialClock, TixClock))
+        return kind(clock=self._clock)
 
-    def _playlist(self) -> Iterator[Callable[[], Scene]]:
-        yield lambda: IpScene(color=self._color())
+    def clock_items(self, now: datetime) -> list[ShowItem]:
+        """
+        Plan the clock for the rest of the minute.
+
+        Args:
+            now: The current time.
+
+        Returns:
+            The counter for up to :data:`COUNTER_SECONDS`, then a colour
+            clock until the minute ends.
+        """
+        left = 60 - now.second - now.microsecond / 1e6
+        counter = min(COUNTER_SECONDS, left)
+        items = [ShowItem(CounterClock(clock=self._clock), counter, clock=True)]
+        if left - counter > 2 * FADE_SECONDS:
+            items.append(ShowItem(self._colour_clock(), left - counter, clock=True))
+        return items
+
+    def _clock_due(self, now: datetime) -> bool:
+        if now.minute % CLOCK_EVERY_MINUTES:
+            return False
+        return self._clock_slot != (now.date(), now.hour, now.minute)
+
+    def _playlist(self) -> Iterator[Callable[[], ShowItem]]:
+        yield lambda: ShowItem(IpScene(color=self._color()), None)
         while True:
-            yield from (self._clock_scene, self._text_scene, self._effect)
-            yield from (self._clock_scene, self._text_scene, self._icon)
+            yield from (self._text_item, self._effect, self._text_item, self._effect, self._icon)
 
     def _next_item(self, canvas: Canvas, frame: int) -> ShowItem:
-        scene = next(self._items)()
-        if isinstance(scene, TextScene):
-            seconds = scene.loop_frames(canvas.width) / scene.fps
-        elif isinstance(scene, IconScene):
-            seconds = ICON_SECONDS
-        else:
-            seconds = EFFECT_SECONDS
-        logger.debug("Show: %s for %.1f s", type(scene).__name__, seconds)
+        item = self._queue.pop(0) if self._queue else next(self._items)()
+        if item.seconds is None and isinstance(item.scene, TextScene):
+            item.seconds = item.scene.loop_frames(canvas.width) / item.scene.fps
+        logger.debug("Show: %s for %.1f s", type(item.scene).__name__, item.seconds or 0)
         self._start = frame
         self._inner_frame = -1
         canvas.clear()
-        return ShowItem(scene, seconds)
+        return item
 
     def render(self, canvas: Canvas, frame: int) -> None:
         if self._inner is None or (self._inner.width, self._inner.height) != (
@@ -150,16 +226,26 @@ class ShowScene:
         ):
             self._inner = Canvas(canvas.width, canvas.height)
         inner = self._inner
-        if self._item is None or (frame - self._start) / self.fps >= self._item.seconds:
+        now = self._clock()
+        if self._clock_due(now) and not (self._item and self._item.clock):
+            self._clock_slot = (now.date(), now.hour, now.minute)
+            self._queue = self.clock_items(now)
+            self._item = None
+        if self._item is None or (frame - self._start) / self.fps >= (
+            self._item.seconds or EFFECT_SECONDS
+        ):
             self._item = self._next_item(inner, frame)
         item = self._item
+        seconds = item.seconds or EFFECT_SECONDS
         elapsed = (frame - self._start) / self.fps
         # Each scene keeps its own pace: render only when its next frame is due.
         target = int(elapsed * item.scene.fps)
         while self._inner_frame < target:
             self._inner_frame += 1
             item.scene.render(inner, self._inner_frame)
-        fade = max(0.0, min(1.0, elapsed / FADE_SECONDS, (item.seconds - elapsed) / FADE_SECONDS))
+        if getattr(item.scene, "done", False) and seconds > elapsed + FADE_SECONDS:
+            item.seconds = seconds = elapsed + FADE_SECONDS
+        fade = max(0.0, min(1.0, elapsed / FADE_SECONDS, (seconds - elapsed) / FADE_SECONDS))
         for y, row in enumerate(inner.rows()):
             for x, (r, g, b) in enumerate(row):
                 canvas.set(x, y, (int(r * fade), int(g * fade), int(b * fade)))

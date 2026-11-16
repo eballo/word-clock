@@ -7,6 +7,7 @@ import pytest
 from wordclock.matrix import feeds
 from wordclock.matrix.feeds import (
     Feed,
+    Forecast,
     SunTimes,
     Weather,
     contribution_level,
@@ -89,6 +90,28 @@ class TestWeather:
         data = {"current": {"temperature_2m": 17.6, "weather_code": 61, "is_day": 0}}
         # When / Then
         assert parse_weather(data) == Weather(17.6, 61, False)
+
+    def test_reads_the_hourly_forecast(self) -> None:
+        # Given
+        data = {
+            "current": {"temperature_2m": 17.6, "weather_code": 61, "is_day": 0},
+            "hourly": {
+                "time": ["2026-11-16T21:00", "2026-11-16T22:00"],
+                "temperature_2m": [17.0, 16.5],
+                "weather_code": [61, 3],
+                "is_day": [0, 0],
+            },
+        }
+        # When
+        weather = parse_weather(data)
+        # Then
+        assert weather.forecast == (Forecast(21, 17.0, 61, False), Forecast(22, 16.5, 3, False))
+
+    def test_no_forecast_is_fine(self) -> None:
+        # Given
+        data = {"current": {"temperature_2m": 17.6, "weather_code": 61, "is_day": 0}}
+        # When / Then
+        assert parse_weather(data).forecast == ()
 
     def test_looks_the_city_up_once(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # Given

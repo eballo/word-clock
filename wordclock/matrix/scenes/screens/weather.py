@@ -6,6 +6,7 @@ from random import Random
 from wordclock.matrix.canvas import Canvas, Color
 from wordclock.matrix.colors import scale
 from wordclock.matrix.feeds import Feed, Weather, weather_kind
+from wordclock.matrix.font import FONT_HEIGHT, render_text
 from wordclock.matrix.scenes.screens.loading import loading
 from wordclock.matrix.scenes.text import TextScene
 from wordclock.matrix.texts import Locale
@@ -130,3 +131,80 @@ class WeatherScene:
             draw_weather(canvas, kind, weather.is_day, frame, self.fps)
         else:
             self._text.render(canvas, step - icon_frames)
+
+
+# Hours ahead of each forecast slot: now, in 3 hours and in 6 hours.
+FORECAST_OFFSETS: tuple[int, ...] = (0, 3, 6)
+FORECAST_ICON_SECONDS = 3.0
+FORECAST_TEMPERATURE_SECONDS = 2.0
+SLOT_DOT: Color = (255, 255, 255)
+
+
+def draw_temperature(canvas: Canvas, degrees: float, slot: int, slots: int) -> bool:
+    """
+    Draw a temperature, fixed and centred on the bottom rows, and one dot
+    per slot on the top row, the current slot bright.
+
+    Args:
+        canvas: The canvas to draw on.
+        degrees: The temperature in °C.
+        slot: Which forecast slot this is, 0 for now.
+        slots: How many slots there are.
+
+    Returns:
+        False when the text is wider than the canvas and nothing was drawn.
+    """
+    columns = render_text(f"{round(degrees)}°")
+    if len(columns) > canvas.width:
+        return False
+    canvas.clear()
+    left = (canvas.width - len(columns)) // 2
+    top = canvas.height - FONT_HEIGHT
+    color = (120, 200, 255) if degrees < 10 else (255, 200, 60) if degrees < 25 else (255, 90, 40)
+    for i, column in enumerate(columns):
+        for y, lit in enumerate(column):
+            if lit:
+                canvas.set(left + i, top + y, color)
+    if top > 0:
+        start = (canvas.width - (2 * slots - 1)) // 2
+        for i in range(slots):
+            canvas.set(start + 2 * i, 0, SLOT_DOT if i == slot else scale(SLOT_DOT, 0.15))
+    return True
+
+
+class ForecastScene:
+    """
+    The weather now, in 3 hours and in 6 hours: for each, the animated
+    icon and then the temperature, fixed in the middle, with dots on the
+    top row that tell which one it is. ``done`` turns True after the
+    three of them.
+    """
+
+    def __init__(self, feed: Feed[Weather], fps: float = 8) -> None:
+        self.fps = fps
+        self._feed = feed
+        self.done = False
+
+    def _slots(self, weather: Weather) -> list[tuple[int, float, bool]]:
+        slots = [(weather.code, weather.temperature, weather.is_day)]
+        for offset in FORECAST_OFFSETS[1:]:
+            if offset < len(weather.forecast):
+                hour = weather.forecast[offset]
+                slots.append((hour.code, hour.temperature, hour.is_day))
+        return slots
+
+    def render(self, canvas: Canvas, frame: int) -> None:
+        weather = self._feed.get()
+        if weather is None:
+            loading(canvas, frame, self.fps, failed=self._feed.error is not None)
+            return
+        slots = self._slots(weather)
+        icon = int(FORECAST_ICON_SECONDS * self.fps)
+        per_slot = icon + int(FORECAST_TEMPERATURE_SECONDS * self.fps)
+        step = frame % (per_slot * len(slots))
+        if frame >= per_slot * len(slots) - 1:
+            self.done = True
+        slot, within = divmod(step, per_slot)
+        code, degrees, is_day = slots[slot]
+        if within < icon or not draw_temperature(canvas, degrees, slot, len(slots)):
+            draw_weather(canvas, weather_kind(code), is_day, frame, self.fps)

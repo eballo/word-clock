@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -10,20 +10,29 @@ from wordclock.matrix.dimmer import BrightnessLevels
 from wordclock.matrix.font import GLYPHS, fold_char
 from wordclock.matrix.languages import MatrixLanguage
 from wordclock.matrix.personal import Personal, load_personal
-from wordclock.matrix.scenes.clocks import BlocksClock, DialClock, TixClock
-from wordclock.matrix.scenes.effects.rain import RainScene
+from wordclock.matrix.scenes.clocks import BlocksClock, CounterClock, DialClock, TixClock
+from wordclock.matrix.scenes.effects.maze import MazeScene
 from wordclock.matrix.scenes.effects.rainbow import RainbowScene
-from wordclock.matrix.scenes.effects.sparkle import SparkleScene
 from wordclock.matrix.scenes.icons import ICONS, IconScene
-from wordclock.matrix.scenes.show import EFFECT_SECONDS, ICON_SECONDS, ShowScene
+from wordclock.matrix.scenes.show import (
+    COUNTER_SECONDS,
+    EFFECT_SECONDS,
+    EFFECTS,
+    ICON_SECONDS,
+    LONG_EFFECT_SECONDS,
+    ShowItem,
+    ShowScene,
+)
 from wordclock.matrix.scenes.text import ClockScene, IpScene, TextScene
 from wordclock.matrix.texts import TEXTS, Locale, date_text, day_texts, greeting
 
 # Every kind of clock the show plays.
-CLOCKS = (ClockScene, BlocksClock, DialClock, TixClock)
+CLOCKS = (ClockScene, CounterClock, BlocksClock, DialClock, TixClock)
 
 # 24 October 2026 is a Saturday.
 SATURDAY = datetime(2026, 10, 24, 10, 0)
+# Two minutes past ten: no clock due.
+TWO_PAST_TEN = datetime(2026, 10, 24, 10, 2)
 
 
 def every_day_text(language: MatrixLanguage = MatrixLanguage.catalan) -> list[str]:
@@ -205,30 +214,80 @@ class TestShowScene:
                 seen.append(type(scene._item.scene))
         return seen
 
-    def test_plays_ip_then_clock_text_effect_clock_text_icon(self) -> None:
-        # Given
-        scene = ShowScene(seed=1, clock=lambda: SATURDAY)
+    def test_plays_ip_then_text_effect_text_effect_icon(self) -> None:
+        # Given: two minutes past ten, no clock due
+        scene = ShowScene(seed=1, clock=lambda: TWO_PAST_TEN)
         # When: long enough for one round
-        seen = self.play(scene, 120 + EFFECT_SECONDS + ICON_SECONDS)
+        seen = self.play(scene, 90 + 2 * LONG_EFFECT_SECONDS + ICON_SECONDS)
         # Then
         assert seen[0] is IpScene
-        assert seen[1] in CLOCKS and seen[2] is TextScene
-        assert seen[3] in (RainbowScene, RainScene, SparkleScene)
-        assert seen[4] in CLOCKS and seen[5:7] == [TextScene, IconScene]
+        assert seen[1] is TextScene and seen[3] is TextScene
+        assert seen[2] not in (TextScene, IconScene, *CLOCKS)
+        assert seen[4] not in (TextScene, IconScene, *CLOCKS)
+        assert seen[5] is IconScene
 
-    def test_uses_every_kind_of_clock(self) -> None:
+    def test_every_effect_can_play(self) -> None:
         # Given
-        scene = ShowScene(seed=1, clock=lambda: SATURDAY)
+        scene = ShowScene(seed=1, clock=lambda: TWO_PAST_TEN)
         # When
-        kinds = {type(scene._clock_scene()) for _ in range(100)}
+        kinds = {type(scene._effect().scene).__name__ for _ in range(400)}
         # Then
-        assert kinds == set(CLOCKS)
+        assert len(kinds) == len(EFFECTS)
+
+    def test_clock_every_five_minutes(self) -> None:
+        # Given: 10:05:00
+        moment = [datetime(2026, 10, 24, 10, 4, 58)]
+        scene = ShowScene(seed=1, clock=lambda: moment[0])
+        canvas = Canvas(10, 6)
+        scene.render(canvas, 0)
+        # When
+        moment[0] = datetime(2026, 10, 24, 10, 5, 0)
+        scene.render(canvas, 1)
+        # Then
+        assert scene._item is not None
+        assert isinstance(scene._item.scene, CounterClock)
+        assert scene._item.seconds == COUNTER_SECONDS
+
+    def test_no_clock_between_the_slots(self) -> None:
+        # Given: 10:06
+        scene = ShowScene(seed=1, clock=lambda: datetime(2026, 10, 24, 10, 6, 0))
+        # When
+        seen = self.play(scene, 60)
+        # Then
+        assert not set(seen) & set(CLOCKS)
+
+    def test_clock_minute_is_counter_then_a_colour_clock(self) -> None:
+        # Given
+        scene = ShowScene(seed=1)
+        # When
+        items = scene.clock_items(datetime(2026, 10, 24, 10, 5, 0))
+        # Then
+        assert isinstance(items[0].scene, CounterClock)
+        assert type(items[1].scene) in (BlocksClock, DialClock, TixClock)
+        assert sum(item.seconds or 0 for item in items) == 60
+        assert all(item.clock for item in items)
+
+    def test_clock_plays_once_per_slot(self) -> None:
+        # Given: the whole 10:05 minute
+        moment = [datetime(2026, 10, 24, 10, 5, 0)]
+        scene = ShowScene(seed=1, clock=lambda: moment[0])
+        canvas = Canvas(10, 6)
+        counters = 0
+        # When
+        for frame in range(int(70 * scene.fps)):
+            moment[0] = datetime(2026, 10, 24, 10, 5, 0) + timedelta(seconds=frame / scene.fps)
+            before = scene._item
+            scene.render(canvas, frame)
+            if scene._item is not before and isinstance(scene._item.scene, CounterClock):
+                counters += 1
+        # Then
+        assert counters == 1
 
     def test_shows_the_zzz_at_night(self) -> None:
         # Given
-        scene = ShowScene(seed=1, clock=lambda: datetime(2026, 10, 24, 2, 0))
+        scene = ShowScene(seed=1, clock=lambda: datetime(2026, 10, 24, 2, 1))
         # When
-        icon = scene._icon()
+        icon = scene._icon().scene
         # Then
         assert isinstance(icon, IconScene)
         assert icon.pixels == ICONS["zzz"]
@@ -267,8 +326,8 @@ class TestShowScene:
     def test_fades_in_from_black(self) -> None:
         # Given
         canvas = Canvas(10, 6)
-        scene = ShowScene(seed=1)
-        scene._items = iter([RainbowScene])
+        scene = ShowScene(seed=1, clock=lambda: TWO_PAST_TEN)
+        scene._items = iter([lambda: ShowItem(RainbowScene(), EFFECT_SECONDS)])
         # When
         scene.render(canvas, 0)
         dark = max(max(color) for row in canvas.rows() for color in row)
@@ -279,13 +338,36 @@ class TestShowScene:
         assert max(max(color) for row in canvas.rows() for color in row) == 255
 
     def test_effect_ends_after_its_time(self) -> None:
-        # Given: an effect, then a clock
+        # Given: an effect, then a text
         canvas = Canvas(10, 6)
-        scene = ShowScene(seed=1)
-        scene._items = iter([RainbowScene, ClockScene])
+        scene = ShowScene(seed=1, clock=lambda: TWO_PAST_TEN)
+        scene._items = iter(
+            [
+                lambda: ShowItem(RainbowScene(), EFFECT_SECONDS),
+                lambda: ShowItem(TextScene("HOLA"), None),
+            ]
+        )
         # When
         for frame in range(int(EFFECT_SECONDS * scene.fps) + 1):
             scene.render(canvas, frame)
         # Then
         assert scene._item is not None
-        assert isinstance(scene._item.scene, ClockScene)
+        assert isinstance(scene._item.scene, TextScene)
+
+    def test_effect_that_is_done_ends_early(self) -> None:
+        # Given: a maze, then a text
+        canvas = Canvas(10, 6)
+        scene = ShowScene(seed=1, clock=lambda: TWO_PAST_TEN)
+        scene._items = iter(
+            [
+                lambda: ShowItem(MazeScene(seed=3), 600.0),
+                lambda: ShowItem(TextScene("HOLA"), None),
+            ]
+        )
+        # When: well before the time limit
+        for frame in range(int(120 * scene.fps)):
+            scene.render(canvas, frame)
+            if isinstance(scene._item.scene, TextScene):
+                break
+        # Then
+        assert isinstance(scene._item.scene, TextScene)

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 from datetime import datetime
 from random import Random
 
 from wordclock.matrix.canvas import Canvas, Color
-from wordclock.matrix.colors import add, scale
+from wordclock.matrix.colors import add, hue_color, scale
+from wordclock.matrix.font import FONT_HEIGHT, render_text
 
 AM_HOURS: Color = (0, 90, 255)
 PM_HOURS: Color = (150, 40, 255)
@@ -151,3 +153,47 @@ class TixClock:
             int(now.second // step),
             scale(SECONDS, 0.5),
         )
+
+
+class CounterClock:
+    """
+    The time as a counter. The minutes are two digits on the left; the
+    hours are squares in the two right columns, filled from the bottom,
+    one per hour of a 12-hour clock (blue in the morning, violet in the
+    afternoon). On start the minutes count up quickly from 00 to the
+    current minute; then they follow the clock. The digits change colour
+    every hour, and the newest square breathes.
+    """
+
+    COUNT_SECONDS = 1.5
+    HOUR_COLUMNS = 2
+
+    def __init__(self, fps: float = 15, clock: Callable[[], datetime] = datetime.now) -> None:
+        self.fps = fps
+        self._clock = clock
+
+    def render(self, canvas: Canvas, frame: int) -> None:
+        now = self._clock()
+        elapsed = frame / self.fps
+        minute = now.minute
+        if elapsed < self.COUNT_SECONDS:
+            minute = int(minute * elapsed / self.COUNT_SECONDS)
+        canvas.clear()
+        digits = hue_color(now.hour * 5 / 12 + 0.08)
+        top = canvas.height - FONT_HEIGHT
+        for x, column in enumerate(render_text(f"{minute:02d}")):
+            for y, lit in enumerate(column):
+                if lit:
+                    canvas.set(x, top + y, digits)
+        hours = now.hour % 12 or 12
+        color = hour_color(now.hour)
+        left = canvas.width - self.HOUR_COLUMNS
+        cells = self.HOUR_COLUMNS * canvas.height
+        breath = 0.55 + 0.45 * math.sin(elapsed * 3)
+        for i in range(min(cells, 12)):
+            x = left + i % self.HOUR_COLUMNS
+            y = canvas.height - 1 - i // self.HOUR_COLUMNS
+            if i < hours:
+                canvas.set(x, y, scale(color, breath) if i == hours - 1 else color)
+            else:
+                canvas.set(x, y, scale(color, 0.07))

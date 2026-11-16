@@ -3,12 +3,17 @@ from __future__ import annotations
 import pytest
 
 from wordclock.matrix.canvas import Canvas
-from wordclock.matrix.feeds import WEATHER_KINDS, Feed, Weather
+from wordclock.matrix.feeds import WEATHER_KINDS, Feed, Forecast, Weather
 from wordclock.matrix.languages import MatrixLanguage
 from wordclock.matrix.scenes.effects.life import LifeScene
 from wordclock.matrix.scenes.screens.commits import LEVELS, CommitsScene
 from wordclock.matrix.scenes.screens.pomodoro import REST, WORK, PomodoroScene
-from wordclock.matrix.scenes.screens.weather import WeatherScene, draw_weather
+from wordclock.matrix.scenes.screens.weather import (
+    ForecastScene,
+    WeatherScene,
+    draw_temperature,
+    draw_weather,
+)
 from wordclock.matrix.texts import Locale
 
 
@@ -160,6 +165,66 @@ class TestWeather:
         # Then: three dots, the first ones red
         assert 1 <= lit(canvas) <= 3
         assert any(canvas.get(x, 3)[0] > canvas.get(x, 3)[1] for x in range(10))
+
+
+def with_forecast() -> Weather:
+    hours = tuple(Forecast(10 + i, 15.0 + i, 61 if i >= 3 else 0, True) for i in range(7))
+    return Weather(15.2, 0, True, forecast=hours)
+
+
+class TestForecast:
+    def test_temperature_is_fixed_and_centred(self) -> None:
+        # Given
+        canvas = Canvas(10, 6)
+        # When
+        drawn = draw_temperature(canvas, 18.4, slot=1, slots=3)
+        # Then: "18°" is 9 columns wide, one dot per slot on the top row
+        assert drawn
+        assert [x for x in range(10) if any(canvas.get(x, 0))] == [2, 4, 6]
+        assert canvas.get(4, 0) == (255, 255, 255)
+        assert any(any(canvas.get(x, y)) for x in range(10) for y in range(1, 6))
+
+    def test_too_wide_is_not_drawn(self) -> None:
+        # Given
+        canvas = Canvas(10, 6)
+        # When / Then
+        assert not draw_temperature(canvas, -12, slot=0, slots=3)
+
+    def test_three_slots_then_done(self) -> None:
+        # Given
+        scene = ForecastScene(feed(with_forecast()), fps=8)
+        canvas = Canvas(10, 6)
+        # When
+        frame = 0
+        while not scene.done and frame < 1000:
+            scene.render(canvas, frame)
+            frame += 1
+        # Then: 3 slots of 3 s icon and 2 s temperature
+        assert scene.done
+        assert frame == 3 * 5 * 8
+
+    def test_slots_now_in_three_and_six_hours(self) -> None:
+        # Given
+        scene = ForecastScene(feed(with_forecast()))
+        # When
+        slots = scene._slots(with_forecast())
+        # Then
+        assert slots == [(0, 15.2, True), (61, 18.0, True), (61, 21.0, True)]
+
+    def test_only_now_without_forecast(self) -> None:
+        # Given
+        scene = ForecastScene(feed(Weather(18.4, 61, True)))
+        # When / Then
+        assert scene._slots(Weather(18.4, 61, True)) == [(61, 18.4, True)]
+
+    def test_waits_for_data(self) -> None:
+        # Given
+        scene = ForecastScene(feed(None, "offline"))
+        canvas = Canvas(10, 6)
+        # When
+        scene.render(canvas, 20)
+        # Then
+        assert 1 <= lit(canvas) <= 3
 
 
 class TestCommits:

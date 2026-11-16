@@ -15,10 +15,7 @@ class SparkleScene:
         self._random = Random(seed)
 
     def render(self, canvas: Canvas, frame: int) -> None:
-        for y in range(canvas.height):
-            for x in range(canvas.width):
-                r, g, b = canvas.get(x, y)
-                canvas.set(x, y, (r * 8 // 10, g * 8 // 10, b * 8 // 10))
+        canvas.fade(0.8)
         for _ in range(self.per_frame):
             x = self._random.randrange(canvas.width)
             y = self._random.randrange(canvas.height)

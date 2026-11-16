@@ -20,10 +20,7 @@ class RainScene:
 
     def render(self, canvas: Canvas, frame: int) -> None:
         # Fade the previous frame to leave a trail behind every drop.
-        for y in range(canvas.height):
-            for x in range(canvas.width):
-                r, g, b = canvas.get(x, y)
-                canvas.set(x, y, (r * 6 // 10, g * 6 // 10, b * 6 // 10))
+        canvas.fade(0.6)
         if self._random.random() < self.density:
             speed = self._random.choice((0.5, 1.0))
             self._drops.append([float(self._random.randrange(canvas.width)), 0.0, speed])
