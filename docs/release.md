@@ -2,6 +2,7 @@
 
 | Version | Date       | Description         |
 |---------|------------|---------------------|
+| v0.14.0 | 2026-11-16 | Bump the uv group across 1 directory with 4 updates |
 | v0.13.0 | 2026-11-16 | Matrix simulator, colour clocks, Pomodoro, Game of Life and remote control API |
 | v0.12.0 | 2026-10-25 | Feature/matrix v2 |
 | v0.11.0 | 2026-10-25 | Matrix: rotate and mirror options |
