@@ -14,6 +14,7 @@ from wordclock.matrix.feeds import (
 from wordclock.matrix.scenes import SCENE_NAMES, Scene, create_scene
 from wordclock.matrix.screens import CommitsScene, LifeScene, PomodoroScene, WeatherScene
 from wordclock.matrix.show import Personal, ShowScene
+from wordclock.matrix.texts import Locale
 
 logger = getLogger(__name__)
 
@@ -34,8 +35,9 @@ class Catalog:
     scenes does not fetch again.
     """
 
-    def __init__(self, personal: Personal, days: int = 60) -> None:
+    def __init__(self, personal: Personal, days: int = 60, locale: Locale | None = None) -> None:
         self.personal = personal
+        self.locale = locale or Locale()
         self.weather: Feed[Weather] | None = None
         self.commits: Feed[list[int]] | None = None
         self.sun: Feed[SunTimes] | None = None
@@ -75,7 +77,9 @@ class Catalog:
             ValueError: If the scene is unknown or not set up.
         """
         if name == "show":
-            return ShowScene(self.personal, weather=self.weather, commits=self.commits)
+            return ShowScene(
+                self.personal, weather=self.weather, commits=self.commits, locale=self.locale
+            )
         if name == "pomodoro":
             return PomodoroScene()
         if name == "life":
@@ -83,7 +87,7 @@ class Catalog:
         if name == "weather":
             if self.weather is None:
                 raise ValueError("The weather needs a city: [weather] city in matrix.toml")
-            return WeatherScene(self.weather)
+            return WeatherScene(self.weather, locale=self.locale)
         if name == "commits":
             if self.commits is None:
                 raise ValueError("The commits need [github] user and token in matrix.toml")

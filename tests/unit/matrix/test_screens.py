@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import pytest
 
+from wordclock.layouts.registry import Language
 from wordclock.matrix.canvas import Canvas
-from wordclock.matrix.feeds import WEATHER_WORDS, Feed, Weather
+from wordclock.matrix.feeds import WEATHER_KINDS, Feed, Weather
 from wordclock.matrix.screens import (
     LEVELS,
     REST,
@@ -14,6 +15,7 @@ from wordclock.matrix.screens import (
     WeatherScene,
     draw_weather,
 )
+from wordclock.matrix.texts import Locale
 
 
 class FakeClock:
@@ -119,7 +121,7 @@ class TestLife:
 
 
 class TestWeather:
-    @pytest.mark.parametrize("kind", WEATHER_WORDS)
+    @pytest.mark.parametrize("kind", [kind for kind, _ in WEATHER_KINDS])
     @pytest.mark.parametrize("is_day", [True, False])
     def test_every_icon_draws_something(self, kind: str, is_day: bool) -> None:
         # Given
@@ -140,6 +142,20 @@ class TestWeather:
         # Then
         assert lit(canvas) > 0
         assert canvas.rows() != icon
+
+    def test_writes_the_word_in_the_current_language(self) -> None:
+        # Given: rain, in English
+        locale = Locale(Language.english)
+        scene = WeatherScene(feed(Weather(18.4, 61, True)), locale=locale)
+        canvas = Canvas(10, 6)
+        # When
+        scene.render(canvas, 6 * 8)
+        english = scene._text_key
+        locale.set(Language.spanish)
+        scene.render(canvas, 6 * 8)
+        # Then
+        assert english == "18° RAIN"
+        assert scene._text_key == "18° LLUVIA"
 
     def test_waits_for_data(self) -> None:
         # Given: the fetch fails

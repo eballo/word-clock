@@ -28,6 +28,11 @@
         </select>
       </label>
       <label>Text <input id="text" type="text" value="HOLA" maxlength="40"></label>
+      <label>Language
+        <select id="language">
+          {% for name in languages %}<option value="{{ name }}">{{ name }}</option>{% endfor %}
+        </select>
+      </label>
       <label>Colour <input id="color" type="color" value="#ffffff"></label>
       <label>Brightness <input id="brightness" type="range" min="5" max="255" value="40"></label>
       <label class="check"><input id="webcam" type="checkbox"> Webcam as camera</label>
@@ -39,6 +44,7 @@
     </form>
 
     <p id="status" class="status" aria-live="polite">Connecting…</p>
+    <p class="links"><a href="/docs">API docs</a></p>
     <video id="video" playsinline muted hidden></video>
   </main>
 

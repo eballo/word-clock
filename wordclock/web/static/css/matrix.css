@@ -123,3 +123,9 @@ main {
 .day button:disabled { opacity: 0.4; cursor: default; }
 
 .status { font-size: 12px; color: #666; min-height: 1.2em; }
+
+.links { font-size: 12px; margin: 0; }
+
+.links a { color: #888; }
+
+.links a:hover { color: #ddd; }

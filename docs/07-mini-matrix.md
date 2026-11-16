@@ -483,6 +483,7 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 |--------|---------|-----|
 | `--brightness` | automatic | Fixed brightness, 0–255; without it, it follows the time of day (section 8.4) |
 | `--color` | per scene | Hex colour, e.g. `ff8800` |
+| `--lang` | `catalan` | Language of the texts: `catalan`, `english` or `spanish` (section 8.5) |
 | `--max-ma` | 1500 | Software current limit in mA |
 | `--seconds` | none | Stop after this time |
 | `--no-snake` | | Every row wired left to right |
@@ -580,6 +581,7 @@ sudo .venv/bin/wordclock-matrix show --api --host 0.0.0.0 --rotate --max-ma 600
 | `GET /api/matrix/scenes` | Scenes that can play now, and the current one |
 | `POST /api/matrix/scene` `{"name": "pomodoro"}` | Play a scene; `text` and `color` (`"ff8800"`) for the scenes that use them |
 | `POST /api/matrix/press` `{}` | A short press of the button (`{"action": "photo"}` for a long one) |
+| `POST /api/matrix/language` `{"language": "english"}` | Switch the language of the texts live (section 8.5) |
 | `POST /api/matrix/time` `{"time": "23:30"}` | Simulate a time of day for the automatic brightness; `{"time": null}` for the real time (section 8.4) |
 | `POST /api/matrix/brightness` `{"brightness": 80}` | Brightness, 0-255; with the automatic brightness, it holds until the next change of phase (section 8.4) |
 | `GET /api/matrix/frame` | The colours on the matrix now |
@@ -590,6 +592,11 @@ curl -X POST wordclock.local:8001/api/matrix/scene \
 curl -X POST wordclock.local:8001/api/matrix/press \
      -H 'Content-Type: application/json' -d '{}'     # pause / resume
 ```
+
+Every endpoint, with its fields and a **Try it out** button, is listed in
+the Swagger page at `/docs` (`http://wordclock.local:8001/docs`, or
+`http://127.0.0.1:8001/docs` in the simulator); the page links to it at
+the bottom. The OpenAPI schema is at `/openapi.json`.
 
 A long press of 10 s, from the button or the API, shuts the Pi down
 (`systemctl poweroff`); in the simulator it is only logged.
@@ -632,6 +639,29 @@ sun times, and **Now** goes back to the real time. Only the brightness
 follows it; the scenes keep the real time. It also works on the Pi with
 `--api`, to check the strip by day and at night.
 
+### 8.5 Languages
+
+The texts of the show and the weather word come in Catalan, English and
+Spanish. `--lang` picks the language at start, and the API or the
+**Language** list of the page switches it live: the next text uses it.
+
+```bash
+curl -X POST wordclock.local:8001/api/matrix/language \
+     -H 'Content-Type: application/json' -d '{"language": "spanish"}'
+```
+
+| Text | Catalan | English | Spanish |
+|------|---------|---------|---------|
+| Greeting | `BON DIA` | `GOOD MORNING` | `BUENOS DÍAS` |
+| Friday | `FALTEN 3 DIES PER DIVENDRES` | `3 DAYS TO FRIDAY` | `FALTAN 3 DÍAS PARA EL VIERNES` |
+| Weekend | `BON DISSABTE` | `HAPPY SATURDAY` | `FELIZ SÁBADO` |
+| Meals | `HORA DE DINAR` | `LUNCH TIME` | `HORA DE COMER` |
+| Night | `A DORMIR!` | `BED TIME!` | `A DORMIR!` |
+| Weather | `18° PLUJA` | `18° RAIN` | `18° LLUVIA` |
+
+Personal texts from `matrix.toml` are shown as written, whatever the
+language.
+
 ### Web simulator
 
 `--web` draws the matrix in a browser page instead of lighting LEDs, as it
@@ -652,6 +682,8 @@ uv run wordclock-matrix rain --web --port 8002
 | Webcam as camera | Uses the Mac webcam for the photo: a 3, 2, 1 countdown, a white flash, then the photo pixelated to 10 × 6 |
 | Scene, Text, Colour, Brightness | Switch the scene live |
 | Time of day, Now | Preview the automatic brightness at another hour (section 8.4) |
+| Language | Switch the language of the texts (section 8.5) |
+| API docs | The Swagger page with every endpoint |
 
 The page draws the LED light as the eye sees it (LED values are linear,
 so it applies the inverse gamma), and it reads the face sizes from
@@ -685,6 +717,8 @@ starts with the IP address once, then repeats forever:
 | Drawing | A red heart or a smile; `ZZZ` from 23:00 to 06:59. It pulses like a heartbeat | 6 s |
 
 Every scene fades in and out over 0,5 s.
+
+The texts, in Catalan (section 8.5 for English and Spanish):
 
 | Text | When |
 |------|------|

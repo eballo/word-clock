@@ -7,8 +7,9 @@ from random import Random
 
 from wordclock.matrix.canvas import Canvas, Color
 from wordclock.matrix.clocks import add, scale
-from wordclock.matrix.feeds import WEATHER_WORDS, Feed, Weather, contribution_level, weather_kind
+from wordclock.matrix.feeds import Feed, Weather, contribution_level, weather_kind
 from wordclock.matrix.scenes import TextScene, hue_color
+from wordclock.matrix.texts import Locale
 
 # --- Pomodoro ---------------------------------------------------------------
 
@@ -200,7 +201,7 @@ def draw_weather(canvas: Canvas, kind: str, is_day: bool, frame: int, fps: float
 
     Args:
         canvas: The canvas to draw on.
-        kind: One of the keys of :data:`WEATHER_WORDS`.
+        kind: One of the kinds of :data:`wordclock.matrix.feeds.WEATHER_KINDS`.
         is_day: False draws the moon instead of the sun.
         frame: Frame number, for the animation.
         fps: Frames per second.
@@ -267,9 +268,10 @@ class WeatherScene:
     (``18° PLUJA``) scrolling past.
     """
 
-    def __init__(self, feed: Feed[Weather], fps: float = 8) -> None:
+    def __init__(self, feed: Feed[Weather], fps: float = 8, locale: Locale | None = None) -> None:
         self.fps = fps
         self._feed = feed
+        self._locale = locale or Locale()
         self._text = TextScene("", fps=fps)
         self._text_key: str | None = None
 
@@ -279,7 +281,7 @@ class WeatherScene:
             loading(canvas, frame, self.fps, failed=self._feed.error is not None)
             return
         kind = weather_kind(weather.code)
-        words = f"{round(weather.temperature)}° {WEATHER_WORDS[kind]}"
+        words = f"{round(weather.temperature)}° {self._locale.texts.weather[kind]}"
         if words != self._text_key:
             self._text = TextScene(words, color=(255, 255, 255), fps=self.fps)
             self._text_key = words

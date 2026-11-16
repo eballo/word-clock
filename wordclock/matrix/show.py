@@ -10,6 +10,7 @@ from math import sin, tau
 from pathlib import Path
 from random import Random
 
+from wordclock.layouts.registry import Language
 from wordclock.matrix.canvas import Canvas, Color
 from wordclock.matrix.clocks import BlocksClock, DialClock, TixClock
 from wordclock.matrix.dimmer import BrightnessLevels, is_night
@@ -25,32 +26,10 @@ from wordclock.matrix.scenes import (
     hue_color,
 )
 from wordclock.matrix.screens import CommitsScene, LifeScene, WeatherScene
+from wordclock.matrix.texts import TEXTS, Locale, Texts
 
 logger = getLogger(__name__)
 
-WEEKDAYS: tuple[str, ...] = (
-    "DILLUNS",
-    "DIMARTS",
-    "DIMECRES",
-    "DIJOUS",
-    "DIVENDRES",
-    "DISSABTE",
-    "DIUMENGE",
-)
-MONTHS: tuple[str, ...] = (
-    "GEN",
-    "FEB",
-    "MAR",
-    "ABR",
-    "MAI",
-    "JUN",
-    "JUL",
-    "AGO",
-    "SET",
-    "OCT",
-    "NOV",
-    "DES",
-)
 EFFECT_SECONDS = 15.0
 ICON_SECONDS = 6.0
 FADE_SECONDS = 0.5
@@ -87,62 +66,65 @@ ICONS: dict[str, tuple[str, ...]] = {
 }
 
 
-def greeting(hour: int) -> str:
+def greeting(hour: int, texts: Texts = TEXTS[Language.catalan]) -> str:
     """
-    Say hello in Catalan for the time of day.
+    Say hello for the time of day.
 
     Args:
         hour: Hour of the day, 0 to 23.
+        texts: The words of one language.
 
     Returns:
-        ``BON DIA``, ``BONA TARDA`` or ``BONA NIT``.
+        The morning, afternoon or night greeting, e.g. ``BON DIA``.
     """
     if 6 <= hour < 13:
-        return "BON DIA"
+        return texts.morning
     if 13 <= hour < 20:
-        return "BONA TARDA"
-    return "BONA NIT"
+        return texts.afternoon
+    return texts.night
 
 
-def date_text(now: datetime) -> str:
+def date_text(now: datetime, texts: Texts = TEXTS[Language.catalan]) -> str:
     """
-    Write the day of the month and the short Catalan month.
+    Write the day of the month and the short month.
 
     Args:
         now: The date to write.
+        texts: The words of one language.
 
     Returns:
         For example ``24 OCT``.
     """
-    return f"{now.day} {MONTHS[now.month - 1]}"
+    return f"{now.day} {texts.months[now.month - 1]}"
 
 
-def day_texts(now: datetime) -> list[str]:
+def day_texts(now: datetime, texts: Texts = TEXTS[Language.catalan]) -> list[str]:
     """
     List the texts that fit this moment: greeting, date, week and meals.
 
     Args:
         now: The current date and time.
+        texts: The words of one language.
 
     Returns:
         The texts to choose from, never empty.
     """
     weekday, hour = now.weekday(), now.hour
-    texts = [greeting(hour), date_text(now)]
+    found = [greeting(hour, texts), date_text(now, texts)]
     if weekday <= 3:
         days = 4 - weekday
-        texts.append("DEMÀ ÉS DIVENDRES!" if days == 1 else f"FALTEN {days} DIES PER DIVENDRES")
+        found.append(texts.friday_tomorrow if days == 1 else texts.days_to_friday.format(days=days))
     elif weekday == 4 and hour >= 15:
-        texts.append("BON CAP DE SETMANA!")
+        found.append(texts.weekend)
     elif weekday >= 5:
-        texts.append(f"BON {WEEKDAYS[weekday]}")
+        found.append(texts.happy_day.format(day=texts.weekdays[weekday]))
     if 13 <= hour < 15:
-        texts.append("HORA DE DINAR")
+        found.append(texts.lunch)
     elif 20 <= hour < 22:
-        texts.append("HORA DE SOPAR")
+        found.append(texts.dinner)
     elif is_night(hour):
-        texts.append("A DORMIR!")
-    return texts
+        found.append(texts.sleep)
+    return found
 
 
 @dataclass(frozen=True)
@@ -280,9 +262,11 @@ class ShowScene:
         seed: int | None = None,
         weather: Feed[Weather] | None = None,
         commits: Feed[list[int]] | None = None,
+        locale: Locale | None = None,
     ) -> None:
         self.fps = fps
         self.personal = personal or Personal()
+        self.locale = locale or Locale()
         self.weather = weather
         self.commits = commits
         self._clock = clock
@@ -301,7 +285,7 @@ class ShowScene:
         special = self.personal.dates.get(now.strftime("%m-%d"), ())
         if special and self._random.random() < DATE_TEXT_SHARE:
             return self._random.choice(special)
-        return self._random.choice(day_texts(now) + list(self.personal.messages))
+        return self._random.choice(day_texts(now, self.locale.texts) + list(self.personal.messages))
 
     def _effect(self) -> Scene:
         kinds = ["rainbow", "rain", "sparkle", "life"]
@@ -311,7 +295,7 @@ class ShowScene:
             kinds.append("commits")
         kind = self._random.choice(kinds)
         if kind == "weather" and self.weather is not None:
-            return WeatherScene(self.weather)
+            return WeatherScene(self.weather, locale=self.locale)
         if kind == "commits" and self.commits is not None:
             return CommitsScene(self.commits)
         if kind == "life":

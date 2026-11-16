@@ -6,6 +6,7 @@ import operator
 import re
 from collections.abc import Callable
 from datetime import time as day_time
+from importlib.metadata import PackageNotFoundError, version
 from logging import getLogger
 from pathlib import Path
 from threading import Lock, Thread
@@ -16,8 +17,9 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from PIL import UnidentifiedImageError
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from wordclock.layouts.registry import Language
 from wordclock.led.controller import BaseLedController
 from wordclock.matrix.button import ButtonAction, ButtonHandler
 from wordclock.matrix.canvas import Color, hex_to_color, strip_to_canvas
@@ -119,31 +121,66 @@ class WebLedController(BaseLedController):
             return list(self._frame)
 
 
+API_DESCRIPTION = """
+Drive the 10 x 6 LED matrix: switch scenes, press the button, change the
+brightness and the language, and read the frame on the strip.
+
+The same API runs in the web simulator (`wordclock-matrix --web`) and on
+the Raspberry Pi (`wordclock-matrix --api`). There is no password: keep it
+on the home network.
+"""
+
+OPENAPI_TAGS: list[dict[str, str]] = [
+    {"name": "matrix", "description": "What the matrix shows and how."},
+    {"name": "button", "description": "The button on the face: lights, photo and shutdown."},
+    {"name": "simulator", "description": "Helpers to test the matrix: time of day and photo."},
+    {"name": "page", "description": "The web page that draws the matrix."},
+]
+
+
+def package_version() -> str:
+    """
+    Read the installed version of the project.
+
+    Returns:
+        The version, or ``0.0.0`` when the package is not installed.
+    """
+    try:
+        return version("wordclock")
+    except PackageNotFoundError:
+        return "0.0.0"
+
+
 class SceneRequest(BaseModel):
-    name: str
-    text: str = "HOLA"
-    color: str | None = None
+    name: str = Field(description="A scene of GET /api/matrix/scenes", examples=["pomodoro"])
+    text: str = Field("HOLA", description="Text for the text scene")
+    color: str | None = Field(None, description="Hex colour, e.g. ff8800", examples=["ff8800"])
 
 
 class ButtonRequest(BaseModel):
-    down: bool
+    down: bool = Field(description="True when the button goes down, False when it is released")
 
 
 class PressRequest(BaseModel):
-    action: ButtonAction = ButtonAction.TOGGLE
+    action: ButtonAction = Field(ButtonAction.TOGGLE, description="What the press does")
 
 
 class BrightnessRequest(BaseModel):
-    brightness: int
+    brightness: int = Field(description="Strip brightness, 0-255", examples=[80])
 
 
 class TimeRequest(BaseModel):
-    # "HH:MM", or None for the real time
-    time: str | None = None
+    time: str | None = Field(
+        None, description="Time of day as HH:MM, or null for the real time", examples=["23:30"]
+    )
+
+
+class LanguageRequest(BaseModel):
+    language: str = Field(description="english, catalan or spanish", examples=["english"])
 
 
 class PhotoRequest(BaseModel):
-    image: str
+    image: str = Field(description="A JPEG or PNG, as a data URL or plain base64")
 
 
 class MatrixService:
@@ -215,20 +252,27 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
     Returns:
         The FastAPI app.
     """
-    app = FastAPI()
+    app = FastAPI(
+        title="Mini Matrix API",
+        version=package_version(),
+        description=API_DESCRIPTION,
+        openapi_tags=OPENAPI_TAGS,
+    )
     templates = Jinja2Templates(directory=_WEB_DIR / "templates")
     app.mount("/static", StaticFiles(directory=_WEB_DIR / "static"), name="static")
     runner = service.runner
     canvas = runner.canvas
 
-    @app.get("/", response_class=HTMLResponse)
+    @app.get("/", response_class=HTMLResponse, tags=["page"], summary="Matrix page")
     def index(request: Request) -> HTMLResponse:
+        """The page that draws the matrix as printed, with its controls."""
         return templates.TemplateResponse(
             request,
             "matrix.html",
             {
                 "face": scad_params(MATRIX_SCAD, FACE_PARAMS),
                 "scenes": service.catalog.available(),
+                "languages": [language.value for language in Language],
             },
         )
 
@@ -247,8 +291,9 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
             },
         }
 
-    @app.get("/api/matrix/frame")
+    @app.get("/api/matrix/frame", tags=["matrix"], summary="Read the frame and state")
     def frame() -> dict:
+        """The colours on the matrix now, seen from the front, and its state."""
         picture = strip_to_canvas(
             service.controller.get_state(),
             canvas.width,
@@ -263,6 +308,7 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
             "cells": picture.rows(),
             "brightness": service.controller.brightness,
             "auto_brightness": runner.dimmer is not None and not runner.dimmer.manual,
+            "language": service.catalog.locale.language.value,
             **day_state(),
             "lights": service.control.lights_on,
             "scene": service.scene_name,
@@ -270,20 +316,23 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
             "action": service.last_action,
         }
 
-    @app.get("/api/matrix/scenes")
+    @app.get("/api/matrix/scenes", tags=["matrix"], summary="List the scenes")
     def scenes() -> dict:
+        """The scenes that can play with these settings, and the current one."""
         return {"scenes": list(service.catalog.available()), "scene": service.scene_name}
 
-    @app.post("/api/matrix/scene")
+    @app.post("/api/matrix/scene", tags=["matrix"], summary="Play a scene")
     def scene(request: SceneRequest) -> dict:
+        """Play a scene, with a text and a colour for the scenes that use them."""
         try:
             service.play(request)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return {"scene": request.name}
 
-    @app.post("/api/matrix/button")
+    @app.post("/api/matrix/button", tags=["button"], summary="Press or release the button")
     def button(request: ButtonRequest) -> dict:
+        """Press or release the button; the release does what the hold time says."""
         if request.down:
             service.button.press()
             return {"action": "none"}
@@ -291,13 +340,15 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
         service.press(action)
         return {"action": action.value}
 
-    @app.post("/api/matrix/press")
+    @app.post("/api/matrix/press", tags=["button"], summary="Press the button once")
     def press(request: PressRequest) -> dict:
+        """A whole press of the button: lights on or off, photo or shutdown."""
         service.press(request.action)
         return {"action": request.action.value}
 
-    @app.post("/api/matrix/brightness")
+    @app.post("/api/matrix/brightness", tags=["matrix"], summary="Set the brightness")
     def brightness(request: BrightnessRequest) -> dict:
+        """Set the brightness; the automatic one takes over at the next phase."""
         if not 0 <= request.brightness <= 255:
             raise HTTPException(status_code=400, detail="brightness must be 0-255")
         if runner.dimmer:
@@ -305,8 +356,29 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
         service.controller.brightness = request.brightness
         return {"brightness": request.brightness}
 
-    @app.post("/api/matrix/time")
+    @app.get("/api/matrix/language", tags=["matrix"], summary="Read the language")
+    def get_language() -> dict:
+        """The language of the texts, and the languages there are."""
+        return {
+            "language": service.catalog.locale.language.value,
+            "languages": [language.value for language in Language],
+        }
+
+    @app.post("/api/matrix/language", tags=["matrix"], summary="Switch the language")
+    def set_language(request: LanguageRequest) -> dict:
+        """Switch the language live; the next text of every scene uses it."""
+        try:
+            language = Language(request.language)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400, detail=f"Unknown language: {request.language}"
+            ) from exc
+        service.catalog.locale.set(language)
+        return get_language()
+
+    @app.post("/api/matrix/time", tags=["simulator"], summary="Simulate a time of day")
     def simulated_time(request: TimeRequest) -> dict:
+        """Preview the automatic brightness at another time of day."""
         if runner.dimmer is None:
             raise HTTPException(
                 status_code=400, detail="The brightness is fixed: start without --brightness"
@@ -319,8 +391,9 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
         runner.controller.brightness = runner.dimmer.brightness()
         return day_state()
 
-    @app.post("/api/matrix/photo")
+    @app.post("/api/matrix/photo", tags=["simulator"], summary="Show a photo")
     def photo(request: PhotoRequest) -> dict:
+        """Show a picture on the matrix, pixelated to 10 x 6, like the camera photo."""
         data = request.image.split(",", 1)[-1]
         try:
             pixels = pixelate(base64.b64decode(data), canvas.width, canvas.height)
