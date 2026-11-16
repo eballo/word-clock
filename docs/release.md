@@ -2,6 +2,7 @@
 
 | Version | Date       | Description         |
 |---------|------------|---------------------|
+| v0.16.0 | 2026-11-16 | Simulator: pick a time of day to preview the automatic brightness |
 | v0.15.0 | 2026-11-16 | Matrix: brightness that follows the time of day |
 | v0.14.1 | 2026-11-16 | Sync uv.lock in the version bump workflow |
 | v0.14.0 | 2026-11-16 | Bump the uv group across 1 directory with 4 updates |
