@@ -61,6 +61,7 @@ EFFECTS: tuple[str, ...] = (
     "maze",
     "stack",
 )
+
 LONG_EFFECTS: frozenset[str] = frozenset({"worms", "snake", "maze", "stack", "forecast"})
 
 
@@ -77,8 +78,8 @@ class ShowScene:
     """
     Play the other scenes one after another, with new colours every time.
 
-    The show starts with the IP address, then repeats forever: a text, an
-    effect, a text, an effect and a drawing. Texts play one full pass, the
+    The show starts with the IP address, then repeats forever: two
+    effects, a text, two effects and a drawing. Texts play one full pass, the
     effects a fixed time or until they end (a solved maze, a full screen
     of worms). Every 5 minutes, on the minute, the counter takes over for
     that minute and lights its first square. Each scene fades in and out.
@@ -103,6 +104,7 @@ class ShowScene:
         self._random = Random(seed)
         self._items: Iterator[Callable[[], ShowItem]] = self._playlist()
         self._queue: list[ShowItem] = []
+        self._last_effect: str | None = None
         self._clock_slot: tuple[date, int, int] | None = None
         self._inner: Canvas | None = None
         self._item: ShowItem | None = None
@@ -161,7 +163,10 @@ class ShowScene:
         return builders[name]()
 
     def _effect(self) -> ShowItem:
-        name = self._random.choice(self.effect_names())
+        names = self.effect_names()
+        # Never the same effect twice in a row.
+        name = self._random.choice([n for n in names if n != self._last_effect] or names)
+        self._last_effect = name
         seconds = LONG_EFFECT_SECONDS if name in LONG_EFFECTS else EFFECT_SECONDS
         return ShowItem(self._build_effect(name), seconds)
 
@@ -198,7 +203,9 @@ class ShowScene:
     def _playlist(self) -> Iterator[Callable[[], ShowItem]]:
         yield lambda: ShowItem(IpScene(color=self._color()), None)
         while True:
-            yield from (self._text_item, self._effect, self._text_item, self._effect, self._icon)
+            # Mostly effects: four of them for each text and drawing.
+            yield from (self._effect, self._effect, self._text_item)
+            yield from (self._effect, self._effect, self._icon)
 
     def _next_item(self, canvas: Canvas, frame: int) -> ShowItem:
         item = self._queue.pop(0) if self._queue else next(self._items)()

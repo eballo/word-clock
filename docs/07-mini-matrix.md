@@ -800,9 +800,10 @@ The `show` scene plays on its own, without a keyboard or a network. It
 starts with the IP address once, then repeats forever:
 
 ```
-   IP ──► text ──► effect ──► text ──► effect ──► drawing ──► text ──► …
-                   any of 8.6,                    heart, smile,
-                   weather, forecast, commits     ZZZ at night
+   IP ──► effect ──► effect ──► text ──► effect ──► effect ──► drawing ──► …
+          any of 8.6, weather,                                 heart, smile,
+          forecast, commits; never                             ZZZ at night
+          the same one twice in a row
 
    at :00, :05, :10 … :55  ──►  counter until the minute ends
                                 and its first square lights, then back

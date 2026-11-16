@@ -18,8 +18,6 @@ from wordclock.matrix.scenes.show import (
     COUNTER_EXTRA_SECONDS,
     EFFECT_SECONDS,
     EFFECTS,
-    ICON_SECONDS,
-    LONG_EFFECT_SECONDS,
     ShowItem,
     ShowScene,
 )
@@ -214,17 +212,26 @@ class TestShowScene:
                 seen.append(type(scene._item.scene))
         return seen
 
-    def test_plays_ip_then_text_effect_text_effect_icon(self) -> None:
-        # Given: two minutes past ten, no clock due
+    def test_plays_mostly_effects(self) -> None:
+        # Given: two minutes past ten, no counter due
         scene = ShowScene(seed=1, clock=lambda: TWO_PAST_TEN)
-        # When: long enough for one round
-        seen = self.play(scene, 90 + 2 * LONG_EFFECT_SECONDS + ICON_SECONDS)
+        kinds = []
+        # When: one round, item by item
+        for _ in range(7):
+            kinds.append(type(next(scene._items)().scene))
+        # Then: IP, then effect, effect, text, effect, effect, drawing
+        plain = (TextScene, IconScene, IpScene, *CLOCKS)
+        assert kinds[0] is IpScene
+        assert kinds[3] is TextScene and kinds[6] is IconScene
+        assert all(kind not in plain for kind in (kinds[1], kinds[2], kinds[4], kinds[5]))
+
+    def test_never_the_same_effect_twice_in_a_row(self) -> None:
+        # Given
+        scene = ShowScene(seed=1, clock=lambda: TWO_PAST_TEN)
+        # When
+        kinds = [type(scene._effect().scene) for _ in range(300)]
         # Then
-        assert seen[0] is IpScene
-        assert seen[1] is TextScene and seen[3] is TextScene
-        assert seen[2] not in (TextScene, IconScene, *CLOCKS)
-        assert seen[4] not in (TextScene, IconScene, *CLOCKS)
-        assert seen[5] is IconScene
+        assert all(a is not b for a, b in zip(kinds, kinds[1:], strict=False))
 
     def test_every_effect_can_play(self) -> None:
         # Given
