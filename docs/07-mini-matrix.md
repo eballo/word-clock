@@ -892,6 +892,7 @@ After=network-online.target
 Type=simple
 User=root
 WorkingDirectory=/home/eballo/word-clock
+Environment=PYTHONDONTWRITEBYTECODE=1
 ExecStart=/home/eballo/word-clock/.venv/bin/wordclock-matrix show --api --host 0.0.0.0
 Restart=on-failure
 RestartSec=5
@@ -900,7 +901,11 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-Replace `/home/eballo` with your user's home directory. If the text reads
+Replace `/home/eballo` with your user's home directory. The service runs
+as `root` for the LEDs; `PYTHONDONTWRITEBYTECODE=1` keeps it from leaving
+`root`-owned `__pycache__` files in `.venv`, which would make the next
+`uv sync` fail with `Permission denied` (fix it with
+`sudo chown -R "$USER": ~/word-clock/.venv`). If the text reads
 upside down (the strip starts at the bottom-right corner instead of the
 top-left), add `--rotate` to `ExecStart`; if it reads mirrored, add
 `--mirror`. Enable and start it:

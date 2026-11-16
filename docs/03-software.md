@@ -190,6 +190,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/home/pi/word-clock
+Environment=PYTHONDONTWRITEBYTECODE=1
 ExecStart=/home/pi/word-clock/.venv/bin/wordclock --lang catalan --host 0.0.0.0 --port 5000
 Restart=on-failure
 RestartSec=5
@@ -226,6 +227,14 @@ cd ~/word-clock
 git pull
 uv sync --extra rpi --extra dev
 sudo systemctl restart wordclock
+```
+
+The service runs as `root`, so `PYTHONDONTWRITEBYTECODE=1` stops it from
+leaving `root`-owned `__pycache__` files in `.venv`. If `uv sync` still
+fails with `Permission denied`, give the folder back to your user:
+
+```bash
+sudo chown -R "$USER": ~/word-clock/.venv
 ```
 
 ---
