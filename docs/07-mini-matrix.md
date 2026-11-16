@@ -509,7 +509,8 @@ the same code runs on the 16 × 16 word clock later.
 Three scenes show the time with colours instead of digits. The examples
 are at 3:17:42 in the afternoon.
 
-**`counter`** — a stopwatch, as the show plays it every 5 minutes. The
+**`counter`** — a stopwatch, as the show plays it every 5 minutes after
+the time. The
 seconds count up as two digits on the left, `00` to `59`, one a second.
 Every full minute lights one more square in the two right columns, from
 the bottom, up to 12 (the empty ones glow faintly; the next one glows a
@@ -568,8 +569,8 @@ blocks are easy to tell apart. The bottom row fills with the seconds.
  row 3  · · · ■ · · · ■ ■ ■
 ```
 
-The `show` scene plays `counter` every 5 minutes, for one minute (section
-9).
+Every 5 minutes the `show` scene scrolls `HH:MM` past twice and then
+plays `counter` for a minute (section 9).
 
 ### 8.2 Pomodoro, weather and commits
 
@@ -722,19 +723,19 @@ language.
 The effects only draw: no data, no settings. They work on any canvas size,
 so they run on the 16 × 16 word clock too.
 
-| Effect | What it does | Ends on its own |
-|--------|--------------|-----------------|
+| Effect | What it does | After a cycle |
+|--------|--------------|---------------|
 | `rainbow` | A rainbow sliding diagonally | — |
 | `spin` | A rainbow whose stripes turn slowly: across the rows, the columns, the diagonals and back | — |
 | `rain` | Drops with fading trails | — |
 | `sparkle` | Cells that light up in random colours and fade | — |
 | `fire` | The bottom row burns; the heat rises, drifts and cools, in a gradient from yellow to dark red | — |
-| `layers` | The centre 2 × 2 square fills cell by cell, then every ring around it, each in a new colour; then it empties from the outside in | After one cycle |
+| `layers` | The centre 2 × 2 square fills cell by cell, then every ring around it, each in a new colour; then it empties from the outside in | Again, in new colours |
 | `bounce` | A light falls, bounces off the floor and the walls, gets a new kick when it slows down, and leaves a trail that goes round the colour wheel | — |
 | `life` | Conway's Game of Life | — |
-| `worms` | One worm per corner, each its own colour, crawls to random free cells and leaves its body behind until the matrix is full | When the matrix is full |
+| `worms` | One worm per corner, each its own colour, crawls to random free cells and leaves its body behind until the matrix is full | Holds 2 s, starts again |
 | `snake` | A worm takes the shortest way to a green dot without crossing itself; each dot makes it one cell longer and gives it a new colour | — |
-| `maze` | A new maze with dim blue walls; a white token starts top left and explores depth first (dead ends in amber) until it leaves through the green gate on the right | When the token escapes |
+| `maze` | A new maze with dim blue walls; a white token starts top left and explores depth first (dead ends in amber) until it leaves through the green gate on the right | A new maze |
 | `stack` | Four-cell pieces fall and land where they fit best; full rows flash and clear; a full pile empties and starts again | — |
 
 The code lives in one module per effect:
@@ -805,16 +806,17 @@ starts with the IP address once, then repeats forever:
           forecast, commits; never                             ZZZ at night
           the same one twice in a row
 
-   at :00, :05, :10 … :55  ──►  counter until the minute ends
-                                and its first square lights, then back
+   at :00, :05, :10 … :55  ──►  HH:MM scrolling twice ──► counter for a
+                                minute, until its first square lights,
+                                then back
 ```
 
 | Part | Content | Time |
 |------|---------|------|
 | Text | One text that fits the moment (table below), or a personal one | One pass across the matrix |
-| Effect | One of the effects of section 8.6 at random, and `weather`, `forecast` and `commits` when they are set up | 15 s; `worms`, `snake`, `maze`, `stack` and `forecast` up to 30 s, or less when they end on their own |
+| Effect | One of the effects of section 8.6 at random, and `weather`, `forecast` and `commits` when they are set up | 2 min 30 s, every effect the same |
 | Drawing | A red heart or a smile; `ZZZ` from 23:00 to 06:59. It pulses like a heartbeat | 6 s |
-| Counter | Every 5 minutes, on the minute, it cuts in: the seconds count to 59 and the first square lights | 1 min and 2 s |
+| Time | Every 5 minutes, on the minute, it cuts in: `HH:MM` scrolls past twice, then the `counter` counts to 59 and lights its first square | About 1 min 10 s |
 
 Every scene fades in and out over 0,5 s.
 

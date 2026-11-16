@@ -27,23 +27,24 @@ from wordclock.matrix.scenes.effects.worms import WormsScene
 from wordclock.matrix.scenes.icons import ICONS, RED, IconScene
 from wordclock.matrix.scenes.screens.commits import CommitsScene
 from wordclock.matrix.scenes.screens.weather import ForecastScene, WeatherScene
-from wordclock.matrix.scenes.text import IpScene, TextScene
+from wordclock.matrix.scenes.text import ClockScene, IpScene, TextScene
 from wordclock.matrix.texts import Locale, day_texts
 
 logger = getLogger(__name__)
 
 
-EFFECT_SECONDS = 15.0
-# Effects that end on their own play up to this long, and stop when done.
-LONG_EFFECT_SECONDS = 30.0
+# Every effect plays this long, so they all get the same time.
+EFFECT_SECONDS = 150.0
 ICON_SECONDS = 6.0
 FADE_SECONDS = 0.5
 # On a personal date, this share of the texts is the date's own text.
 DATE_TEXT_SHARE = 0.5
 # The clock plays for one minute at every multiple of this many minutes.
 CLOCK_EVERY_MINUTES = 5
-# The counter runs a little past the minute, to show its first square.
-COUNTER_EXTRA_SECONDS = 2.0
+# The time scrolls past this many times before the counter.
+CLOCK_PASSES = 2
+# The counter runs a full minute and a little more, to show its first square.
+COUNTER_SECONDS = 62.0
 
 # Effects the show picks from, on top of the weather, the forecast and the
 # commits when they are set up.
@@ -62,16 +63,16 @@ EFFECTS: tuple[str, ...] = (
     "stack",
 )
 
-LONG_EFFECTS: frozenset[str] = frozenset({"worms", "snake", "maze", "stack", "forecast"})
-
 
 @dataclass
 class ShowItem:
-    """One scene of the show and how long it plays; None for one text pass."""
+    """One scene of the show and how long it plays; None for text passes."""
 
     scene: Scene
     seconds: float | None
     clock: bool = False
+    # Text passes when ``seconds`` is None
+    passes: int = 1
 
 
 class ShowScene:
@@ -79,10 +80,10 @@ class ShowScene:
     Play the other scenes one after another, with new colours every time.
 
     The show starts with the IP address, then repeats forever: two
-    effects, a text, two effects and a drawing. Texts play one full pass, the
-    effects a fixed time or until they end (a solved maze, a full screen
-    of worms). Every 5 minutes, on the minute, the counter takes over for
-    that minute and lights its first square. Each scene fades in and out.
+    effects, a text, two effects and a drawing. Texts play one full pass,
+    every effect the same time. Every 5 minutes, on the minute, the time
+    cuts in: ``HH:MM`` scrolls past twice, then the counter runs a minute.
+    Each scene fades in and out.
     """
 
     def __init__(
@@ -167,8 +168,7 @@ class ShowScene:
         # Never the same effect twice in a row.
         name = self._random.choice([n for n in names if n != self._last_effect] or names)
         self._last_effect = name
-        seconds = LONG_EFFECT_SECONDS if name in LONG_EFFECTS else EFFECT_SECONDS
-        return ShowItem(self._build_effect(name), seconds)
+        return ShowItem(self._build_effect(name), EFFECT_SECONDS)
 
     def _icon(self) -> ShowItem:
         if is_night(self._clock().hour):
@@ -183,17 +183,21 @@ class ShowScene:
 
     def clock_items(self, now: datetime) -> list[ShowItem]:
         """
-        Plan the counter for the rest of the minute.
+        Plan the time: ``HH:MM`` scrolling past, then the counter.
 
         Args:
             now: The current time.
 
         Returns:
-            The counter until the minute ends and a little longer, so its
-            first square lights up.
+            The scrolling time for :data:`CLOCK_PASSES` passes, then the
+            counter for a full minute, so its first square lights up.
         """
-        left = 60 - now.second - now.microsecond / 1e6
-        return [ShowItem(CounterScene(), left + COUNTER_EXTRA_SECONDS, clock=True)]
+        rainbow = self._random.random() < 0.3
+        time = ClockScene(color=self._color(), rainbow=rainbow)
+        return [
+            ShowItem(time, None, clock=True, passes=CLOCK_PASSES),
+            ShowItem(CounterScene(), COUNTER_SECONDS, clock=True),
+        ]
 
     def _clock_due(self, now: datetime) -> bool:
         if now.minute % CLOCK_EVERY_MINUTES:
@@ -210,7 +214,7 @@ class ShowScene:
     def _next_item(self, canvas: Canvas, frame: int) -> ShowItem:
         item = self._queue.pop(0) if self._queue else next(self._items)()
         if item.seconds is None and isinstance(item.scene, TextScene):
-            item.seconds = item.scene.loop_frames(canvas.width) / item.scene.fps
+            item.seconds = item.passes * item.scene.loop_frames(canvas.width) / item.scene.fps
         logger.debug("Show: %s for %.1f s", type(item.scene).__name__, item.seconds or 0)
         self._start = frame
         self._inner_frame = -1
@@ -241,8 +245,6 @@ class ShowScene:
         while self._inner_frame < target:
             self._inner_frame += 1
             item.scene.render(inner, self._inner_frame)
-        if getattr(item.scene, "done", False) and seconds > elapsed + FADE_SECONDS:
-            item.seconds = seconds = elapsed + FADE_SECONDS
         fade = max(0.0, min(1.0, elapsed / FADE_SECONDS, (seconds - elapsed) / FADE_SECONDS))
         for y, row in enumerate(inner.rows()):
             for x, (r, g, b) in enumerate(row):

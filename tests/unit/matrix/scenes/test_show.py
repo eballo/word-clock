@@ -11,11 +11,11 @@ from wordclock.matrix.font import GLYPHS, fold_char
 from wordclock.matrix.languages import MatrixLanguage
 from wordclock.matrix.personal import Personal, load_personal
 from wordclock.matrix.scenes.clocks import BlocksClock, CounterScene, DialClock, TixClock
-from wordclock.matrix.scenes.effects.maze import MazeScene
 from wordclock.matrix.scenes.effects.rainbow import RainbowScene
 from wordclock.matrix.scenes.icons import ICONS, IconScene
 from wordclock.matrix.scenes.show import (
-    COUNTER_EXTRA_SECONDS,
+    CLOCK_PASSES,
+    COUNTER_SECONDS,
     EFFECT_SECONDS,
     EFFECTS,
     ShowItem,
@@ -252,8 +252,8 @@ class TestShowScene:
         scene.render(canvas, 1)
         # Then
         assert scene._item is not None
-        assert isinstance(scene._item.scene, CounterScene)
-        assert scene._item.seconds == 60 + COUNTER_EXTRA_SECONDS
+        assert isinstance(scene._item.scene, ClockScene)
+        assert scene._item.clock
 
     def test_no_clock_between_the_slots(self) -> None:
         # Given: 10:06
@@ -263,16 +263,24 @@ class TestShowScene:
         # Then
         assert not set(seen) & set(CLOCKS)
 
-    def test_counter_fills_the_rest_of_the_minute(self) -> None:
+    def test_time_scrolls_then_the_counter(self) -> None:
         # Given
         scene = ShowScene(seed=1)
         # When
-        items = scene.clock_items(datetime(2026, 10, 24, 10, 5, 20))
-        # Then: 40 s left, plus a little to see the first square
-        assert len(items) == 1
-        assert isinstance(items[0].scene, CounterScene)
-        assert items[0].seconds == 40 + COUNTER_EXTRA_SECONDS
-        assert items[0].clock
+        items = scene.clock_items(datetime(2026, 10, 24, 10, 5, 0))
+        # Then
+        assert [type(item.scene) for item in items] == [ClockScene, CounterScene]
+        assert items[0].seconds is None and items[0].passes == CLOCK_PASSES
+        assert items[1].seconds == COUNTER_SECONDS
+        assert all(item.clock for item in items)
+
+    def test_every_effect_plays_the_same_time(self) -> None:
+        # Given
+        scene = ShowScene(seed=1, clock=lambda: TWO_PAST_TEN)
+        # When
+        seconds = {scene._effect().seconds for _ in range(100)}
+        # Then: two and a half minutes
+        assert seconds == {EFFECT_SECONDS} == {150.0}
 
     def test_clock_plays_once_per_slot(self) -> None:
         # Given: the whole 10:05 minute
@@ -359,22 +367,4 @@ class TestShowScene:
             scene.render(canvas, frame)
         # Then
         assert scene._item is not None
-        assert isinstance(scene._item.scene, TextScene)
-
-    def test_effect_that_is_done_ends_early(self) -> None:
-        # Given: a maze, then a text
-        canvas = Canvas(10, 6)
-        scene = ShowScene(seed=1, clock=lambda: TWO_PAST_TEN)
-        scene._items = iter(
-            [
-                lambda: ShowItem(MazeScene(seed=3), 600.0),
-                lambda: ShowItem(TextScene("HOLA"), None),
-            ]
-        )
-        # When: well before the time limit
-        for frame in range(int(120 * scene.fps)):
-            scene.render(canvas, frame)
-            if isinstance(scene._item.scene, TextScene):
-                break
-        # Then
         assert isinstance(scene._item.scene, TextScene)
