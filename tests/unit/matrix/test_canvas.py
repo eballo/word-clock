@@ -51,6 +51,15 @@ class TestCanvas:
         assert filled == [(9, 9, 9)] * 8
         assert canvas.to_strip() == [(0, 0, 0)] * 8
 
+    def test_fade_dims_every_cell(self) -> None:
+        # Given
+        canvas = Canvas(2, 1)
+        canvas.set(0, 0, (200, 100, 10))
+        # When
+        canvas.fade(0.5)
+        # Then
+        assert canvas.rows() == [[(100, 50, 5), (0, 0, 0)]]
+
 
 class TestToStrip:
     def test_snake_reverses_odd_rows(self) -> None:

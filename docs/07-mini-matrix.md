@@ -469,14 +469,24 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 | `blocks` | The time by counting cells (section 8.1) |
 | `dial` | The matrix as a clock face: 60 cells, one per minute and per second (section 8.1) |
 | `tix` | TIX style: each digit a block of colour with that many cells lit (section 8.1) |
+| `counter` | A stopwatch: seconds as two digits, one square per minute (section 8.1) |
 | `pomodoro` | 25 min of work, 5 of rest: the cells empty as time runs out (section 8.2) |
 | `life` | Conway's Game of Life, wrapping around the edges |
 | `weather` | Animated weather icon, then `18° PLUJA` (section 8.2; needs a city) |
+| `forecast` | Now, in 3 h and in 6 h: icon, then the temperature fixed (section 8.2; needs a city) |
 | `commits` | GitHub contributions of the last 60 days, one cell per day (section 8.2; needs a GitHub account) |
 | `ip` | The local IP address, scrolling |
 | `rain` | Green drops with fading trails, like Matrix rain |
 | `rainbow` | A rainbow sliding diagonally |
 | `sparkle` | Cells that light up in random colours and fade out |
+| `spin` | A rainbow whose stripes turn: rows, columns, diagonals (section 8.6) |
+| `fire` | Flames over the bottom row, yellow to dark red (section 8.6) |
+| `layers` | The centre square, then each ring around it, fill up (section 8.6) |
+| `bounce` | A light that jumps and bounces around (section 8.6) |
+| `worms` | A worm from each corner grows until the matrix is full (section 8.6) |
+| `snake` | A worm hunts a green dot, grows and changes colour (section 8.6) |
+| `maze` | A token escapes from a new maze (section 8.6) |
+| `stack` | Four-cell pieces fall, pile up and clear full rows (section 8.6) |
 | `wiring` | One cell at a time, in order, to test the wiring |
 
 | Option | Default | Use |
@@ -498,6 +508,28 @@ the same code runs on the 16 × 16 word clock later.
 
 Three scenes show the time with colours instead of digits. The examples
 are at 3:17:42 in the afternoon.
+
+**`counter`** — a stopwatch, as the show plays it every 5 minutes after
+the time. The
+seconds count up as two digits on the left, `00` to `59`, one a second.
+Every full minute lights one more square in the two right columns, from
+the bottom, up to 12 (the empty ones glow faintly; the next one glows a
+little more as its minute goes by, and a new one flashes white). After
+the twelfth it starts again. The digits change colour every minute. At
+3 minutes 59 seconds:
+
+```
+ col    0 1 2 3 4 5 6 7 8 9
+ row 0  · · · · · · · · ▫ ▫
+ row 1  ■ ■ ■ · ■ ■ ■ · ▫ ▫
+ row 2  ■ · · · ■ · ■ · ▫ ▫
+ row 3  ■ ■ ■ · ■ ■ ■ · ▫ ▫
+ row 4  · · ■ · · · ■ · ■ ▫     third minute
+ row 5  ■ ■ ■ · ■ ■ ■ · ■ ■     first and second minutes
+```
+
+`HH:MM` in the 3 × 5 font needs 17 columns, so the time of day only fits
+scrolling (`clock`) or as colours (`blocks`, `dial`, `tix`).
 
 **`blocks`** — count the cells, top to bottom:
 
@@ -537,8 +569,8 @@ blocks are easy to tell apart. The bottom row fills with the seconds.
  row 3  · · · ■ · · · ■ ■ ■
 ```
 
-The `show` scene plays one of the four clocks (`clock`, `blocks`, `dial`
-or `tix`) each time, at random.
+Every 5 minutes the `show` scene scrolls `HH:MM` past twice and then
+plays `counter` for a minute (section 9).
 
 ### 8.2 Pomodoro, weather and commits
 
@@ -548,6 +580,12 @@ and the matrix flashes when a phase ends. While it plays, a short press of
 the button pauses and resumes it (instead of switching the lights), and
 the paused cells breathe. Start it again from the top by choosing the
 scene again.
+
+**`forecast`** — the weather now, in 3 hours and in 6 hours, from the
+same Open-Meteo request as `weather`. Each one shows its animated icon
+for 3 s, then the temperature fixed in the middle for 2 s (`18°` fits in
+10 columns; wider ones such as `-12°` keep the icon). The dots on the top
+row say which one it is: first, second or third.
 
 **`weather`** — the weather now, from [Open-Meteo](https://open-meteo.com)
 (free, no key): an animated icon for 6 s (sun or moon and stars, clouds,
@@ -581,6 +619,8 @@ sudo .venv/bin/wordclock-matrix show --api --host 0.0.0.0 --rotate --max-ma 600
 | `GET /api/matrix/scenes` | Scenes that can play now, and the current one |
 | `POST /api/matrix/scene` `{"name": "pomodoro"}` | Play a scene; `text` and `color` (`"ff8800"`) for the scenes that use them |
 | `POST /api/matrix/press` `{}` | A short press of the button (`{"action": "photo"}` for a long one) |
+| `POST /api/matrix/lights` `{"on": false}` | Turn the LEDs off, `{"on": true}` to light them again; the scene keeps running in the dark. Unlike a press, it does not toggle |
+| `GET /api/matrix/lights` | Whether the LEDs are lit |
 | `POST /api/matrix/language` `{"language": "english"}` | Switch the language of the texts live (section 8.5) |
 | `POST /api/matrix/time` `{"time": "23:30"}` | Simulate a time of day for the automatic brightness; `{"time": null}` for the real time (section 8.4) |
 | `POST /api/matrix/brightness` `{"brightness": 80}` | Brightness, 0-255; with the automatic brightness, it holds until the next change of phase (section 8.4) |
@@ -680,6 +720,47 @@ the word clock faces have their own in `wordclock/layouts/`.
 Personal texts from `matrix.toml` are shown as written, whatever the
 language.
 
+### 8.6 Effects
+
+The effects only draw: no data, no settings. They work on any canvas size,
+so they run on the 16 × 16 word clock too.
+
+| Effect | What it does | After a cycle |
+|--------|--------------|---------------|
+| `rainbow` | A rainbow sliding diagonally | — |
+| `spin` | A rainbow whose stripes turn slowly: across the rows, the columns, the diagonals and back | — |
+| `rain` | Drops with fading trails | — |
+| `sparkle` | Cells that light up in random colours and fade | — |
+| `fire` | The bottom row burns; the heat rises, drifts and cools, in a gradient from yellow to dark red | — |
+| `layers` | The centre 2 × 2 square fills cell by cell, then every ring around it, each in a new colour; then it empties from the outside in | Again, in new colours |
+| `bounce` | A light falls, bounces off the floor and the walls, gets a new kick when it slows down, and leaves a trail that goes round the colour wheel | — |
+| `life` | Conway's Game of Life | — |
+| `worms` | One worm per corner, each its own colour, crawls to random free cells and leaves its body behind until the matrix is full | Holds 2 s, starts again |
+| `snake` | A worm takes the shortest way to a green dot without crossing itself; each dot makes it one cell longer and gives it a new colour | — |
+| `maze` | A new maze with dim blue walls; a white token starts top left and explores depth first (dead ends in amber) until it leaves through the green gate on the right | A new maze |
+| `stack` | Four-cell pieces fall and land where they fit best; full rows flash and clear; a full pile empties and starts again | — |
+
+The code lives in one module per effect:
+
+```
+wordclock/matrix/scenes/
+├── __init__.py      # SCENES: every scene without settings, by name
+├── base.py          # Scene: fps, render(canvas, frame), optional done
+├── text.py          # text, clock, ip
+├── clocks.py        # counter, blocks, dial, tix
+├── icons.py         # heart, smile, ZZZ
+├── effects/         # rainbow.py (rainbow, spin), rain.py, sparkle.py,
+│                    # fire.py, layers.py, bounce.py, life.py, worms.py,
+│                    # snake.py, maze.py, stack.py, wiring.py, grid.py
+├── screens/         # pomodoro.py, weather.py (weather, forecast),
+│                    # commits.py, loading.py
+└── show.py          # the show
+```
+
+To add an effect: write `effects/<name>.py` with a class that has `fps`
+and `render(canvas, frame)`, add it to `SCENES` in `scenes/__init__.py`
+and to `EFFECTS` in `show.py` if the show should play it.
+
 ### Web simulator
 
 `--web` draws the matrix in a browser page instead of lighting LEDs, as it
@@ -700,6 +781,7 @@ uv run wordclock-matrix rain --web --port 8002
 | Webcam as camera | Uses the Mac webcam for the photo: a 3, 2, 1 countdown, a white flash, then the photo pixelated to 10 × 6 |
 | Scene, Text, Colour, Brightness | Switch the scene live |
 | Time of day, Now | Preview the automatic brightness at another hour (section 8.4) |
+| Lights | Turn the LEDs off and on |
 | Language | Switch the language of the texts (section 8.5) |
 | API docs | The Swagger page with every endpoint |
 
@@ -722,17 +804,22 @@ The `show` scene plays on its own, without a keyboard or a network. It
 starts with the IP address once, then repeats forever:
 
 ```
-   IP ──► clock ──► text ──► effect ──► clock ──► text ──► drawing ──► …
-          HH:MM                rainbow,                     heart, smile,
-                               rain or sparkles             ZZZ at night
+   IP ──► effect ──► effect ──► text ──► effect ──► effect ──► drawing ──► …
+          any of 8.6, weather,                                 heart, smile,
+          forecast, commits; never                             ZZZ at night
+          the same one twice in a row
+
+   at :00, :05, :10 … :55  ──►  HH:MM scrolling twice ──► counter for a
+                                minute, until its first square lights,
+                                then back
 ```
 
 | Part | Content | Time |
 |------|---------|------|
-| Clock | `HH:MM`, a random colour or rainbow letters | One pass across the matrix |
 | Text | One text that fits the moment (table below), or a personal one | One pass across the matrix |
-| Effect | `rainbow` at a random speed, `rain` in a random colour, or `sparkle` | 15 s |
+| Effect | One of the effects of section 8.6 at random, and `weather`, `forecast` and `commits` when they are set up | 2 min 30 s, every effect the same |
 | Drawing | A red heart or a smile; `ZZZ` from 23:00 to 06:59. It pulses like a heartbeat | 6 s |
+| Time | Every 5 minutes, on the minute, it cuts in: `HH:MM` scrolls past twice, then the `counter` counts to 59 and lights its first square | About 1 min 10 s |
 
 Every scene fades in and out over 0,5 s.
 
@@ -851,6 +938,7 @@ sudo systemctl status wordclock-matrix
 - [ ] Optional: camera on its posts, lens behind the rivet window
 - [ ] Optional: switch on its pillar, wired to GPIO 3 and GND, button cap in its rivet
 - [ ] `text`, `clock`, `ip` and `rain` scenes running
+- [ ] Effects of section 8.6 checked on the matrix, and the `counter` at :00 or :05
 - [ ] Brightness checked by day and at night, `[brightness]` levels set in `matrix.toml` if needed
 - [ ] `wordclock-matrix` service enabled: the show starts when the matrix is plugged in
 - [ ] Matrix on the table or on the wall, only the power cable showing

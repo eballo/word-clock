@@ -17,6 +17,8 @@ logger = getLogger(__name__)
 HTTP_TIMEOUT = 10
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+# Hours of forecast fetched with the weather, the current one first
+FORECAST_HOURS = 7
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 
 T = TypeVar("T")
@@ -111,12 +113,24 @@ class Feed(Generic[T]):
 
 
 @dataclass(frozen=True)
+class Forecast:
+    """The weather expected at one hour."""
+
+    hour: int
+    temperature: float
+    code: int
+    is_day: bool
+
+
+@dataclass(frozen=True)
 class Weather:
-    """The weather now, from Open-Meteo."""
+    """The weather now, from Open-Meteo, and the next hours."""
 
     temperature: float
     code: int
     is_day: bool
+    # From the current hour on, one per hour
+    forecast: tuple[Forecast, ...] = ()
 
 
 # WMO weather codes, as Open-Meteo gives them, grouped by what is drawn.
@@ -169,16 +183,34 @@ def parse_weather(data: dict) -> Weather:
     Read the current weather from an Open-Meteo forecast answer.
 
     Args:
-        data: The decoded answer, with a ``current`` block.
+        data: The decoded answer, with a ``current`` block and, optionally,
+            an ``hourly`` block.
 
     Returns:
-        The weather now.
+        The weather now and the hourly forecast.
     """
     current = data["current"]
+    hourly = data.get("hourly") or {}
+    forecast = tuple(
+        Forecast(
+            hour=datetime.fromisoformat(moment).hour,
+            temperature=float(temperature),
+            code=int(code),
+            is_day=bool(is_day),
+        )
+        for moment, temperature, code, is_day in zip(
+            hourly.get("time", []),
+            hourly.get("temperature_2m", []),
+            hourly.get("weather_code", []),
+            hourly.get("is_day", []),
+            strict=False,
+        )
+    )
     return Weather(
         temperature=float(current["temperature_2m"]),
         code=int(current["weather_code"]),
         is_day=bool(current["is_day"]),
+        forecast=forecast,
     )
 
 
@@ -221,6 +253,9 @@ def weather_fetcher(city: str) -> Callable[[], Weather]:
                 "latitude": latitude,
                 "longitude": longitude,
                 "current": "temperature_2m,weather_code,is_day",
+                "hourly": "temperature_2m,weather_code,is_day",
+                "forecast_hours": FORECAST_HOURS,
+                "timezone": "auto",
             }
         )
         return parse_weather(get_json(f"{FORECAST_URL}?{query}"))

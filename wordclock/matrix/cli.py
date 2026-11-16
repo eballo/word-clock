@@ -16,8 +16,8 @@ from wordclock.matrix.canvas import Canvas, Color, hex_to_color
 from wordclock.matrix.catalog import ALL_SCENES, Catalog
 from wordclock.matrix.dimmer import Dimmer
 from wordclock.matrix.languages import MatrixLanguage
+from wordclock.matrix.personal import load_personal
 from wordclock.matrix.runner import MatrixRunner
-from wordclock.matrix.show import load_personal
 from wordclock.matrix.texts import Locale
 from wordclock.matrix.web import MatrixService, WebLedController, serve
 

@@ -5,16 +5,12 @@ import pytest
 from wordclock.led.controller import MockLedController
 from wordclock.matrix.canvas import Canvas
 from wordclock.matrix.runner import MatrixRunner, preview_lines
-from wordclock.matrix.scenes import (
-    SCENE_NAMES,
-    RainbowScene,
-    RainScene,
-    SparkleScene,
-    TextScene,
-    WiringScene,
-    create_scene,
-    local_ip,
-)
+from wordclock.matrix.scenes import SCENE_NAMES, create_scene
+from wordclock.matrix.scenes.effects.rain import RainScene
+from wordclock.matrix.scenes.effects.rainbow import RainbowScene
+from wordclock.matrix.scenes.effects.sparkle import SparkleScene
+from wordclock.matrix.scenes.effects.wiring import WiringScene
+from wordclock.matrix.scenes.text import TextScene, local_ip
 
 
 def lit_cells(canvas: Canvas) -> set[tuple[int, int]]:

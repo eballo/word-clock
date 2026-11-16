@@ -4,8 +4,10 @@ import pytest
 
 from wordclock.matrix.canvas import Canvas
 from wordclock.matrix.catalog import ALL_SCENES, Catalog
-from wordclock.matrix.screens import CommitsScene, WeatherScene
-from wordclock.matrix.show import Personal
+from wordclock.matrix.personal import Personal
+from wordclock.matrix.scenes import SCENE_NAMES
+from wordclock.matrix.scenes.screens.commits import CommitsScene
+from wordclock.matrix.scenes.screens.weather import ForecastScene, WeatherScene
 
 SET_UP = Personal(city="Barcelona", github_user="eballo", github_token="secret")
 
@@ -16,6 +18,7 @@ class TestCatalog:
         available = Catalog(Personal()).available()
         # Then
         assert "weather" not in available and "commits" not in available
+        assert "forecast" not in available
         assert "pomodoro" in available and "life" in available
 
     def test_with_settings_offers_every_scene(self) -> None:
@@ -37,7 +40,22 @@ class TestCatalog:
         catalog = Catalog(SET_UP)
         # When / Then
         assert isinstance(catalog.build("weather"), WeatherScene)
+        assert isinstance(catalog.build("forecast"), ForecastScene)
         assert isinstance(catalog.build("commits"), CommitsScene)
+
+    def test_forecast_needs_a_city(self) -> None:
+        # Given / When / Then
+        with pytest.raises(ValueError, match="city"):
+            Catalog(Personal()).build("forecast")
+
+    @pytest.mark.parametrize(
+        "name",
+        ["counter", "spin", "fire", "layers", "bounce", "worms", "snake", "maze", "stack"],
+    )
+    def test_new_scenes_are_registered(self, name: str) -> None:
+        # Given / When / Then
+        assert name in SCENE_NAMES
+        assert name in Catalog(Personal()).available()
 
     @pytest.mark.parametrize("name", ["weather", "commits", "tetris"])
     def test_rejects_what_cannot_play(self, name: str) -> None:

@@ -6,7 +6,7 @@ from logging import getLogger
 from wordclock.led.controller import BaseLedController
 from wordclock.matrix.canvas import Canvas, limit_current
 from wordclock.matrix.dimmer import Dimmer
-from wordclock.matrix.scenes import Scene
+from wordclock.matrix.scenes.base import Scene
 
 logger = getLogger(__name__)
 

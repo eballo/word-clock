@@ -5,40 +5,14 @@ from datetime import datetime
 from random import Random
 
 from wordclock.matrix.canvas import Canvas, Color
+from wordclock.matrix.colors import add, hue_color, scale
+from wordclock.matrix.font import FONT_HEIGHT, render_text
 
 AM_HOURS: Color = (0, 90, 255)
 PM_HOURS: Color = (150, 40, 255)
 FIVE_MINUTES: Color = (0, 220, 60)
 MINUTES: Color = (255, 180, 0)
 SECONDS: Color = (120, 200, 255)
-
-
-def scale(color: Color, level: float) -> Color:
-    """
-    Dim a colour.
-
-    Args:
-        color: The full colour.
-        level: 0 for black, 1 for the full colour.
-
-    Returns:
-        The dimmed colour.
-    """
-    return (round(color[0] * level), round(color[1] * level), round(color[2] * level))
-
-
-def add(a: Color, b: Color) -> Color:
-    """
-    Mix two lights on the same cell.
-
-    Args:
-        a: One colour.
-        b: The other colour.
-
-    Returns:
-        Their sum, each channel capped at 255.
-    """
-    return (min(255, a[0] + b[0]), min(255, a[1] + b[1]), min(255, a[2] + b[2]))
 
 
 def hour_color(hour: int) -> Color:
@@ -178,3 +152,45 @@ class TixClock:
             int(now.second // step),
             scale(SECONDS, 0.5),
         )
+
+
+class CounterScene:
+    """
+    A stopwatch. The seconds count up as two digits on the left, from 00
+    to 59, one a second. Every full minute lights one more square in the
+    two right columns, from the bottom, up to 12; the next square glows a
+    little more as its minute goes by, and a new one flashes white. After
+    the last square it starts again. The digits change colour every minute.
+    """
+
+    COLUMNS = 2
+    SQUARES = 12
+    SQUARE: Color = (255, 170, 0)
+
+    def __init__(self, fps: float = 10) -> None:
+        self.fps = fps
+
+    def render(self, canvas: Canvas, frame: int) -> None:
+        elapsed = frame / self.fps
+        squares = min(self.SQUARES, self.COLUMNS * canvas.height)
+        minutes, seconds = divmod(int(elapsed), 60)
+        minutes %= squares + 1
+        canvas.clear()
+        digits = hue_color(0.55 + minutes * 0.13)
+        top = canvas.height - FONT_HEIGHT
+        for x, column in enumerate(render_text(f"{seconds:02d}")):
+            for y, lit in enumerate(column):
+                if lit:
+                    canvas.set(x, top + y, digits)
+        left = canvas.width - self.COLUMNS
+        progress = (elapsed % 60) / 60
+        for i in range(squares):
+            x = left + i % self.COLUMNS
+            y = canvas.height - 1 - i // self.COLUMNS
+            if i < minutes:
+                fresh = i == minutes - 1 and seconds < 1
+                canvas.set(x, y, (255, 255, 255) if fresh else self.SQUARE)
+            elif i == minutes:
+                canvas.set(x, y, scale(self.SQUARE, 0.07 + 0.3 * progress))
+            else:
+                canvas.set(x, y, scale(self.SQUARE, 0.07))

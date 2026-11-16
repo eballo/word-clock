@@ -80,6 +80,15 @@ class Canvas:
             return self._cells[y * self.width + x]
         return BLACK
 
+    def fade(self, keep: float) -> None:
+        """
+        Dim every cell, to leave a fading trail behind moving lights.
+
+        Args:
+            keep: Share of the light that stays, 0 for black, 1 unchanged.
+        """
+        self._cells = [(int(r * keep), int(g * keep), int(b * keep)) for r, g, b in self._cells]
+
     def rows(self) -> list[list[Color]]:
         """
         Return the cells row by row, top row first.

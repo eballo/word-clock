@@ -8,7 +8,7 @@ from threading import Lock
 from wordclock.matrix.button import ButtonAction
 from wordclock.matrix.canvas import Canvas, Color
 from wordclock.matrix.photo import CountdownScene, PhotoScene
-from wordclock.matrix.scenes import Scene
+from wordclock.matrix.scenes.base import Scene
 
 logger = getLogger(__name__)
 
@@ -119,6 +119,17 @@ class ControlledScene:
                 self._waiting_photo = True
         elif action == ButtonAction.SHUTDOWN and self._shutdown is not None:
             self._shutdown()
+
+    def set_lights(self, on: bool) -> None:
+        """
+        Switch the LEDs on or off; the scene keeps running while they are off.
+
+        Args:
+            on: True to light the LEDs, False to turn them off.
+        """
+        if on != self.lights_on:
+            logger.info("Lights %s", "on" if on else "off")
+        self.lights_on = on
 
     def show_photo(self, pixels: list[Color], width: int) -> None:
         """

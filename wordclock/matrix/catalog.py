@@ -11,17 +11,19 @@ from wordclock.matrix.feeds import (
     sun_fetcher,
     weather_fetcher,
 )
+from wordclock.matrix.personal import Personal
 from wordclock.matrix.scenes import SCENE_NAMES, Scene, create_scene
-from wordclock.matrix.screens import CommitsScene, LifeScene, PomodoroScene, WeatherScene
-from wordclock.matrix.show import Personal, ShowScene
+from wordclock.matrix.scenes.screens.commits import CommitsScene
+from wordclock.matrix.scenes.screens.weather import ForecastScene, WeatherScene
+from wordclock.matrix.scenes.show import ShowScene
 from wordclock.matrix.texts import Locale
 
 logger = getLogger(__name__)
 
-# Scenes that need the personal settings or keep state, on top of the
-# plain ones of :data:`SCENE_NAMES`.
-EXTRA_SCENES: tuple[str, ...] = ("pomodoro", "life", "weather", "commits")
-ALL_SCENES: tuple[str, ...] = SCENE_NAMES + EXTRA_SCENES
+# Scenes that need the personal settings or a network feed, on top of the
+# plain ones of :data:`wordclock.matrix.scenes.SCENES`.
+DATA_SCENES: tuple[str, ...] = ("weather", "forecast", "commits")
+ALL_SCENES: tuple[str, ...] = ("show", *SCENE_NAMES, *DATA_SCENES)
 
 WEATHER_REFRESH_SECONDS = 15 * 60
 COMMITS_REFRESH_SECONDS = 30 * 60
@@ -53,10 +55,10 @@ class Catalog:
         List the scenes that can play with these settings.
 
         Returns:
-            Scene names; ``weather`` needs a city, ``commits`` a GitHub
-            account.
+            Scene names; ``weather`` and ``forecast`` need a city,
+            ``commits`` a GitHub account.
         """
-        missing = {"weather"} if self.weather is None else set()
+        missing = {"weather", "forecast"} if self.weather is None else set()
         if self.commits is None:
             missing.add("commits")
         return tuple(name for name in ALL_SCENES if name not in missing)
@@ -80,14 +82,14 @@ class Catalog:
             return ShowScene(
                 self.personal, weather=self.weather, commits=self.commits, locale=self.locale
             )
-        if name == "pomodoro":
-            return PomodoroScene()
-        if name == "life":
-            return LifeScene()
         if name == "weather":
             if self.weather is None:
                 raise ValueError("The weather needs a city: [weather] city in matrix.toml")
             return WeatherScene(self.weather, locale=self.locale)
+        if name == "forecast":
+            if self.weather is None:
+                raise ValueError("The forecast needs a city: [weather] city in matrix.toml")
+            return ForecastScene(self.weather)
         if name == "commits":
             if self.commits is None:
                 raise ValueError("The commits need [github] user and token in matrix.toml")

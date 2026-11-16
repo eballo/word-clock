@@ -165,6 +165,10 @@ class PressRequest(BaseModel):
     action: ButtonAction = Field(ButtonAction.TOGGLE, description="What the press does")
 
 
+class LightsRequest(BaseModel):
+    on: bool = Field(description="True to light the LEDs, False to turn them off")
+
+
 class BrightnessRequest(BaseModel):
     brightness: int = Field(description="Strip brightness, 0-255", examples=[80])
 
@@ -345,6 +349,17 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
         """A whole press of the button: lights on or off, photo or shutdown."""
         service.press(request.action)
         return {"action": request.action.value}
+
+    @app.get("/api/matrix/lights", tags=["matrix"], summary="Read the lights")
+    def get_lights() -> dict:
+        """Whether the LEDs are lit."""
+        return {"on": service.control.lights_on}
+
+    @app.post("/api/matrix/lights", tags=["matrix"], summary="Switch the lights")
+    def set_lights(request: LightsRequest) -> dict:
+        """Turn the LEDs off or on again; the scene keeps running in the dark."""
+        service.control.set_lights(request.on)
+        return {"on": service.control.lights_on}
 
     @app.post("/api/matrix/brightness", tags=["matrix"], summary="Set the brightness")
     def brightness(request: BrightnessRequest) -> dict:

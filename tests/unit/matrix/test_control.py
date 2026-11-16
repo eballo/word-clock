@@ -3,7 +3,8 @@ from __future__ import annotations
 from wordclock.matrix.button import ButtonAction
 from wordclock.matrix.canvas import Canvas
 from wordclock.matrix.control import COUNTDOWN_SECONDS, PHOTO_SECONDS, ControlledScene
-from wordclock.matrix.scenes import RainbowScene, WiringScene
+from wordclock.matrix.scenes.effects.rainbow import RainbowScene
+from wordclock.matrix.scenes.effects.wiring import WiringScene
 
 FPS = 30
 
