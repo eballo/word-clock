@@ -130,16 +130,6 @@ WEATHER_KINDS: tuple[tuple[str, frozenset[int]], ...] = (
     ("storm", frozenset({95, 96, 99})),
 )
 
-WEATHER_WORDS: dict[str, str] = {
-    "clear": "SOL",
-    "cloudy": "NÚVOLS",
-    "fog": "BOIRA",
-    "drizzle": "PLUGIM",
-    "rain": "PLUJA",
-    "snow": "NEU",
-    "storm": "TEMPESTA",
-}
-
 
 def weather_kind(code: int) -> str:
     """
@@ -149,7 +139,7 @@ def weather_kind(code: int) -> str:
         code: The WMO code.
 
     Returns:
-        One of the keys of :data:`WEATHER_WORDS`; ``cloudy`` for unknown codes.
+        A kind of :data:`WEATHER_KINDS`; ``cloudy`` for unknown codes.
     """
     return next((kind for kind, codes in WEATHER_KINDS if code in codes), "cloudy")
 

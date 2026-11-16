@@ -11,12 +11,14 @@ from typing import Annotated
 import typer
 
 from wordclock.config import MATRIX_HEIGHT, MATRIX_MAX_MA, MATRIX_WIDTH
+from wordclock.layouts.registry import Language
 from wordclock.led.controller import create_controller
 from wordclock.matrix.canvas import Canvas, Color, hex_to_color
 from wordclock.matrix.catalog import ALL_SCENES, Catalog
 from wordclock.matrix.dimmer import Dimmer
 from wordclock.matrix.runner import MatrixRunner
 from wordclock.matrix.show import load_personal
+from wordclock.matrix.texts import Locale
 from wordclock.matrix.web import MatrixService, WebLedController, serve
 
 SceneName = StrEnum("SceneName", {name: name for name in ALL_SCENES})
@@ -68,6 +70,9 @@ def stop_on_sigterm(signum: int, frame: FrameType | None) -> None:
 def main(
     scene: Annotated[SceneName, typer.Argument(help="Scene to play")] = SceneName.show,
     text: Annotated[str, typer.Option(help="Text for the text scene")] = "HOLA",
+    lang: Annotated[
+        Language, typer.Option(help="Language of the texts; the API can switch it live")
+    ] = Language.catalan,
     color: Annotated[str | None, typer.Option(help="Hex colour, e.g. ff8800")] = None,
     width: int = MATRIX_WIDTH,
     height: int = MATRIX_HEIGHT,
@@ -104,7 +109,7 @@ def main(
     basicConfig(level=DEBUG if debug else INFO, format="%(asctime)s %(levelname)-8s %(message)s")
     signal(SIGTERM, stop_on_sigterm)
     rgb = parse_color(color) if color else None
-    catalog = Catalog(load_personal(config))
+    catalog = Catalog(load_personal(config), locale=Locale(lang))
     dimmer = Dimmer(catalog.personal.brightness, catalog.sun) if brightness is None else None
     start_brightness = dimmer.brightness() if dimmer else brightness
     if web:

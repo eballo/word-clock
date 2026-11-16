@@ -202,6 +202,72 @@ class TestSimulatedTime:
         assert frame["time"] is None
 
 
+class TestLanguage:
+    def test_catalan_by_default(self, client: TestClient) -> None:
+        # Given / When
+        r = client.get("/api/matrix/language")
+        # Then
+        assert r.status_code == 200
+        assert r.json() == {"language": "catalan", "languages": ["english", "catalan", "spanish"]}
+
+    def test_switches_live(self, client: TestClient, service: MatrixService) -> None:
+        # Given / When
+        r = client.post("/api/matrix/language", json={"language": "english"})
+        frame = client.get("/api/matrix/frame").json()
+        # Then
+        assert r.status_code == 200
+        assert r.json()["language"] == "english"
+        assert frame["language"] == "english"
+        assert service.catalog.locale.texts.morning == "GOOD MORNING"
+
+    def test_rejects_an_unknown_language(self, client: TestClient) -> None:
+        # Given / When
+        r = client.post("/api/matrix/language", json={"language": "klingon"})
+        # Then
+        assert r.status_code == 400
+        assert r.json() == {"detail": "Unknown language: klingon"}
+
+    def test_page_offers_the_languages(self, client: TestClient) -> None:
+        # Given / When
+        r = client.get("/")
+        # Then
+        assert '<option value="spanish">' in r.text
+
+
+class TestApiDocs:
+    def test_serves_swagger(self, client: TestClient) -> None:
+        # Given / When
+        r = client.get("/docs")
+        # Then
+        assert r.status_code == 200
+        assert "swagger" in r.text.lower()
+
+    def test_schema_lists_every_endpoint(self, client: TestClient) -> None:
+        # Given / When
+        schema = client.get("/openapi.json").json()
+        # Then
+        assert schema["info"]["title"] == "Mini Matrix API"
+        assert {
+            "/api/matrix/frame",
+            "/api/matrix/scenes",
+            "/api/matrix/scene",
+            "/api/matrix/button",
+            "/api/matrix/press",
+            "/api/matrix/brightness",
+            "/api/matrix/language",
+            "/api/matrix/time",
+            "/api/matrix/photo",
+        } <= set(schema["paths"])
+
+    def test_every_endpoint_has_a_tag_and_a_description(self, client: TestClient) -> None:
+        # Given
+        schema = client.get("/openapi.json").json()
+        # When
+        operations = [op for path in schema["paths"].values() for op in path.values()]
+        # Then
+        assert all(op.get("tags") and op.get("description") for op in operations)
+
+
 class TestRemoteControl:
     def test_lists_the_scenes_that_can_play(self, client: TestClient) -> None:
         # Given: no city and no GitHub account

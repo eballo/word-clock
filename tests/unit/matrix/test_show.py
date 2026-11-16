@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from wordclock.layouts.registry import Language
 from wordclock.matrix.canvas import Canvas
 from wordclock.matrix.clocks import BlocksClock, DialClock, TixClock
 from wordclock.matrix.dimmer import BrightnessLevels
@@ -21,8 +22,6 @@ from wordclock.matrix.show import (
     EFFECT_SECONDS,
     ICON_SECONDS,
     ICONS,
-    MONTHS,
-    WEEKDAYS,
     IconScene,
     Personal,
     ShowScene,
@@ -31,6 +30,7 @@ from wordclock.matrix.show import (
     greeting,
     load_personal,
 )
+from wordclock.matrix.texts import TEXTS, Locale
 
 # Every kind of clock the show plays.
 CLOCKS = (ClockScene, BlocksClock, DialClock, TixClock)
@@ -39,12 +39,20 @@ CLOCKS = (ClockScene, BlocksClock, DialClock, TixClock)
 SATURDAY = datetime(2026, 10, 24, 10, 0)
 
 
-def every_day_text() -> list[str]:
+def every_day_text(language: Language = Language.catalan) -> list[str]:
     texts: set[str] = set()
     for day in range(19, 26):
         for hour in range(24):
-            texts.update(day_texts(datetime(2026, 10, day, hour)))
+            texts.update(day_texts(datetime(2026, 10, day, hour), TEXTS[language]))
     return sorted(texts)
+
+
+def every_text() -> list[str]:
+    texts: list[str] = []
+    for language, words in TEXTS.items():
+        texts += every_day_text(language) + list(words.weekdays + words.months)
+        texts += list(words.weather.values())
+    return texts
 
 
 class TestDayTexts:
@@ -87,7 +95,7 @@ class TestDayTexts:
         # Then
         assert "BON CAP DE SETMANA!" not in texts
 
-    @pytest.mark.parametrize("text", every_day_text() + list(WEEKDAYS + MONTHS))
+    @pytest.mark.parametrize("text", every_text())
     def test_every_text_has_glyphs(self, text: str) -> None:
         # Given / When
         missing = [char for char in text if fold_char(char) not in GLYPHS]
@@ -247,6 +255,18 @@ class TestShowScene:
         # Then
         assert "HOLA ENRIC" in texts
         assert "BON DISSABTE" in texts
+
+    def test_writes_in_the_language_of_the_locale(self) -> None:
+        # Given
+        locale = Locale(Language.english)
+        scene = ShowScene(seed=1, clock=lambda: SATURDAY, locale=locale)
+        # When
+        english = {scene._text() for _ in range(100)}
+        locale.set(Language.spanish)
+        spanish = {scene._text() for _ in range(100)}
+        # Then
+        assert english == {"GOOD MORNING", "24 OCT", "HAPPY SATURDAY"}
+        assert spanish == {"BUENOS DÍAS", "24 OCT", "FELIZ SÁBADO"}
 
     def test_prefers_the_text_of_a_personal_date(self) -> None:
         # Given

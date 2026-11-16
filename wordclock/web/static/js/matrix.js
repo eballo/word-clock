@@ -39,6 +39,7 @@ const video = document.getElementById('video');
 const controls = {
   scene: document.getElementById('scene'),
   text: document.getElementById('text'),
+  language: document.getElementById('language'),
   color: document.getElementById('color'),
   brightness: document.getElementById('brightness'),
   webcam: document.getElementById('webcam'),
@@ -245,6 +246,9 @@ function sendScene() {
 controls.scene.addEventListener('change', sendScene);
 controls.text.addEventListener('change', sendScene);
 controls.color.addEventListener('change', sendScene);
+controls.language.addEventListener('change', () => {
+  post('/api/matrix/language', { language: controls.language.value }).catch(showError);
+});
 controls.brightness.addEventListener('input', () => {
   post('/api/matrix/brightness', { brightness: Number(controls.brightness.value) }).catch(showError);
 });
@@ -296,6 +300,7 @@ async function poll() {
       lastCapture = frame.capture;
       capture();
     }
+    if (document.activeElement !== controls.language) controls.language.value = frame.language;
     if (frame.auto_brightness && document.activeElement !== controls.brightness) {
       controls.brightness.value = frame.brightness;
     }
