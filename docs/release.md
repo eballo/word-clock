@@ -2,6 +2,7 @@
 
 | Version | Date       | Description         |
 |---------|------------|---------------------|
+| v0.13.0 | 2026-11-16 | Matrix simulator, colour clocks, Pomodoro, Game of Life and remote control API |
 | v0.12.0 | 2026-10-25 | Feature/matrix v2 |
 | v0.11.0 | 2026-10-25 | Matrix: rotate and mirror options |
 | v0.10.0 | 2026-10-24 | Matrix show: texts for the day and week, drawings and personal texts |
