@@ -264,12 +264,15 @@ async function poll() {
       lastCapture = frame.capture;
       controls.scene.value = frame.scene;
       controls.brightness.value = frame.brightness;
+    }
+    if (frame.auto_brightness && document.activeElement !== controls.brightness) {
+      controls.brightness.value = frame.brightness;
     } else if (frame.capture !== lastCapture) {
       lastCapture = frame.capture;
       capture();
     }
     if (!statusEl.dataset.error) {
-      statusEl.textContent = `${frame.scene} · lights ${frame.lights ? 'on' : 'off'} · last press: ${frame.action}`;
+      statusEl.textContent = `${frame.scene} · lights ${frame.lights ? 'on' : 'off'} · brightness ${frame.brightness}${frame.auto_brightness ? ' (auto)' : ''} · last press: ${frame.action}`;
     }
     draw();
   } catch (error) {

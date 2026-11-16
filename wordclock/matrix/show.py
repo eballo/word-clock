@@ -12,6 +12,7 @@ from random import Random
 
 from wordclock.matrix.canvas import Canvas, Color
 from wordclock.matrix.clocks import BlocksClock, DialClock, TixClock
+from wordclock.matrix.dimmer import BrightnessLevels, is_night
 from wordclock.matrix.feeds import Feed, Weather
 from wordclock.matrix.scenes import (
     ClockScene,
@@ -86,19 +87,6 @@ ICONS: dict[str, tuple[str, ...]] = {
 }
 
 
-def is_night(hour: int) -> bool:
-    """
-    Tell whether it is sleeping time.
-
-    Args:
-        hour: Hour of the day, 0 to 23.
-
-    Returns:
-        True from 23:00 to 06:59.
-    """
-    return hour >= 23 or hour < 7
-
-
 def greeting(hour: int) -> str:
     """
     Say hello in Catalan for the time of day.
@@ -169,6 +157,8 @@ class Personal:
     # GitHub login and token for the commits screen
     github_user: str | None = None
     github_token: str | None = field(default=None, repr=False)
+    # Strip brightness for the day, the evening and the night
+    brightness: BrightnessLevels = field(default_factory=BrightnessLevels)
 
 
 def _optional_text(table: object, key: str) -> str | None:
@@ -188,13 +178,23 @@ def _texts(value: object) -> tuple[str, ...]:
     raise ValueError(f"Expected a text or a list of texts, got {value!r}")
 
 
+def _brightness(table: object) -> BrightnessLevels:
+    if not isinstance(table, dict):
+        raise ValueError(f"Expected a table, got {table!r}")
+    unknown = set(table) - {"day", "evening", "night"}
+    if unknown:
+        raise ValueError(f"Unknown brightness keys: {', '.join(sorted(unknown))}")
+    return BrightnessLevels(**table)
+
+
 def load_personal(path: Path) -> Personal:
     """
     Read the personal texts from a TOML file.
 
     The file has a ``messages`` list, a ``[dates]`` table that maps
     ``"MM-DD"`` to a text or a list of texts, a ``[weather]`` table with a
-    ``city`` and a ``[github]`` table with a ``user`` and a ``token``. A
+    ``city``, a ``[github]`` table with a ``user`` and a ``token``, and a
+    ``[brightness]`` table with a ``day``, ``evening`` and ``night`` level. A
     missing or broken file gives no personal settings, so the show still
     runs. Without a token in the file, ``GITHUB_TOKEN`` is used.
 
@@ -214,6 +214,7 @@ def load_personal(path: Path) -> Personal:
         city = _optional_text(data.get("weather", {}), "city")
         github_user = _optional_text(data.get("github", {}), "user")
         github_token = _optional_text(data.get("github", {}), "token")
+        brightness = _brightness(data.get("brightness", {}))
     except (tomllib.TOMLDecodeError, ValueError, AttributeError) as exc:
         logger.warning("Ignoring personal texts in %s: %s", path, exc)
         return Personal(github_token=os.environ.get("GITHUB_TOKEN"))
@@ -224,6 +225,7 @@ def load_personal(path: Path) -> Personal:
         city=city,
         github_user=github_user,
         github_token=github_token or os.environ.get("GITHUB_TOKEN"),
+        brightness=brightness,
     )
 
 

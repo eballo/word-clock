@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+from datetime import datetime
 from io import BytesIO
 
 import pytest
@@ -9,6 +10,7 @@ from PIL import Image
 
 from wordclock.matrix.canvas import Canvas
 from wordclock.matrix.catalog import Catalog
+from wordclock.matrix.dimmer import BrightnessLevels, Dimmer
 from wordclock.matrix.runner import MatrixRunner
 from wordclock.matrix.screens import PomodoroScene
 from wordclock.matrix.show import Personal
@@ -123,6 +125,20 @@ class TestControls:
         assert r.status_code == 200
         assert service.controller.brightness == 120
         assert bad.status_code == 400
+
+    def test_brightness_by_hand_holds_over_the_dimmer(self, service: MatrixService) -> None:
+        # Given
+        service.runner.dimmer = Dimmer(BrightnessLevels(), clock=lambda: datetime(2026, 1, 1, 13))
+        with TestClient(create_matrix_app(service)) as client:
+            auto = client.get("/api/matrix/frame").json()["auto_brightness"]
+            # When
+            client.post("/api/matrix/brightness", json={"brightness": 150})
+            service.runner.show_frame()
+            frame = client.get("/api/matrix/frame").json()
+        # Then
+        assert auto is True
+        assert frame["brightness"] == 150
+        assert frame["auto_brightness"] is False
 
 
 class TestRemoteControl:

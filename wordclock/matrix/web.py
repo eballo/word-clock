@@ -241,6 +241,7 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
             "height": canvas.height,
             "cells": picture.rows(),
             "brightness": service.controller.brightness,
+            "auto_brightness": runner.dimmer is not None and not runner.dimmer.manual,
             "lights": service.control.lights_on,
             "scene": service.scene_name,
             "capture": service.capture_id,
@@ -277,6 +278,8 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
     def brightness(request: BrightnessRequest) -> dict:
         if not 0 <= request.brightness <= 255:
             raise HTTPException(status_code=400, detail="brightness must be 0-255")
+        if runner.dimmer:
+            runner.dimmer.set_manual(request.brightness)
         service.controller.brightness = request.brightness
         return {"brightness": request.brightness}
 
