@@ -10,11 +10,11 @@ from math import sin, tau
 from pathlib import Path
 from random import Random
 
-from wordclock.layouts.registry import Language
 from wordclock.matrix.canvas import Canvas, Color
 from wordclock.matrix.clocks import BlocksClock, DialClock, TixClock
 from wordclock.matrix.dimmer import BrightnessLevels, is_night
 from wordclock.matrix.feeds import Feed, Weather
+from wordclock.matrix.languages import MatrixLanguage
 from wordclock.matrix.scenes import (
     ClockScene,
     IpScene,
@@ -66,7 +66,7 @@ ICONS: dict[str, tuple[str, ...]] = {
 }
 
 
-def greeting(hour: int, texts: Texts = TEXTS[Language.catalan]) -> str:
+def greeting(hour: int, texts: Texts = TEXTS[MatrixLanguage.catalan]) -> str:
     """
     Say hello for the time of day.
 
@@ -84,7 +84,7 @@ def greeting(hour: int, texts: Texts = TEXTS[Language.catalan]) -> str:
     return texts.night
 
 
-def date_text(now: datetime, texts: Texts = TEXTS[Language.catalan]) -> str:
+def date_text(now: datetime, texts: Texts = TEXTS[MatrixLanguage.catalan]) -> str:
     """
     Write the day of the month and the short month.
 
@@ -98,7 +98,7 @@ def date_text(now: datetime, texts: Texts = TEXTS[Language.catalan]) -> str:
     return f"{now.day} {texts.months[now.month - 1]}"
 
 
-def day_texts(now: datetime, texts: Texts = TEXTS[Language.catalan]) -> list[str]:
+def day_texts(now: datetime, texts: Texts = TEXTS[MatrixLanguage.catalan]) -> list[str]:
     """
     List the texts that fit this moment: greeting, date, week and meals.
 

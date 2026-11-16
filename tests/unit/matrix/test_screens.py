@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from wordclock.layouts.registry import Language
 from wordclock.matrix.canvas import Canvas
 from wordclock.matrix.feeds import WEATHER_KINDS, Feed, Weather
+from wordclock.matrix.languages import MatrixLanguage
 from wordclock.matrix.screens import (
     LEVELS,
     REST,
@@ -145,13 +145,13 @@ class TestWeather:
 
     def test_writes_the_word_in_the_current_language(self) -> None:
         # Given: rain, in English
-        locale = Locale(Language.english)
+        locale = Locale(MatrixLanguage.english)
         scene = WeatherScene(feed(Weather(18.4, 61, True)), locale=locale)
         canvas = Canvas(10, 6)
         # When
         scene.render(canvas, 6 * 8)
         english = scene._text_key
-        locale.set(Language.spanish)
+        locale.set(MatrixLanguage.spanish)
         scene.render(canvas, 6 * 8)
         # Then
         assert english == "18° RAIN"

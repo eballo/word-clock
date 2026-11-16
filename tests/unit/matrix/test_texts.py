@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime
+from importlib import import_module
 
 import pytest
 
-from wordclock.layouts.registry import Language
 from wordclock.matrix.feeds import WEATHER_KINDS
+from wordclock.matrix.languages import MatrixLanguage
 from wordclock.matrix.show import date_text, day_texts, greeting
 from wordclock.matrix.texts import TEXTS, Locale
 
@@ -13,10 +14,10 @@ from wordclock.matrix.texts import TEXTS, Locale
 class TestTexts:
     def test_every_language_has_texts(self) -> None:
         # Given / When / Then
-        assert set(TEXTS) == set(Language)
+        assert set(TEXTS) == set(MatrixLanguage)
 
-    @pytest.mark.parametrize("language", list(Language))
-    def test_complete_lists(self, language: Language) -> None:
+    @pytest.mark.parametrize("language", list(MatrixLanguage))
+    def test_complete_lists(self, language: MatrixLanguage) -> None:
         # Given
         texts = TEXTS[language]
         # When / Then
@@ -27,12 +28,13 @@ class TestTexts:
     @pytest.mark.parametrize(
         ("language", "expected"),
         [
-            (Language.catalan, "FALTEN 3 DIES PER DIVENDRES"),
-            (Language.english, "3 DAYS TO FRIDAY"),
-            (Language.spanish, "FALTAN 3 DÍAS PARA EL VIERNES"),
+            (MatrixLanguage.catalan, "FALTEN 3 DIES PER DIVENDRES"),
+            (MatrixLanguage.english, "3 DAYS TO FRIDAY"),
+            (MatrixLanguage.spanish, "FALTAN 3 DÍAS PARA EL VIERNES"),
+            (MatrixLanguage.dutch, "NOG 3 DAGEN TOT VRIJDAG"),
         ],
     )
-    def test_counts_the_days_to_friday(self, language: Language, expected: str) -> None:
+    def test_counts_the_days_to_friday(self, language: MatrixLanguage, expected: str) -> None:
         # Given: Tuesday 20 October 2026
         now = datetime(2026, 10, 20, 10)
         # When
@@ -43,12 +45,15 @@ class TestTexts:
     @pytest.mark.parametrize(
         ("language", "hour", "expected"),
         [
-            (Language.english, 8, "GOOD MORNING"),
-            (Language.english, 21, "GOOD NIGHT"),
-            (Language.spanish, 14, "BUENAS TARDES"),
+            (MatrixLanguage.english, 8, "GOOD MORNING"),
+            (MatrixLanguage.english, 21, "GOOD NIGHT"),
+            (MatrixLanguage.spanish, 14, "BUENAS TARDES"),
+            (MatrixLanguage.dutch, 8, "GOEDEMORGEN"),
         ],
     )
-    def test_greets_in_each_language(self, language: Language, hour: int, expected: str) -> None:
+    def test_greets_in_each_language(
+        self, language: MatrixLanguage, hour: int, expected: str
+    ) -> None:
         # Given / When / Then
         assert greeting(hour, TEXTS[language]) == expected
 
@@ -56,20 +61,38 @@ class TestTexts:
         # Given
         now = datetime(2026, 12, 24)
         # When / Then
-        assert date_text(now, TEXTS[Language.english]) == "24 DEC"
-        assert date_text(now, TEXTS[Language.spanish]) == "24 DIC"
+        assert date_text(now, TEXTS[MatrixLanguage.english]) == "24 DEC"
+        assert date_text(now, TEXTS[MatrixLanguage.spanish]) == "24 DIC"
+        assert date_text(now, TEXTS[MatrixLanguage.dutch]) == "24 DEC"
+
+    def test_dutch_weekend(self) -> None:
+        # Given: Saturday 24 October 2026
+        now = datetime(2026, 10, 24, 10)
+        # When
+        texts = day_texts(now, TEXTS[MatrixLanguage.dutch])
+        # Then
+        assert "FIJNE ZATERDAG" in texts
 
 
 class TestLocale:
     def test_catalan_by_default(self) -> None:
         # Given / When / Then
-        assert Locale().texts == TEXTS[Language.catalan]
+        assert Locale().texts == TEXTS[MatrixLanguage.catalan]
 
     def test_switches_live(self) -> None:
         # Given
         locale = Locale()
         # When
-        locale.set(Language.english)
+        locale.set(MatrixLanguage.english)
         # Then
-        assert locale.language == Language.english
+        assert locale.language == MatrixLanguage.english
         assert locale.texts.morning == "GOOD MORNING"
+
+
+class TestLanguageModules:
+    @pytest.mark.parametrize("language", list(MatrixLanguage))
+    def test_one_module_per_language(self, language: MatrixLanguage) -> None:
+        # Given
+        module = import_module(f"wordclock.matrix.languages.{language.value}")
+        # When / Then
+        assert module.TEXTS is TEXTS[language]

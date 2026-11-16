@@ -208,7 +208,10 @@ class TestLanguage:
         r = client.get("/api/matrix/language")
         # Then
         assert r.status_code == 200
-        assert r.json() == {"language": "catalan", "languages": ["english", "catalan", "spanish"]}
+        assert r.json() == {
+            "language": "catalan",
+            "languages": ["catalan", "english", "spanish", "dutch"],
+        }
 
     def test_switches_live(self, client: TestClient, service: MatrixService) -> None:
         # Given / When
@@ -232,6 +235,7 @@ class TestLanguage:
         r = client.get("/")
         # Then
         assert '<option value="spanish">' in r.text
+        assert '<option value="dutch">' in r.text
 
 
 class TestApiDocs:
