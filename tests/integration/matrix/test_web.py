@@ -141,6 +141,67 @@ class TestControls:
         assert frame["auto_brightness"] is False
 
 
+class TestSimulatedTime:
+    @pytest.fixture()
+    def dimmed(self, service: MatrixService) -> MatrixService:
+        levels = BrightnessLevels(day=90, evening=30, night=6)
+        service.runner.dimmer = Dimmer(levels, clock=lambda: datetime(2026, 1, 1, 13))
+        return service
+
+    def test_frame_shows_the_time_of_day(self, dimmed: MatrixService) -> None:
+        # Given
+        with TestClient(create_matrix_app(dimmed)) as client:
+            # When
+            frame = client.get("/api/matrix/frame").json()
+        # Then
+        assert frame["time"] == "13:00"
+        assert frame["phase"] == "day"
+        assert frame["simulated_time"] is False
+        assert frame["sun"] == {"sunrise": "08:00", "sunset": "19:00"}
+
+    def test_sets_a_time_and_dims_the_strip(self, dimmed: MatrixService) -> None:
+        # Given
+        with TestClient(create_matrix_app(dimmed)) as client:
+            # When
+            r = client.post("/api/matrix/time", json={"time": "23:45"})
+            frame = client.get("/api/matrix/frame").json()
+        # Then
+        assert r.status_code == 200
+        assert r.json()["phase"] == "night"
+        assert frame["time"] == "23:45"
+        assert frame["simulated_time"] is True
+        assert frame["brightness"] == 6
+
+    def test_back_to_the_real_time(self, dimmed: MatrixService) -> None:
+        # Given
+        with TestClient(create_matrix_app(dimmed)) as client:
+            client.post("/api/matrix/time", json={"time": "23:45"})
+            # When
+            r = client.post("/api/matrix/time", json={"time": None})
+        # Then
+        assert r.json()["simulated_time"] is False
+        assert dimmed.controller.brightness == 90
+
+    def test_rejects_a_bad_time(self, dimmed: MatrixService) -> None:
+        # Given
+        with TestClient(create_matrix_app(dimmed)) as client:
+            # When
+            r = client.post("/api/matrix/time", json={"time": "25:00"})
+        # Then
+        assert r.status_code == 400
+        assert r.json() == {"detail": "time must be HH:MM"}
+
+    def test_needs_the_automatic_brightness(self, client: TestClient) -> None:
+        # Given: a fixed brightness, no dimmer
+        # When
+        r = client.post("/api/matrix/time", json={"time": "23:45"})
+        frame = client.get("/api/matrix/frame").json()
+        # Then
+        assert r.status_code == 400
+        assert "--brightness" in r.json()["detail"]
+        assert frame["time"] is None
+
+
 class TestRemoteControl:
     def test_lists_the_scenes_that_can_play(self, client: TestClient) -> None:
         # Given: no city and no GitHub account

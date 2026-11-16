@@ -112,7 +112,8 @@ class Dimmer:
     Brightness that follows the time of day.
 
     A brightness set by hand holds until the next change of phase, then the
-    automatic brightness takes over again.
+    automatic brightness takes over again. A simulated time of day, from
+    the web simulator, replaces the real one to preview the brightness.
     """
 
     def __init__(
@@ -128,11 +129,52 @@ class Dimmer:
         self._manual: int | None = None
         self._manual_phase: Phase | None = None
         self._cache: tuple[datetime, SunTimes, int] | None = None
+        self._simulated: time | None = None
 
     @property
     def manual(self) -> bool:
         """True while a brightness set by hand holds."""
         return self._manual is not None
+
+    @property
+    def simulated(self) -> bool:
+        """True while a simulated time of day replaces the real one."""
+        return self._simulated is not None
+
+    def now(self) -> datetime:
+        """
+        The moment the brightness follows.
+
+        Returns:
+            Now, or today at the simulated time of day.
+        """
+        moment = self._clock()
+        if self._simulated is None:
+            return moment
+        return datetime.combine(moment.date(), self._simulated)
+
+    def simulate(self, moment: time | None) -> None:
+        """
+        Replace the real time of day, or go back to it.
+
+        A brightness set by hand is dropped, so the automatic one shows.
+
+        Args:
+            moment: The time of day to simulate; None for the real time.
+        """
+        with self._lock:
+            self._simulated = moment.replace(second=0, microsecond=0) if moment else None
+            self._manual = None
+            self._manual_phase = None
+
+    def phase(self) -> Phase:
+        """
+        The part of the day the brightness follows now.
+
+        Returns:
+            Day, evening or night.
+        """
+        return phase_at(self.now(), self.sun_times())
 
     def sun_times(self) -> SunTimes:
         """
@@ -151,7 +193,7 @@ class Dimmer:
         Args:
             brightness: The brightness, 0-255.
         """
-        phase = phase_at(self._clock(), self.sun_times())
+        phase = self.phase()
         with self._lock:
             self._manual = brightness
             self._manual_phase = phase
@@ -163,7 +205,7 @@ class Dimmer:
         Returns:
             The brightness held by hand, or the automatic one, 0-255.
         """
-        moment = self._clock()
+        moment = self.now()
         sun = self.sun_times()
         phase = phase_at(moment, sun)
         with self._lock:

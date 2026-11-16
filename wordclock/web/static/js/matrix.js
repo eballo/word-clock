@@ -42,6 +42,10 @@ const controls = {
   color: document.getElementById('color'),
   brightness: document.getElementById('brightness'),
   webcam: document.getElementById('webcam'),
+  day: document.getElementById('day'),
+  dayTime: document.getElementById('day-time'),
+  dayLabel: document.getElementById('day-label'),
+  dayNow: document.getElementById('day-now'),
 };
 
 let frame = null;
@@ -246,6 +250,30 @@ controls.brightness.addEventListener('input', () => {
 });
 document.getElementById('controls').addEventListener('submit', (event) => event.preventDefault());
 
+// Simulated time of day: previews the automatic brightness.
+const toMinutes = (hhmm) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+};
+const toHhmm = (minutes) =>
+  `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+
+controls.dayTime.addEventListener('input', () => {
+  post('/api/matrix/time', { time: toHhmm(Number(controls.dayTime.value)) }).catch(showError);
+});
+controls.dayNow.addEventListener('click', () => {
+  post('/api/matrix/time', { time: null }).catch(showError);
+});
+
+function showDay() {
+  controls.day.hidden = frame.time === null;
+  if (frame.time === null) return;
+  if (document.activeElement !== controls.dayTime) controls.dayTime.value = toMinutes(frame.time);
+  const sun = `☀ ${frame.sun.sunrise}–${frame.sun.sunset}`;
+  controls.dayLabel.textContent = `${frame.time} · ${frame.phase} · ${sun}`;
+  controls.dayNow.disabled = !frame.simulated_time;
+}
+
 // ── Frames ──────────────────────────────────────────────────────────
 
 // Keep a message on screen for a few seconds before the status comes back.
@@ -264,15 +292,16 @@ async function poll() {
       lastCapture = frame.capture;
       controls.scene.value = frame.scene;
       controls.brightness.value = frame.brightness;
-    }
-    if (frame.auto_brightness && document.activeElement !== controls.brightness) {
-      controls.brightness.value = frame.brightness;
     } else if (frame.capture !== lastCapture) {
       lastCapture = frame.capture;
       capture();
     }
+    if (frame.auto_brightness && document.activeElement !== controls.brightness) {
+      controls.brightness.value = frame.brightness;
+    }
+    showDay();
     if (!statusEl.dataset.error) {
-      statusEl.textContent = `${frame.scene} · lights ${frame.lights ? 'on' : 'off'} · brightness ${frame.brightness}${frame.auto_brightness ? ' (auto)' : ''} · last press: ${frame.action}`;
+      statusEl.textContent = `${frame.scene} · lights ${frame.lights ? 'on' : 'off'} · brightness ${frame.brightness}${frame.auto_brightness ? ' (auto)' : ''}${frame.simulated_time ? ` at ${frame.time} (simulated)` : ''} · last press: ${frame.action}`;
     }
     draw();
   } catch (error) {
