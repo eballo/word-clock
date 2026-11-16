@@ -53,7 +53,7 @@ class FireScene:
         new = [[0.0] * width for _ in range(height)]
         new[height - 1] = [0.75 + 0.25 * self._random.random() for _ in range(width)]
         # Taller matrices need slower cooling for the flames to reach as high.
-        cooling = 1.1 / height
+        cooling = 1.6 / height
         for y in range(height - 1):
             for x in range(width):
                 source = min(width - 1, max(0, x + self._random.choice((-1, 0, 0, 1))))
