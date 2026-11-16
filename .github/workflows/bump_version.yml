@@ -87,6 +87,9 @@ jobs:
           echo "old_version=$OLD" >> "$GITHUB_OUTPUT"
           echo "new_version=$NEW" >> "$GITHUB_OUTPUT"
 
+      - name: Sync uv.lock with the new version
+        run: uv lock
+
       - name: Update release log
         env:
           NEW_VERSION: ${{ steps.version.outputs.new_version }}
@@ -113,7 +116,7 @@ jobs:
       - name: Commit, tag and push
         run: |
           set -euo pipefail
-          git add pyproject.toml README.md docs/release.md
+          git add pyproject.toml uv.lock README.md docs/release.md
           git commit -m "Bump version: ${{ steps.version.outputs.old_version }} -> ${{ steps.version.outputs.new_version }}"
           git tag "v${{ steps.version.outputs.new_version }}"
           git push origin main "v${{ steps.version.outputs.new_version }}"
