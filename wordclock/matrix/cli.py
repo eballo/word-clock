@@ -71,7 +71,7 @@ def main(
     scene: Annotated[SceneName, typer.Argument(help="Scene to play")] = SceneName.show,
     text: Annotated[str, typer.Option(help="Text for the text scene")] = "HOLA",
     lang: Annotated[
-        MatrixLanguage, typer.Option(help="MatrixLanguage of the texts; the API can switch it live")
+        MatrixLanguage, typer.Option(help="Language of the texts; the API can switch it live")
     ] = MatrixLanguage.catalan,
     color: Annotated[str | None, typer.Option(help="Hex colour, e.g. ff8800")] = None,
     width: int = MATRIX_WIDTH,
