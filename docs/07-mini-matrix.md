@@ -481,7 +481,7 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 
 | Option | Default | Use |
 |--------|---------|-----|
-| `--brightness` | 40 | Global brightness, 0–255 |
+| `--brightness` | automatic | Fixed brightness, 0–255; without it, it follows the time of day (section 8.4) |
 | `--color` | per scene | Hex colour, e.g. `ff8800` |
 | `--max-ma` | 1500 | Software current limit in mA |
 | `--seconds` | none | Stop after this time |
@@ -580,7 +580,7 @@ sudo .venv/bin/wordclock-matrix show --api --host 0.0.0.0 --rotate --max-ma 600
 | `GET /api/matrix/scenes` | Scenes that can play now, and the current one |
 | `POST /api/matrix/scene` `{"name": "pomodoro"}` | Play a scene; `text` and `color` (`"ff8800"`) for the scenes that use them |
 | `POST /api/matrix/press` `{}` | A short press of the button (`{"action": "photo"}` for a long one) |
-| `POST /api/matrix/brightness` `{"brightness": 80}` | Brightness, 0-255 |
+| `POST /api/matrix/brightness` `{"brightness": 80}` | Brightness, 0-255; with the automatic brightness, it holds until the next change of phase (section 8.4) |
 | `GET /api/matrix/frame` | The colours on the matrix now |
 
 ```bash
@@ -592,6 +592,38 @@ curl -X POST wordclock.local:8001/api/matrix/press \
 
 A long press of 10 s, from the button or the API, shuts the Pi down
 (`systemctl poweroff`); in the simulator it is only logged.
+
+### 8.4 Brightness through the day
+
+Without `--brightness`, the matrix is bright in daylight and dims in the
+evening and at night, so it does not light up a dark room:
+
+```
+ brightness
+   96 ┤        ┌──────────────────┐
+      │       ╱                    ╲
+   32 ┤──────┘                      └────────────────┐
+    8 ┤                                               ╲───────
+      └──┬────────┬──────────────────┬───────────────┬───────
+       07:00   sunrise            sunset           23:00
+```
+
+| Phase | When | Default |
+|-------|------|---------|
+| Day | From sunrise to sunset | 96 |
+| Evening | From sunset to 23:00, and from 07:00 to a late winter sunrise | 32 |
+| Night | From 23:00 to 06:59, the same hours as the `ZZZ` drawing | 8 |
+
+Each change fades over 30 minutes. With a `[weather]` city in
+`matrix.toml` (section 9), the sunrise and sunset come from Open-Meteo
+every 3 hours, in the city's time zone; without a city, or until the first
+answer, the day runs from 08:00 to 19:00. The levels can be changed in a
+`[brightness]` table of the same file.
+
+A brightness set by hand, from the slider of the page or the API, holds
+until the next change of phase; then the automatic brightness takes over
+again. The page shows `(auto)` next to the brightness while it is
+automatic. `--brightness 40` turns the automatic brightness off.
 
 ### Web simulator
 
@@ -676,6 +708,12 @@ messages = ["HOLA ENRIC", "♥ CASA ♥"]
 [weather]
 city = "Barcelona"
 
+# Brightness for the day, the evening and the night, 0-255 (section 8.4)
+[brightness]
+day = 96
+evening = 32
+night = 8
+
 # GitHub account for the commits scene. A fine-grained token with no
 # permissions is enough for public contributions.
 [github]
@@ -753,5 +791,6 @@ sudo systemctl status wordclock-matrix
 - [ ] Optional: camera on its posts, lens behind the rivet window
 - [ ] Optional: switch on its pillar, wired to GPIO 3 and GND, button cap in its rivet
 - [ ] `text`, `clock`, `ip` and `rain` scenes running
+- [ ] Brightness checked by day and at night, `[brightness]` levels set in `matrix.toml` if needed
 - [ ] `wordclock-matrix` service enabled: the show starts when the matrix is plugged in
 - [ ] Matrix on the table or on the wall, only the power cable showing

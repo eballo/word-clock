@@ -10,10 +10,11 @@ from typing import Annotated
 
 import typer
 
-from wordclock.config import MATRIX_BRIGHTNESS, MATRIX_HEIGHT, MATRIX_MAX_MA, MATRIX_WIDTH
+from wordclock.config import MATRIX_HEIGHT, MATRIX_MAX_MA, MATRIX_WIDTH
 from wordclock.led.controller import create_controller
 from wordclock.matrix.canvas import Canvas, Color, hex_to_color
 from wordclock.matrix.catalog import ALL_SCENES, Catalog
+from wordclock.matrix.dimmer import Dimmer
 from wordclock.matrix.runner import MatrixRunner
 from wordclock.matrix.show import load_personal
 from wordclock.matrix.web import MatrixService, WebLedController, serve
@@ -70,7 +71,12 @@ def main(
     color: Annotated[str | None, typer.Option(help="Hex colour, e.g. ff8800")] = None,
     width: int = MATRIX_WIDTH,
     height: int = MATRIX_HEIGHT,
-    brightness: Annotated[int, typer.Option(min=0, max=255)] = MATRIX_BRIGHTNESS,
+    brightness: Annotated[
+        int | None,
+        typer.Option(
+            min=0, max=255, help="Fixed brightness; without it, it follows the time of day"
+        ),
+    ] = None,
     max_ma: Annotated[int, typer.Option(help="Software current limit in mA")] = MATRIX_MAX_MA,
     snake: Annotated[bool, typer.Option(help="Odd rows run right to left")] = True,
     rotate: Annotated[bool, typer.Option(help="Turn the picture 180°, matrix upside down")] = False,
@@ -98,10 +104,13 @@ def main(
     basicConfig(level=DEBUG if debug else INFO, format="%(asctime)s %(levelname)-8s %(message)s")
     signal(SIGTERM, stop_on_sigterm)
     rgb = parse_color(color) if color else None
+    catalog = Catalog(load_personal(config))
+    dimmer = Dimmer(catalog.personal.brightness, catalog.sun) if brightness is None else None
+    start_brightness = dimmer.brightness() if dimmer else brightness
     if web:
-        ctrl = WebLedController(num_leds=width * height, brightness=brightness)
+        ctrl = WebLedController(num_leds=width * height, brightness=start_brightness)
     else:
-        ctrl = create_controller(mock=mock, num_leds=width * height, brightness=brightness)
+        ctrl = create_controller(mock=mock, num_leds=width * height, brightness=start_brightness)
     runner = MatrixRunner(
         Canvas(width, height),
         ctrl,
@@ -110,8 +119,8 @@ def main(
         preview=(mock if preview is None else preview) and not (web or api),
         rotate=rotate,
         mirror=mirror,
+        dimmer=dimmer,
     )
-    catalog = Catalog(load_personal(config))
     try:
         player = catalog.build(scene.value, text=text, color=rgb)
     except ValueError as exc:

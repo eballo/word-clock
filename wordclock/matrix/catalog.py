@@ -3,7 +3,14 @@ from __future__ import annotations
 from logging import getLogger
 
 from wordclock.matrix.canvas import Color
-from wordclock.matrix.feeds import Feed, Weather, contributions_fetcher, weather_fetcher
+from wordclock.matrix.feeds import (
+    Feed,
+    SunTimes,
+    Weather,
+    contributions_fetcher,
+    sun_fetcher,
+    weather_fetcher,
+)
 from wordclock.matrix.scenes import SCENE_NAMES, Scene, create_scene
 from wordclock.matrix.screens import CommitsScene, LifeScene, PomodoroScene, WeatherScene
 from wordclock.matrix.show import Personal, ShowScene
@@ -17,6 +24,7 @@ ALL_SCENES: tuple[str, ...] = SCENE_NAMES + EXTRA_SCENES
 
 WEATHER_REFRESH_SECONDS = 15 * 60
 COMMITS_REFRESH_SECONDS = 30 * 60
+SUN_REFRESH_SECONDS = 3 * 60 * 60
 
 
 class Catalog:
@@ -30,8 +38,10 @@ class Catalog:
         self.personal = personal
         self.weather: Feed[Weather] | None = None
         self.commits: Feed[list[int]] | None = None
+        self.sun: Feed[SunTimes] | None = None
         if personal.city:
             self.weather = Feed(weather_fetcher(personal.city), WEATHER_REFRESH_SECONDS, "weather")
+            self.sun = Feed(sun_fetcher(personal.city), SUN_REFRESH_SECONDS, "sun")
         if personal.github_user and personal.github_token:
             fetch = contributions_fetcher(personal.github_user, personal.github_token, days)
             self.commits = Feed(fetch, COMMITS_REFRESH_SECONDS, "commits")

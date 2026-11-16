@@ -5,6 +5,7 @@ from logging import getLogger
 
 from wordclock.led.controller import BaseLedController
 from wordclock.matrix.canvas import Canvas, limit_current
+from wordclock.matrix.dimmer import Dimmer
 from wordclock.matrix.scenes import Scene
 
 logger = getLogger(__name__)
@@ -45,6 +46,7 @@ class MatrixRunner:
         preview: bool = False,
         rotate: bool = False,
         mirror: bool = False,
+        dimmer: Dimmer | None = None,
     ) -> None:
         self.canvas = canvas
         self.controller = controller
@@ -53,9 +55,12 @@ class MatrixRunner:
         self.preview = preview
         self.rotate = rotate
         self.mirror = mirror
+        self.dimmer = dimmer
 
     def show_frame(self) -> None:
         """Send the canvas to the strip, under the current limit."""
+        if self.dimmer:
+            self.controller.brightness = self.dimmer.brightness()
         colors = limit_current(
             self.canvas.to_strip(self.snake, self.rotate, self.mirror),
             self.max_ma,

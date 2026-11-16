@@ -1,17 +1,20 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, time
 
 import pytest
 
 from wordclock.matrix import feeds
 from wordclock.matrix.feeds import (
     Feed,
+    SunTimes,
     Weather,
     contribution_level,
     contributions_fetcher,
     parse_contributions,
+    parse_sun,
     parse_weather,
+    sun_fetcher,
     weather_fetcher,
     weather_kind,
 )
@@ -113,6 +116,34 @@ class TestWeather:
         # When / Then
         with pytest.raises(KeyError, match="Atlantis"):
             weather_fetcher("Atlantis")()
+
+
+class TestSun:
+    def test_parses_today_in_local_time(self) -> None:
+        # Given
+        data = {"daily": {"sunrise": ["2026-11-16T07:51"], "sunset": ["2026-11-16T17:28"]}}
+        # When / Then
+        assert parse_sun(data) == SunTimes(time(7, 51), time(17, 28))
+
+    def test_asks_for_the_city_time_zone(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Given
+        urls: list[str] = []
+
+        def fake_get_json(url: str, headers=None, body=None) -> dict:
+            urls.append(url)
+            if url.startswith(feeds.GEOCODING_URL):
+                return {"results": [{"latitude": 41.4, "longitude": 2.2}]}
+            return {"daily": {"sunrise": ["2026-06-21T06:18"], "sunset": ["2026-06-21T21:29"]}}
+
+        monkeypatch.setattr(feeds, "get_json", fake_get_json)
+        fetch = sun_fetcher("Barcelona")
+        # When
+        fetch()
+        sun = fetch()
+        # Then
+        assert sun == SunTimes(time(6, 18), time(21, 29))
+        assert sum(url.startswith(feeds.GEOCODING_URL) for url in urls) == 1
+        assert "timezone=auto" in urls[-1]
 
 
 class TestContributions:

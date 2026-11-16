@@ -114,6 +114,8 @@ class RealLedController(BaseLedController):
 
         for i, (r, g, b) in enumerate(self._pixels):
             self._strip.setPixelColor(i, Color(r, g, b))
+        # The brightness can change while running (dimmer, remote control).
+        self._strip.setBrightness(self.brightness)
         self._strip.show()
 
     def clear(self) -> None:

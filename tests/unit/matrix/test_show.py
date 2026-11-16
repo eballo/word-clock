@@ -7,6 +7,7 @@ import pytest
 
 from wordclock.matrix.canvas import Canvas
 from wordclock.matrix.clocks import BlocksClock, DialClock, TixClock
+from wordclock.matrix.dimmer import BrightnessLevels
 from wordclock.matrix.font import GLYPHS, fold_char
 from wordclock.matrix.scenes import (
     ClockScene,
@@ -143,7 +144,32 @@ class TestLoadPersonal:
         # Then
         assert personal == Personal()
 
-    @pytest.mark.parametrize("content", ["messages = [", "messages = [1, 2]", "dates = 3"])
+    def test_reads_the_brightness_levels(self, tmp_path: Path) -> None:
+        # Given
+        path = tmp_path / "matrix.toml"
+        path.write_text("[brightness]\nday = 120\nnight = 4\n", encoding="utf-8")
+        # When
+        personal = load_personal(path)
+        # Then
+        assert personal.brightness == BrightnessLevels(day=120, night=4)
+
+    def test_default_brightness_levels(self, tmp_path: Path) -> None:
+        # Given / When
+        personal = load_personal(tmp_path / "missing.toml")
+        # Then
+        assert personal.brightness == BrightnessLevels()
+
+    @pytest.mark.parametrize(
+        "content",
+        [
+            "messages = [",
+            "messages = [1, 2]",
+            "dates = 3",
+            "[brightness]\nday = 300",
+            "[brightness]\nnoon = 50",
+            "brightness = 50",
+        ],
+    )
     def test_broken_file_gives_no_texts(self, tmp_path: Path, content: str) -> None:
         # Given
         path = tmp_path / "matrix.toml"

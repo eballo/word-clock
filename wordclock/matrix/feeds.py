@@ -4,7 +4,8 @@ import json
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from datetime import time as day_time
 from logging import getLogger
 from threading import Lock, Thread
 from typing import Generic, TypeVar
@@ -191,6 +192,26 @@ def parse_weather(data: dict) -> Weather:
     )
 
 
+def place_finder(city: str) -> Callable[[], tuple[float, float]]:
+    """
+    Build a function that finds a city once and then remembers it.
+
+    Args:
+        city: City name, such as ``Barcelona``.
+
+    Returns:
+        A function that returns the latitude and longitude.
+    """
+    place: list[tuple[float, float]] = []
+
+    def find() -> tuple[float, float]:
+        if not place:
+            place.append(geocode(city))
+        return place[0]
+
+    return find
+
+
 def weather_fetcher(city: str) -> Callable[[], Weather]:
     """
     Build the fetch function of a weather feed.
@@ -201,12 +222,10 @@ def weather_fetcher(city: str) -> Callable[[], Weather]:
     Returns:
         A function that returns the weather now.
     """
-    place: list[tuple[float, float]] = []
+    find = place_finder(city)
 
     def fetch() -> Weather:
-        if not place:
-            place.append(geocode(city))
-        latitude, longitude = place[0]
+        latitude, longitude = find()
         query = urlencode(
             {
                 "latitude": latitude,
@@ -215,6 +234,62 @@ def weather_fetcher(city: str) -> Callable[[], Weather]:
             }
         )
         return parse_weather(get_json(f"{FORECAST_URL}?{query}"))
+
+    return fetch
+
+
+# --- Sunrise and sunset -----------------------------------------------------
+
+
+@dataclass(frozen=True)
+class SunTimes:
+    """Local sunrise and sunset of today."""
+
+    sunrise: day_time
+    sunset: day_time
+
+
+def parse_sun(data: dict) -> SunTimes:
+    """
+    Read today's sunrise and sunset from an Open-Meteo forecast answer.
+
+    Args:
+        data: The decoded answer, with a ``daily`` block in local time.
+
+    Returns:
+        The sunrise and sunset times.
+    """
+    daily = data["daily"]
+    return SunTimes(
+        sunrise=datetime.fromisoformat(daily["sunrise"][0]).time(),
+        sunset=datetime.fromisoformat(daily["sunset"][0]).time(),
+    )
+
+
+def sun_fetcher(city: str) -> Callable[[], SunTimes]:
+    """
+    Build the fetch function of a sunrise and sunset feed.
+
+    Args:
+        city: City name; it is looked up once, on the first fetch.
+
+    Returns:
+        A function that returns today's sun times, in the city's time zone.
+    """
+    find = place_finder(city)
+
+    def fetch() -> SunTimes:
+        latitude, longitude = find()
+        query = urlencode(
+            {
+                "latitude": latitude,
+                "longitude": longitude,
+                "daily": "sunrise,sunset",
+                "timezone": "auto",
+                "forecast_days": 1,
+            }
+        )
+        return parse_sun(get_json(f"{FORECAST_URL}?{query}"))
 
     return fetch
 
