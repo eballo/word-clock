@@ -5,11 +5,11 @@ from pathlib import Path
 
 import pytest
 
-from wordclock.layouts.registry import Language
 from wordclock.matrix.canvas import Canvas
 from wordclock.matrix.clocks import BlocksClock, DialClock, TixClock
 from wordclock.matrix.dimmer import BrightnessLevels
 from wordclock.matrix.font import GLYPHS, fold_char
+from wordclock.matrix.languages import MatrixLanguage
 from wordclock.matrix.scenes import (
     ClockScene,
     IpScene,
@@ -39,7 +39,7 @@ CLOCKS = (ClockScene, BlocksClock, DialClock, TixClock)
 SATURDAY = datetime(2026, 10, 24, 10, 0)
 
 
-def every_day_text(language: Language = Language.catalan) -> list[str]:
+def every_day_text(language: MatrixLanguage = MatrixLanguage.catalan) -> list[str]:
     texts: set[str] = set()
     for day in range(19, 26):
         for hour in range(24):
@@ -258,11 +258,11 @@ class TestShowScene:
 
     def test_writes_in_the_language_of_the_locale(self) -> None:
         # Given
-        locale = Locale(Language.english)
+        locale = Locale(MatrixLanguage.english)
         scene = ShowScene(seed=1, clock=lambda: SATURDAY, locale=locale)
         # When
         english = {scene._text() for _ in range(100)}
-        locale.set(Language.spanish)
+        locale.set(MatrixLanguage.spanish)
         spanish = {scene._text() for _ in range(100)}
         # Then
         assert english == {"GOOD MORNING", "24 OCT", "HAPPY SATURDAY"}

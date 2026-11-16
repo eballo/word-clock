@@ -19,12 +19,12 @@ from fastapi.templating import Jinja2Templates
 from PIL import UnidentifiedImageError
 from pydantic import BaseModel, Field
 
-from wordclock.layouts.registry import Language
 from wordclock.led.controller import BaseLedController
 from wordclock.matrix.button import ButtonAction, ButtonHandler
 from wordclock.matrix.canvas import Color, hex_to_color, strip_to_canvas
 from wordclock.matrix.catalog import Catalog
 from wordclock.matrix.control import ControlledScene
+from wordclock.matrix.languages import MatrixLanguage
 from wordclock.matrix.photo import pixelate
 from wordclock.matrix.runner import MatrixRunner
 
@@ -272,7 +272,7 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
             {
                 "face": scad_params(MATRIX_SCAD, FACE_PARAMS),
                 "scenes": service.catalog.available(),
-                "languages": [language.value for language in Language],
+                "languages": [language.value for language in MatrixLanguage],
             },
         )
 
@@ -361,14 +361,14 @@ def create_matrix_app(service: MatrixService) -> FastAPI:
         """The language of the texts, and the languages there are."""
         return {
             "language": service.catalog.locale.language.value,
-            "languages": [language.value for language in Language],
+            "languages": [language.value for language in MatrixLanguage],
         }
 
     @app.post("/api/matrix/language", tags=["matrix"], summary="Switch the language")
     def set_language(request: LanguageRequest) -> dict:
         """Switch the language live; the next text of every scene uses it."""
         try:
-            language = Language(request.language)
+            language = MatrixLanguage(request.language)
         except ValueError as exc:
             raise HTTPException(
                 status_code=400, detail=f"Unknown language: {request.language}"

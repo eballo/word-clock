@@ -483,7 +483,7 @@ sudo .venv/bin/wordclock-matrix text --text "Bon dia" --preview
 |--------|---------|-----|
 | `--brightness` | automatic | Fixed brightness, 0–255; without it, it follows the time of day (section 8.4) |
 | `--color` | per scene | Hex colour, e.g. `ff8800` |
-| `--lang` | `catalan` | Language of the texts: `catalan`, `english` or `spanish` (section 8.5) |
+| `--lang` | `catalan` | Language of the texts: `catalan`, `english`, `spanish` or `dutch` (section 8.5) |
 | `--max-ma` | 1500 | Software current limit in mA |
 | `--seconds` | none | Stop after this time |
 | `--no-snake` | | Every row wired left to right |
@@ -641,8 +641,8 @@ follows it; the scenes keep the real time. It also works on the Pi with
 
 ### 8.5 Languages
 
-The texts of the show and the weather word come in Catalan, English and
-Spanish. `--lang` picks the language at start, and the API or the
+The texts of the show and the weather word come in Catalan, English,
+Spanish and Dutch. `--lang` picks the language at start, and the API or the
 **Language** list of the page switches it live: the next text uses it.
 
 ```bash
@@ -650,14 +650,32 @@ curl -X POST wordclock.local:8001/api/matrix/language \
      -H 'Content-Type: application/json' -d '{"language": "spanish"}'
 ```
 
-| Text | Catalan | English | Spanish |
-|------|---------|---------|---------|
-| Greeting | `BON DIA` | `GOOD MORNING` | `BUENOS DÍAS` |
-| Friday | `FALTEN 3 DIES PER DIVENDRES` | `3 DAYS TO FRIDAY` | `FALTAN 3 DÍAS PARA EL VIERNES` |
-| Weekend | `BON DISSABTE` | `HAPPY SATURDAY` | `FELIZ SÁBADO` |
-| Meals | `HORA DE DINAR` | `LUNCH TIME` | `HORA DE COMER` |
-| Night | `A DORMIR!` | `BED TIME!` | `A DORMIR!` |
-| Weather | `18° PLUJA` | `18° RAIN` | `18° LLUVIA` |
+| Text | Catalan | English | Spanish | Dutch |
+|------|---------|---------|---------|-------|
+| Greeting | `BON DIA` | `GOOD MORNING` | `BUENOS DÍAS` | `GOEDEMORGEN` |
+| Friday | `FALTEN 3 DIES PER DIVENDRES` | `3 DAYS TO FRIDAY` | `FALTAN 3 DÍAS PARA EL VIERNES` | `NOG 3 DAGEN TOT VRIJDAG` |
+| Weekend | `BON DISSABTE` | `HAPPY SATURDAY` | `FELIZ SÁBADO` | `FIJNE ZATERDAG` |
+| Meals | `HORA DE DINAR` | `LUNCH TIME` | `HORA DE COMER` | `LUNCHTIJD` |
+| Night | `A DORMIR!` | `BED TIME!` | `A DORMIR!` | `BEDTIJD!` |
+| Weather | `18° PLUJA` | `18° RAIN` | `18° LLUVIA` | `18° REGEN` |
+
+Each language lives in its own file, so the words are easy to find and
+change:
+
+```
+wordclock/matrix/languages/
+├── __init__.py   # MatrixLanguage and the TEXTS of every language
+├── base.py       # Texts: the fields every language fills
+├── catalan.py
+├── dutch.py
+├── english.py
+└── spanish.py
+```
+
+To add a language, copy one of the files, translate it, and add it to
+`MatrixLanguage` and `TEXTS` in `__init__.py`; the tests check that every
+text has a glyph in the matrix font. These are the matrix languages only:
+the word clock faces have their own in `wordclock/layouts/`.
 
 Personal texts from `matrix.toml` are shown as written, whatever the
 language.
