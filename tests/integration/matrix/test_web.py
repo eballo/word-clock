@@ -11,9 +11,9 @@ from PIL import Image
 from wordclock.matrix.canvas import Canvas
 from wordclock.matrix.catalog import Catalog
 from wordclock.matrix.dimmer import BrightnessLevels, Dimmer
+from wordclock.matrix.personal import Personal
 from wordclock.matrix.runner import MatrixRunner
-from wordclock.matrix.screens import PomodoroScene
-from wordclock.matrix.show import Personal
+from wordclock.matrix.scenes.screens.pomodoro import PomodoroScene
 from wordclock.matrix.web import (
     FACE_PARAMS,
     MATRIX_SCAD,

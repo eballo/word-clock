@@ -5,7 +5,7 @@ from datetime import datetime
 import pytest
 
 from wordclock.matrix.canvas import Canvas, Color
-from wordclock.matrix.clocks import (
+from wordclock.matrix.scenes.clocks import (
     AM_HOURS,
     FIVE_MINUTES,
     MINUTES,

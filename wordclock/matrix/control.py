@@ -8,7 +8,7 @@ from threading import Lock
 from wordclock.matrix.button import ButtonAction
 from wordclock.matrix.canvas import Canvas, Color
 from wordclock.matrix.photo import CountdownScene, PhotoScene
-from wordclock.matrix.scenes import Scene
+from wordclock.matrix.scenes.base import Scene
 
 logger = getLogger(__name__)
 

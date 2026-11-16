@@ -5,40 +5,13 @@ from datetime import datetime
 from random import Random
 
 from wordclock.matrix.canvas import Canvas, Color
+from wordclock.matrix.colors import add, scale
 
 AM_HOURS: Color = (0, 90, 255)
 PM_HOURS: Color = (150, 40, 255)
 FIVE_MINUTES: Color = (0, 220, 60)
 MINUTES: Color = (255, 180, 0)
 SECONDS: Color = (120, 200, 255)
-
-
-def scale(color: Color, level: float) -> Color:
-    """
-    Dim a colour.
-
-    Args:
-        color: The full colour.
-        level: 0 for black, 1 for the full colour.
-
-    Returns:
-        The dimmed colour.
-    """
-    return (round(color[0] * level), round(color[1] * level), round(color[2] * level))
-
-
-def add(a: Color, b: Color) -> Color:
-    """
-    Mix two lights on the same cell.
-
-    Args:
-        a: One colour.
-        b: The other colour.
-
-    Returns:
-        Their sum, each channel capped at 255.
-    """
-    return (min(255, a[0] + b[0]), min(255, a[1] + b[1]), min(255, a[2] + b[2]))
 
 
 def hour_color(hour: int) -> Color:

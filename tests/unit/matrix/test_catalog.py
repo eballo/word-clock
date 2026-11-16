@@ -4,8 +4,9 @@ import pytest
 
 from wordclock.matrix.canvas import Canvas
 from wordclock.matrix.catalog import ALL_SCENES, Catalog
-from wordclock.matrix.screens import CommitsScene, WeatherScene
-from wordclock.matrix.show import Personal
+from wordclock.matrix.personal import Personal
+from wordclock.matrix.scenes.screens.commits import CommitsScene
+from wordclock.matrix.scenes.screens.weather import WeatherScene
 
 SET_UP = Personal(city="Barcelona", github_user="eballo", github_token="secret")
 

@@ -7,8 +7,7 @@ import pytest
 
 from wordclock.matrix.feeds import WEATHER_KINDS
 from wordclock.matrix.languages import MatrixLanguage
-from wordclock.matrix.show import date_text, day_texts, greeting
-from wordclock.matrix.texts import TEXTS, Locale
+from wordclock.matrix.texts import TEXTS, Locale, date_text, day_texts, greeting
 
 
 class TestTexts:

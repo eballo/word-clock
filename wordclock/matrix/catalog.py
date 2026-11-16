@@ -11,17 +11,19 @@ from wordclock.matrix.feeds import (
     sun_fetcher,
     weather_fetcher,
 )
+from wordclock.matrix.personal import Personal
 from wordclock.matrix.scenes import SCENE_NAMES, Scene, create_scene
-from wordclock.matrix.screens import CommitsScene, LifeScene, PomodoroScene, WeatherScene
-from wordclock.matrix.show import Personal, ShowScene
+from wordclock.matrix.scenes.screens.commits import CommitsScene
+from wordclock.matrix.scenes.screens.weather import WeatherScene
+from wordclock.matrix.scenes.show import ShowScene
 from wordclock.matrix.texts import Locale
 
 logger = getLogger(__name__)
 
-# Scenes that need the personal settings or keep state, on top of the
-# plain ones of :data:`SCENE_NAMES`.
-EXTRA_SCENES: tuple[str, ...] = ("pomodoro", "life", "weather", "commits")
-ALL_SCENES: tuple[str, ...] = SCENE_NAMES + EXTRA_SCENES
+# Scenes that need the personal settings or a network feed, on top of the
+# plain ones of :data:`wordclock.matrix.scenes.SCENES`.
+DATA_SCENES: tuple[str, ...] = ("weather", "commits")
+ALL_SCENES: tuple[str, ...] = ("show", *SCENE_NAMES, *DATA_SCENES)
 
 WEATHER_REFRESH_SECONDS = 15 * 60
 COMMITS_REFRESH_SECONDS = 30 * 60
@@ -80,10 +82,6 @@ class Catalog:
             return ShowScene(
                 self.personal, weather=self.weather, commits=self.commits, locale=self.locale
             )
-        if name == "pomodoro":
-            return PomodoroScene()
-        if name == "life":
-            return LifeScene()
         if name == "weather":
             if self.weather is None:
                 raise ValueError("The weather needs a city: [weather] city in matrix.toml")

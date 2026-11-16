@@ -5,16 +5,10 @@ import pytest
 from wordclock.matrix.canvas import Canvas
 from wordclock.matrix.feeds import WEATHER_KINDS, Feed, Weather
 from wordclock.matrix.languages import MatrixLanguage
-from wordclock.matrix.screens import (
-    LEVELS,
-    REST,
-    WORK,
-    CommitsScene,
-    LifeScene,
-    PomodoroScene,
-    WeatherScene,
-    draw_weather,
-)
+from wordclock.matrix.scenes.effects.life import LifeScene
+from wordclock.matrix.scenes.screens.commits import LEVELS, CommitsScene
+from wordclock.matrix.scenes.screens.pomodoro import REST, WORK, PomodoroScene
+from wordclock.matrix.scenes.screens.weather import WeatherScene, draw_weather
 from wordclock.matrix.texts import Locale
 
 

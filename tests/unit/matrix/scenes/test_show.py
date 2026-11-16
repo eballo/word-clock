@@ -6,31 +6,18 @@ from pathlib import Path
 import pytest
 
 from wordclock.matrix.canvas import Canvas
-from wordclock.matrix.clocks import BlocksClock, DialClock, TixClock
 from wordclock.matrix.dimmer import BrightnessLevels
 from wordclock.matrix.font import GLYPHS, fold_char
 from wordclock.matrix.languages import MatrixLanguage
-from wordclock.matrix.scenes import (
-    ClockScene,
-    IpScene,
-    RainbowScene,
-    RainScene,
-    SparkleScene,
-    TextScene,
-)
-from wordclock.matrix.show import (
-    EFFECT_SECONDS,
-    ICON_SECONDS,
-    ICONS,
-    IconScene,
-    Personal,
-    ShowScene,
-    date_text,
-    day_texts,
-    greeting,
-    load_personal,
-)
-from wordclock.matrix.texts import TEXTS, Locale
+from wordclock.matrix.personal import Personal, load_personal
+from wordclock.matrix.scenes.clocks import BlocksClock, DialClock, TixClock
+from wordclock.matrix.scenes.effects.rain import RainScene
+from wordclock.matrix.scenes.effects.rainbow import RainbowScene
+from wordclock.matrix.scenes.effects.sparkle import SparkleScene
+from wordclock.matrix.scenes.icons import ICONS, IconScene
+from wordclock.matrix.scenes.show import EFFECT_SECONDS, ICON_SECONDS, ShowScene
+from wordclock.matrix.scenes.text import ClockScene, IpScene, TextScene
+from wordclock.matrix.texts import TEXTS, Locale, date_text, day_texts, greeting
 
 # Every kind of clock the show plays.
 CLOCKS = (ClockScene, BlocksClock, DialClock, TixClock)
