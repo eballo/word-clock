@@ -137,11 +137,24 @@ wago = [20.2, 13.1, 8.3];
 vent = [3, 18];
 
 /* [Magnets] */
-// 5 x 2 mm neodymium discs
+// 5 x 2 mm neodymium discs, only for the letters cover
 magnet_d = 5;
 magnet_h = 2;
 magnet_fit = 0.2;
-face_magnet_post = 9;
+
+/* [Face clips] */
+// The face sits inside the shell walls, flush with them, on posts. Short
+// ridges on the inside of the walls click into a groove round its edge; two
+// notches in the bottom wall let a fingernail lift it out again.
+face_post_d = 9;
+face_fit = 0.2;
+snap_depth = 0.7;
+snap_len = 20;
+groove = [0.9, 1.6];   // depth, height
+snap_xs = [65, 125];   // along the bottom and top walls, mirrored
+snap_ys = [40, 110, 220, 320];   // along the left and right walls
+pry_notch = [14, 2];
+pry_xs = [-30, 30];    // from the vertical seam
 
 /* [Letters cover] */
 // Top-left 6 x 10 corner of the Catalan word clock grid
@@ -239,10 +252,10 @@ dupont_top = pi_z + pi_board_t + 2.5 + 14;
 
 function display_holes() = [for (h = lcd_m3) [glass_x, glass_y] + lcd_frame_pos + h];
 
-// Face magnets on posts: three per tile, clear of the seams, the keyholes,
-// the DC jack and the wires (the strip turns in the side margins).
-fm = shell_t + face_magnet_post / 2;
-function face_magnets() = [
+// Posts the face rests on: three per tile, clear of the seams, the
+// keyholes, the DC jack and the wires (the strip turns in the side margins).
+fm = shell_t + face_post_d / 2;
+function face_posts() = [
     [fm, fm], [box_w / 4 + 10, fm], [fm, rivet_y - 6],
     [box_w - fm, fm], [box_w * 3 / 4, fm], [box_w - fm, rivet_y - 6],
     [fm, box_h - fm], [box_w / 4, box_h - fm], [seam_x - 20, box_h - fm],
@@ -277,7 +290,7 @@ assert(seam_x + tab_depth < 250 && box_h - split_y + tab_depth < 250, "A tile do
 assert(face_back - pi_top >= 8, "Less than 8 mm above the Pi ports");
 assert(glass_back - lcd_back_h - back_t >= 8, "No room for the ribbon under the display");
 assert(pi_x + pi_board[0] < glass_x, "The Pi overlaps the display");
-assert(norm([pi_x + pi_holes[0][0], pi_y + pi_holes[0][1]] - [fm, fm]) - face_magnet_post / 2 >= 8, "No screwdriver room between the Pi and the corner post");
+assert(norm([pi_x + pi_holes[0][0], pi_y + pi_holes[0][1]] - [fm, fm]) - face_post_d / 2 >= 8, "No screwdriver room between the Pi and the corner post");
 assert(wago_xy[0] + wago[0] < glass_x + lcd_frame_pos[0], "The WAGO connectors sit under the display frame");
 assert(rivet_y + rivet_d / 2 + 2 < split_y, "The split cuts the rivet row");
 assert(split_y + tab_depth < grid_y + bar_w / 2 + window_r, "Face dovetails reach the windows");
@@ -287,7 +300,7 @@ assert(cam_x0 > seam_x + 1, "The camera posts sit on the seam");
 assert(cam_y0 + cam_board[1] - cam_hole_top + cam_post_d / 2 + 1 < split_y, "The camera posts sit on the horizontal seam");
 assert(face_back - dupont_top >= 6, "No room to bend the jumper wires on the Pi header");
 assert(jack_x - jack_body[0] / 2 - 2 > pi_x + pi_board[0] + 2.5, "The jack cradle hits the Pi power port");
-assert(jack_x + jack_body[0] / 2 + 2 < box_w / 4 + 10 - face_magnet_post / 2, "The jack cradle hits a face magnet post");
+assert(jack_x + jack_body[0] / 2 + 2 < box_w / 4 + 10 - face_post_d / 2, "The jack cradle hits a face magnet post");
 
 // --- 2D helpers ----------------------------------------------------------
 
@@ -393,11 +406,8 @@ module shell_posts() {
         // Cable exit
         translate([-1, 2 + mic_board[1] / 2 - 3, mic_z]) cube([4, 6, 4]);
     }
-    // Face magnets: pocket on top of each post
-    for (p = face_magnets()) translate([p[0], p[1], 0]) difference() {
-        cylinder(d = face_magnet_post, h = face_back);
-        translate([0, 0, face_back - magnet_h - 0.1]) cylinder(d = magnet_d + magnet_fit, h = magnet_h + 1);
-    }
+    // Face rests
+    for (p = face_posts()) translate([p[0], p[1], 0]) cylinder(d = face_post_d, h = face_back);
     // Grid locating pins, under the lugs of the grid
     for (p = grid_pins()) translate([p[0], p[1], 0]) cylinder(d = 3, h = back_t + 4);
 }
@@ -406,15 +416,18 @@ module shell_body() {
     difference() {
         union() {
             linear_extrude(back_t) outline_2d();
-            linear_extrude(face_back) difference() {
+            linear_extrude(depth) difference() {
                 outline_2d();
                 offset(-shell_t) outline_2d();
             }
             shell_posts();
+            face_snaps();
             jack_cradle();
         }
         for (dx = [-keyhole_dx / 2, keyhole_dx / 2]) translate([seam_x + dx, box_h - keyhole_from_top, 0]) keyhole();
         leg_slots();
+        // Notches to lift the face out
+        for (dx = pry_xs) translate([seam_x + dx - pry_notch[0] / 2, -1, depth - pry_notch[1]]) cube([pry_notch[0], shell_t + 2, pry_notch[1] + 1]);
         // DC jack nose through the bottom wall
         translate([jack_x, -1, jack_z]) rotate([-90, 0, 0]) cylinder(d = jack_nose[0] + 2 * jack_fit, h = shell_t + 2);
         // microSD slot under the card
@@ -510,18 +523,52 @@ module windows_2d() {
 }
 
 // Face in place, front at z = depth.
+module face_outline_2d() {
+    offset(r = -(shell_t + face_fit)) outline_2d();
+}
+
+// A band of width w round the outside of the face
+module face_edge_2d(w) {
+    difference() {
+        offset(delta = 1) face_outline_2d();
+        offset(delta = -w) face_outline_2d();
+    }
+}
+
+// Ridges on the inside of the walls, level with the face groove: a 45°
+// triangle, so the shell prints without support and the face can be pulled
+// out again
+module snap_ridge() {
+    rotate([90, 0, 90]) linear_extrude(snap_len, center = true)
+        polygon([[0, -snap_depth], [snap_depth, 0], [0, snap_depth], [-0.5, snap_depth], [-0.5, -snap_depth]]);
+}
+
+function snap_points() = concat(
+    [for (x = snap_xs, side = [0, 1], m = [0, 1]) [m == 0 ? x : box_w - x, side == 0 ? shell_t : box_h - shell_t, side == 0 ? 0 : 180]],
+    [for (y = snap_ys, side = [0, 1]) [side == 0 ? shell_t : box_w - shell_t, y, side == 0 ? -90 : 90]]
+);
+
+module face_snaps() {
+    for (p = snap_points()) translate([p[0], p[1], face_back + face_t / 2]) rotate([0, 0, p[2]]) snap_ridge();
+}
+
 module face_body(t) {
     translate([0, 0, face_back]) difference() {
         linear_extrude(face_t) difference() {
-            offset(delta = -seam_gap / 2) tile_2d(t, face_tabs_v, face_tabs_h);
+            intersection() {
+                offset(delta = -seam_gap / 2) tile_2d(t, face_tabs_v, face_tabs_h);
+                face_outline_2d();
+            }
             windows_2d();
         }
+        // Groove for the wall ridges, and a lead-in on the back edge
+        translate([0, 0, (face_t - groove[1]) / 2]) linear_extrude(groove[1]) face_edge_2d(groove[0]);
+        translate([0, 0, -0.01]) linear_extrude(0.5) face_edge_2d(0.5);
         for (p = rivets()) {
             through = abs(p[0] - cam_x) < 1 || abs(p[0] - mic_x) < 1;
             translate([p[0], p[1], through ? -1 : face_t - rivet_depth]) cylinder(d = rivet_d, h = face_t + 2);
         }
         translate([cam_x, rivet_y, -1]) cylinder(d = cam_pocket[0], h = cam_pocket[1] + 1);
-        for (p = face_magnets()) translate([p[0], p[1], -0.01]) cylinder(d = magnet_d + magnet_fit, h = magnet_h + 0.2);
         for (h = [0, 1], p = cover_magnets(h)) translate([p[0], p[1], face_t - magnet_h - 0.2]) cylinder(d = magnet_d + magnet_fit, h = magnet_h + 1);
     }
 }
@@ -815,7 +862,7 @@ function test_pieces() = [
     ["seam_right", "shell", 1, [seam_x - 1, 0], [seam_x + 40, 50]],
     ["face_band_left", "face", 0, [seam_x - 45, glass_top - 10], [seam_x + tab_depth + 1, split_y + 1]],
     ["face_band_right", "face", 1, [seam_x - 1, glass_top - 10], [seam_x + 45, split_y + 1]],
-    ["face_corner", "face", 0, [0, 0], [40, 40]],
+    ["face_corner", "face", 0, [0, 0], [100, 60]],
     ["cover_letters", "cover", 0, [cover_x0, cover_y0], [cover_x0 + 75, cover_y0 + 45]],
 ];
 

@@ -61,7 +61,7 @@ printing on the Bambu Lab A1, the wiring and the assembly.
 | 12 | 4 × M2.5 × 6 mm self-tapping | Raspberry Pi |
 | 13 | 4 × M2 × 6 mm self-tapping | Camera |
 | 14 | 4 × M3 × 6 mm self-tapping (optional) | Arduino Uno |
-| 15 | 40 neodymium magnets, 5 × 2 mm | 12 + 12 for the face, 8 + 8 for the letters cover |
+| 15 | 16 neodymium magnets, 5 × 2 mm | 8 in the front of the face, 8 in the letters cover |
 | 16 | Tracing paper | Diffuser, cut to the grid |
 
 The jack cradle is drawn for an adapter with an 11 mm round nose, 12 mm
@@ -108,13 +108,13 @@ uv run wordclock-cad --box --test    # box_test_black.3mf and box_test_white.3mf
 | Piece | What to check |
 |-------|---------------|
 | `seam_left` + `seam_right` | The dovetail slides in without forcing and holds; an M5 × 25 bolt goes through both blocks and the nut sits in its hex pocket |
-| `pi_corner` | The Raspberry Pi sits on the two posts with M2.5 screws; the microSD card comes out through the slot; the DC jack nose fits its hole and the body clips into the cradle; a magnet presses into a post |
+| `pi_corner` | The Raspberry Pi sits on the two posts with M2.5 screws; the microSD card comes out through the slot; the DC jack nose fits its hole and the body clips into the cradle |
 | `face_band_left` + `face_band_right` | The face dovetail; the camera and the microphone see through their rivets; the plain rivets look the same |
-| `face_corner` | A magnet presses into the pocket and holds against a post magnet |
+| `face_corner` | Press it into `pi_corner`: it clicks under the two wall ridges, sits flush with the walls, and a fingernail lifts it out again. Too hard or too loose: change `snap_depth` |
 | `grid_corner` | The strip passes under the walls through the notches; the lug sits on a 3 mm pin; the light of one LED fills the cell |
 | `cover_letters` | Two letters, with tracing paper behind, lit by one LED; a magnet in its pocket |
 
-If a fit is too tight or too loose, change `joint_gap`, `magnet_fit` or
+If a fit is too tight or too loose, change `joint_gap`, `snap_depth`, `magnet_fit` or
 `slot_fit` at the top of the model and print the test again.
 
 To change a size, edit the parameters at the top of
@@ -129,7 +129,7 @@ assembly views for the OpenSCAD GUI: set `part` to `assembly`, `exploded`,
 | Joint | How |
 |-------|-----|
 | Shell tiles | Dovetails in the 3 mm back plate, plus M5 bolts through blocks across the seams, in the margins: nut pockets on the bottom and left tiles |
-| Face tiles | Dovetails in the margins and the band; the face sits on the shell with magnets, three per tile |
+| Face tiles | Dovetails in the margins and the band. The face sits inside the shell walls, flush with them, on 12 posts, and clicks in: 16 short ridges on the inside of the walls catch a groove round its edge. No magnets |
 | Grid halves | Lugs at the foot of the frame over 3 mm pins in the back plate; the face holds them down through the paper |
 | Letters cover | Two halves, four magnets each, into pockets in the front of the face |
 | Legs | Two hooks each go through slots in the back plate and slide down |
@@ -199,10 +199,8 @@ so there is no micro-USB plug in the way.
 
 ## 7. Assemble
 
-1. Press the face magnets into the 12 posts of the shell tiles, all with
-   the same pole up, and the matching magnets into the back of the face
-   tiles. Do the same for the cover: 8 in the front of the face, 8 in the
-   cover halves.
+1. Press the cover magnets in: 8 into the front of the face tiles, all
+   with the same pole up, and 8 into the cover halves so they attract.
 2. Slide the shell tiles together on their dovetails, then bolt the seams:
    3 × M5 × 25 down the middle, 4 × M5 × 16 across.
 3. Fit the DC jack, the WAGO connectors, the Raspberry Pi, the camera, the
@@ -216,11 +214,12 @@ so there is no micro-USB plug in the way.
    --rotate --mirror` before closing.
 7. Set the grid halves on their pins, the strip passing under the walls
    through the notches. Lay the tracing paper on the grid.
-8. Slide the face tiles together and set the face on the box: the magnets
-   pull it into place and the glass sits in its window.
+8. Slide the face tiles together, set the face on the box with the glass
+   in its window, and press round the edge until every ridge clicks.
 9. For the letters cover: set its two halves on the grid area of the face.
 
-To open the box, pull the face off from one corner; everything inside is
+To open the box, put a fingernail or a coin in one of the two notches in
+the top of the bottom wall and lift the face out; everything inside is
 reachable without removing the display.
 
 ---
@@ -238,7 +237,7 @@ reachable without removing the display.
 
 - [ ] Fit test printed and checked (`uv run wordclock-cad --box --test`)
 - [ ] Shell, grid, face, cover and legs printed (`uv run wordclock-cad --box`)
-- [ ] Magnets pressed in, polarity checked on the face and the cover
+- [ ] Cover magnets pressed in, polarity checked
 - [ ] Shell tiles joined with 7 × M5
 - [ ] Jack, WAGO connectors, Pi, camera and microphone fitted
 - [ ] Display screwed on from the back, DSI ribbon connected
