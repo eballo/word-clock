@@ -9,10 +9,14 @@ import typer
 
 from wordclock.cad.build import (
     find_loose_parts,
+    oversized_parts,
+    plan_box_jobs,
+    plan_box_test_jobs,
     plan_jobs,
     plan_matrix_jobs,
     render_all,
     write_bambu_projects,
+    write_box_projects,
     write_matrix_projects,
     write_preview,
 )
@@ -32,9 +36,15 @@ def main(
     optional: Annotated[
         bool, typer.Option(help="Also render optional parts (frame rings, Pi Zero tray)")
     ] = False,
-    test: Annotated[bool, typer.Option(help="Render only the 4x4 test corner")] = False,
+    test: Annotated[
+        bool, typer.Option(help="Render only the 4x4 test corner (with --box: the fit-test plate)")
+    ] = False,
     matrix: Annotated[
         bool, typer.Option(help="Render only the mini 10x6 matrix for the 30 LEDs/m strip")
+    ] = False,
+    box: Annotated[
+        bool,
+        typer.Option(help="Render only the mini matrix in one flat box, with the display inside"),
     ] = False,
     preview: Annotated[
         bool, typer.Option(help="Write assembly preview files for the OpenSCAD GUI instead")
@@ -59,7 +69,11 @@ def main(
         typer.echo(f"OpenSCAD not found: {openscad!r}", err=True)
         raise typer.Exit(1)
 
-    if matrix:
+    if box and test:
+        jobs = plan_box_test_jobs(out)
+    elif box:
+        jobs = plan_box_jobs(out)
+    elif matrix:
         jobs = plan_matrix_jobs(out)
     else:
         jobs = plan_jobs(languages, out, grid=grid, extras=extras, optional=optional, test=test)
@@ -72,9 +86,14 @@ def main(
     loose = find_loose_parts(paths)
     for path, bodies in loose.items():
         typer.echo(f"Loose parts: {path} has {bodies} separate bodies", err=True)
-    if loose:
+    too_big = oversized_parts(paths)
+    for path, (width, length) in too_big.items():
+        typer.echo(f"Too big for the bed: {path} is {width:.0f} x {length:.0f} mm", err=True)
+    if loose or too_big:
         raise typer.Exit(1)
-    if matrix:
+    if box:
+        projects = write_box_projects(out, out.parent / "bambu")
+    elif matrix:
         projects = write_matrix_projects(out, out.parent / "bambu")
     else:
         projects = write_bambu_projects(languages, out, out.parent / "bambu")

@@ -6,13 +6,22 @@ from dataclasses import dataclass
 from logging import getLogger
 from pathlib import Path
 
-from wordclock.cad.bambu import count_bodies, read_stl, write_project
+from wordclock.cad.bambu import (
+    BED_SIZE,
+    BLACK,
+    WHITE,
+    count_bodies,
+    read_stl,
+    write_plate,
+    write_project,
+)
 from wordclock.layouts.utils.layout import load_grid
 
 logger = getLogger(__name__)
 
 SCAD_FILE: Path = Path(__file__).parent / "wordclock.scad"
 MATRIX_SCAD_FILE: Path = Path(__file__).parent / "matrix.scad"
+BOX_SCAD_FILE: Path = Path(__file__).parent / "matrix_box.scad"
 
 # Grid lines where the panel is split, matching `splits` in the SCAD model.
 # A 3x3 split keeps every tile under 17.5 cm, well inside the 25 cm bed of
@@ -59,6 +68,8 @@ class RenderJob:
     rows: tuple[str, ...] | None = None
     half: int | None = None
     scad: Path = SCAD_FILE
+    # Piece of a part split for the bed (matrix box: tile or half)
+    piece: int | None = None
 
 
 def scad_string_list(values: list[str] | tuple[str, ...]) -> str:
@@ -93,6 +104,8 @@ def scad_command(job: RenderJob, openscad: str = "openscad") -> list[str]:
         cmd += ["-D", f"rows={scad_string_list(job.rows)}"]
     if job.half is not None:
         cmd += ["-D", f"half={job.half}"]
+    if job.piece is not None:
+        cmd += ["-D", f"piece={job.piece}"]
     cmd.append(str(job.scad))
     return cmd
 
@@ -163,6 +176,115 @@ def plan_matrix_jobs(out_dir: Path) -> list[RenderJob]:
     ]
 
 
+# Mini matrix in one flat box (display, Pi and camera inside): the shell and
+# the face in four tiles, the grid and the letters cover in two halves, and
+# one triangle leg (print it twice).
+BOX_TILES: tuple[str, ...] = ("bottom_left", "bottom_right", "top_left", "top_right")
+BOX_HALVES: tuple[str, ...] = ("left", "right")
+BOX_PIECES: dict[str, tuple[str, ...]] = {
+    "shell": BOX_TILES,
+    "face": BOX_TILES,
+    "grid": BOX_HALVES,
+    "cover": BOX_HALVES,
+    "leg": ("",),
+}
+# Fit test: small pieces cut from the real parts, in the order of
+# `test_pieces()` in the model, printed together on one plate.
+BOX_TEST_PART = "test"
+BOX_TEST_NAMES: tuple[str, ...] = (
+    "grid_corner",
+    "pi_corner",
+    "seam_left",
+    "seam_right",
+    "face_band_left",
+    "face_band_right",
+    "face_corner",
+    "cover_letters",
+    "jack_cradle",
+)
+# Test pieces that also get a project of their own, to print alone
+BOX_TEST_ALONE: tuple[str, ...] = ("jack_cradle",)
+
+# Free space kept around a part on the 256 mm bed.
+BED_MARGIN = 3.0
+
+
+def box_stl(out_dir: Path, part: str, name: str) -> Path:
+    """
+    Path of one STL of the matrix box.
+
+    Args:
+        out_dir: Directory for the STL files; they go into ``box/``.
+        part: Part name, e.g. ``"shell"``.
+        name: Piece name, e.g. ``"top_left"``; empty for a single piece.
+
+    Returns:
+        The STL path.
+    """
+    return out_dir / "box" / (f"{part}_{name}.stl" if name else f"{part}.stl")
+
+
+def plan_box_jobs(out_dir: Path) -> list[RenderJob]:
+    """
+    List every STL of the matrix box.
+
+    Args:
+        out_dir: Directory for the STL files; they go into ``box/``.
+
+    Returns:
+        Render jobs, one per piece.
+    """
+    return [
+        RenderJob(
+            part,
+            box_stl(out_dir, part, name),
+            scad=BOX_SCAD_FILE,
+            piece=index if name else None,
+        )
+        for part, names in BOX_PIECES.items()
+        for index, name in enumerate(names)
+    ]
+
+
+def plan_box_test_jobs(out_dir: Path) -> list[RenderJob]:
+    """
+    List the fit-test pieces of the matrix box.
+
+    Args:
+        out_dir: Directory for the STL files; they go into ``box/``.
+
+    Returns:
+        One render job per test piece.
+    """
+    return [
+        RenderJob(BOX_TEST_PART, box_stl(out_dir, BOX_TEST_PART, name), scad=BOX_SCAD_FILE, piece=i)
+        for i, name in enumerate(BOX_TEST_NAMES)
+    ]
+
+
+def oversized_parts(
+    paths: list[Path], bed: float = BED_SIZE, margin: float = BED_MARGIN
+) -> dict[Path, tuple[float, float]]:
+    """
+    Find STL files whose footprint does not fit the printer bed.
+
+    Args:
+        paths: Rendered STL files.
+        bed: Bed size in millimetres.
+        margin: Free space to keep around the part.
+
+    Returns:
+        Each file that is too big, with its footprint (width, depth).
+    """
+    too_big = {}
+    for path in paths:
+        vertices = read_stl(path).vertices
+        size = tuple(max(v[i] for v in vertices) - min(v[i] for v in vertices) for i in (0, 1))
+        if max(size) > bed - 2 * margin:
+            too_big[path] = size
+    return too_big
+
+
 # Per-object print settings in the Bambu Studio projects.
 FACE_SETTINGS: dict[str, str] = {"sparse_infill_density": "100%"}
 GRID_SETTINGS: dict[str, str] = {"wall_loops": "3", "sparse_infill_density": "15%"}
@@ -226,6 +348,67 @@ def write_matrix_projects(stl_dir: Path, out_dir: Path) -> list[Path]:
     singles = [stl_dir / "matrix" / f"{part}.stl" for part in MATRIX_SINGLE_PARTS]
     if all(path.exists() for path in singles):
         projects.append(write_project(singles, out_dir / "matrix_box.3mf", GRID_SETTINGS))
+    return projects
+
+
+# Filament per box piece: black outside, white for the grid so the cells
+# reflect the light. Test pieces print in the colour of their part.
+BOX_COLOURS: dict[str, str] = {
+    "shell": BLACK,
+    "face": BLACK,
+    "grid": WHITE,
+    "cover": BLACK,
+    "leg": BLACK,
+}
+BOX_TEST_WHITE: frozenset[str] = frozenset({"grid_corner"})
+
+
+def write_box_projects(stl_dir: Path, out_dir: Path) -> list[Path]:
+    """
+    Group the matrix box STL files into Bambu Studio projects, one piece per plate.
+
+    Writes ``box_shell.3mf``, ``box_face.3mf``, ``box_grid.3mf``,
+    ``box_cover.3mf`` and ``box_legs.3mf`` (the leg twice), each with its
+    filament colour from :data:`BOX_COLOURS`, and the fit test as
+    ``box_test_black.3mf`` and ``box_test_white.3mf`` when it was rendered,
+    plus ``box_test_jack.3mf`` with the jack cradle alone.
+
+    Args:
+        stl_dir: Directory with the rendered STL files.
+        out_dir: Directory for the projects.
+
+    Returns:
+        Paths of the written projects.
+    """
+    settings = {
+        "shell": GRID_SETTINGS,
+        "face": FACE_SETTINGS,
+        "grid": GRID_SETTINGS,
+        "cover": FACE_SETTINGS,
+        "leg": FACE_SETTINGS,
+    }
+    projects = []
+    for part, names in BOX_PIECES.items():
+        stls = [box_stl(stl_dir, part, name) for name in names]
+        if part == "leg":
+            stls = stls * 2
+        if all(path.exists() for path in stls):
+            output = out_dir / ("box_legs.3mf" if part == "leg" else f"box_{part}.3mf")
+            projects.append(write_project(stls, output, settings[part], BOX_COLOURS[part]))
+    tests = [box_stl(stl_dir, BOX_TEST_PART, name) for name in BOX_TEST_NAMES]
+    if all(path.exists() for path in tests):
+        for colour, name in ((BLACK, "black"), (WHITE, "white")):
+            group = [
+                path
+                for path, piece in zip(tests, BOX_TEST_NAMES, strict=True)
+                if (piece in BOX_TEST_WHITE) == (colour == WHITE)
+            ]
+            output = out_dir / f"box_test_{name}.3mf"
+            projects.append(write_plate(group, output, GRID_SETTINGS, colour))
+        for piece in BOX_TEST_ALONE:
+            path = tests[BOX_TEST_NAMES.index(piece)]
+            output = out_dir / f"box_test_{piece.split('_')[0]}.3mf"
+            projects.append(write_plate([path], output, GRID_SETTINGS, BLACK))
     return projects
 
 
