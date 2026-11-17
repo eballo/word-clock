@@ -42,6 +42,7 @@ The `docs/` folder walks through the full build process:
 - `05-enclosure.md` — IKEA SANNAHED frame, 3D-printed parts and STL generation
 - `06-bench-test.md` — lighting a test strip under the printed test corner
 - `07-mini-matrix.md` — a quick 10 × 6 matrix with the 30 LEDs/metre strip
+- `08-matrix-box.md` — the mini matrix in one flat box with the display, the Pi and a hidden camera
 
 ## Ideas & Notes
 

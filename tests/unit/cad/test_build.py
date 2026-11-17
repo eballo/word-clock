@@ -4,6 +4,8 @@ import zipfile
 from pathlib import Path
 
 from wordclock.cad import (
+    BOX_PIECES,
+    BOX_SCAD_FILE,
     EXTRA_PARTS,
     FACE_PARTS,
     MATRIX_BOX_PART,
@@ -17,11 +19,14 @@ from wordclock.cad import (
     TILE_SPLITS,
     TILES,
     RenderJob,
+    oversized_parts,
+    plan_box_jobs,
     plan_jobs,
     plan_matrix_jobs,
     scad_command,
     scad_string_list,
     write_bambu_projects,
+    write_box_projects,
     write_matrix_projects,
     write_preview,
 )
@@ -266,3 +271,91 @@ class TestMatrix:
         with zipfile.ZipFile(projects[-1]) as zf:
             settings = zf.read("Metadata/model_settings.config").decode()
         assert settings.count("<plate>") == len(MATRIX_SINGLE_PARTS)
+
+
+def tiny_stl(size: float = 1.0) -> str:
+    return "\n".join(
+        ["solid s", "facet normal 0 0 1", "outer loop", "vertex 0 0 0", f"vertex {size} 0 0"]
+        + [f"vertex 0 {size} 0", "endloop", "endfacet", "endsolid s", ""]
+    )
+
+
+class TestBox:
+    def test_plans_every_piece(self) -> None:
+        # Given
+        out = Path("build/stl")
+        # When
+        jobs = plan_box_jobs(out)
+        # Then: four tiles of shell and face, two halves of grid and cover, one leg
+        assert len(jobs) == sum(len(names) for names in BOX_PIECES.values()) == 13
+        assert (
+            RenderJob("shell", out / "box" / "shell_top_left.stl", scad=BOX_SCAD_FILE, piece=2)
+            in jobs
+        )
+        assert (
+            RenderJob("cover", out / "box" / "cover_right.stl", scad=BOX_SCAD_FILE, piece=1) in jobs
+        )
+        assert RenderJob("leg", out / "box" / "leg.stl", scad=BOX_SCAD_FILE) in jobs
+
+    def test_command_passes_the_piece(self) -> None:
+        # Given
+        job = next(
+            job for job in plan_box_jobs(Path("build")) if job.part == "face" and job.piece == 3
+        )
+        # When
+        cmd = scad_command(job)
+        # Then
+        assert 'part="face"' in cmd
+        assert "piece=3" in cmd
+        assert cmd[-1] == str(BOX_SCAD_FILE)
+
+    def test_leg_has_no_piece(self) -> None:
+        # Given
+        job = next(job for job in plan_box_jobs(Path("build")) if job.part == "leg")
+        # When / Then
+        assert not any(arg.startswith("piece=") for arg in scad_command(job))
+
+    def test_model_parts_match_the_plan(self) -> None:
+        # Given
+        scad = BOX_SCAD_FILE.read_text(encoding="utf-8")
+        # When / Then: every planned part is drawn by the model
+        for part in BOX_PIECES:
+            assert f'part == "{part}"' in scad
+
+    def test_writes_one_project_per_part(self, tmp_path: Path) -> None:
+        # Given
+        for job in plan_box_jobs(tmp_path / "stl"):
+            job.output.parent.mkdir(parents=True, exist_ok=True)
+            job.output.write_text(tiny_stl(), encoding="ascii")
+        # When
+        projects = write_box_projects(tmp_path / "stl", tmp_path / "bambu")
+        # Then
+        names = [path.name for path in projects]
+        assert names == [
+            "box_shell.3mf",
+            "box_face.3mf",
+            "box_grid.3mf",
+            "box_cover.3mf",
+            "box_legs.3mf",
+        ]
+        with zipfile.ZipFile(projects[-1]) as zf:
+            legs = zf.read("Metadata/model_settings.config").decode()
+        assert legs.count("<plate>") == 2
+        with zipfile.ZipFile(projects[1]) as zf:
+            face = zf.read("Metadata/model_settings.config").decode()
+        assert face.count("<plate>") == 4
+        assert 'value="100%"' in face
+
+
+class TestOversizedParts:
+    def test_flags_parts_bigger_than_the_bed(self, tmp_path: Path) -> None:
+        # Given
+        small = tmp_path / "small.stl"
+        big = tmp_path / "big.stl"
+        small.write_text(tiny_stl(200), encoding="ascii")
+        big.write_text(tiny_stl(252), encoding="ascii")
+        # When
+        too_big = oversized_parts([small, big])
+        # Then: 252 mm leaves less than 3 mm on each side of the 256 mm bed
+        assert list(too_big) == [big]
+        assert too_big[big] == (252.0, 252.0)
