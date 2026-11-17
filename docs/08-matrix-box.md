@@ -57,7 +57,7 @@ printing on the Bambu Lab A1, the wiring and the assembly.
 | 8 | Female-female jumper wires; 90° ones for the Arduino | Pi pins 2, 6 and 12; Arduino headers |
 | 9 | 7 × M5 bolts and nuts: 3 × M5 × 25 mm (vertical seam), 4 × M5 × 16 mm (horizontal seam) | Join the shell tiles |
 | 10 | 2 × M5 wall screws with plugs, heads up to 10 mm | Hang the box |
-| 11 | 4 × M3 × 6 mm countersunk | Display, from the back into its frame |
+| 11 | 4 × M3 × 8 mm pan head (ISO 7045) | Display, from the back into its frame |
 | 12 | 4 × M2.5 × 6 mm self-tapping | Raspberry Pi |
 | 13 | 4 × M2 × 6 mm self-tapping | Camera |
 | 14 | 4 × M3 × 6 mm self-tapping (optional) | Arduino Uno |
@@ -147,8 +147,8 @@ assembly views for the OpenSCAD GUI: set `part` to `assembly`, `exploded`,
 
 | Part | Mount |
 |------|-------|
-| Display | Four posts from the back plate, M3 countersunk screws from the wall side into the threaded holes of its frame. It is fixed to the box, not to the face, so the face comes off without touching it |
-| Camera | OV5647 board, 25 × 24 mm with M2 holes 21 × 12,5 mm apart, on four posts; the lens against the back of the camera rivet, which is a through hole. Check the holes on yours before printing |
+| Display | Four 10 mm posts from the back plate up to the threaded M3 holes of its metal frame (126,2 × 65,65 mm apart). An M3 × 8 pan-head screw goes in from the wall side down a bore in each post and seats on a 4 mm shoulder, so it bites about 3 mm into the frame and never reaches the panel. The glass sits in the window of the face. The display is fixed to the box, not to the face, so the face comes off without touching it. Take off the four standoffs on its back that are meant for a Pi |
+| Camera | OV5647 board, 25 × 24 mm with M2 holes 21 × 12,5 mm apart, on four posts with M2 × 6 screws, its ribbon connector down. The lens sits in a 12,5 mm pocket in the back of the face, 1 mm behind the front, so the 4 mm rivet hole does not crop the picture. Check the holes on yours before printing |
 | Microphone | A cradle that holds it against the back of the microphone rivet |
 | Raspberry Pi | Upright left of the display on four posts, M2.5, 14 mm from the left wall so a screwdriver passes the corner post. USB and Ethernet up; the microSD card down, reached through a slot in the bottom wall; the GPIO header along the left edge, pin 1 at the bottom |
 | Arduino Uno | Upright right of the display on four 3 mm posts, USB-B up so the cable has room. Jumper wires in its headers need 90° plugs: straight ones reach the face |
@@ -205,8 +205,9 @@ so there is no micro-USB plug in the way.
    3 × M5 × 25 down the middle, 4 × M5 × 16 across.
 3. Fit the DC jack, the WAGO connectors, the Raspberry Pi, the camera, the
    microphone and, if used, the Arduino.
-4. Screw the display onto its posts from the back with the four M3
-   countersunk screws; connect the DSI ribbon.
+4. Lay the display face down on a towel, set the box on it so the posts
+   meet the frame holes, and drive the four M3 × 8 screws in from the back
+   down the bores; connect the DSI ribbon.
 5. Stick the strip on the back plate in a snake, starting at the
    bottom-left cell, and solder the row joints in the side margins.
 6. Wire everything as in section 6. Test with `wordclock-matrix wiring

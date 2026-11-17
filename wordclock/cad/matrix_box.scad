@@ -76,7 +76,12 @@ lcd_t = 6;
 lcd_frame_h = 5;
 lcd_back_h = 12;
 lcd_m3 = [[20, 20], [146.2, 20], [20, 85.65], [146.2, 85.65]];
-display_post_d = 7;
+// Posts from the back plate up to the frame. An M3 x 8 pan-head screw goes
+// in from the wall side down a bore and seats on a shoulder near the top,
+// so it bites about 3 mm into the frame and never reaches the panel.
+display_post_d = 10;
+display_bore_d = 6.2;
+display_shoulder = 4;
 glass_fit = 0.3;
 
 /* [Raspberry Pi 3B] */
@@ -99,6 +104,9 @@ cam_holes = [21, 12.5];
 cam_hole_top = 2;
 cam_lens_from_top = 9.5;
 cam_lens_h = 6;
+// The lens sits in a pocket in the back of the face, 1 mm behind the front,
+// so the 4 mm rivet hole does not crop the picture
+cam_pocket = [12.5, 2];
 cam_post_d = 5;
 // USB microphone behind the rivet that mirrors the camera, in a cradle
 mic_board = [16, 12, 6];
@@ -213,7 +221,7 @@ cam_x = [for (p = rivets()) if (p[0] - cam_board[0] / 2 > seam_x + 2) p[0]][0];
 mic_x = box_w - cam_x;
 cam_x0 = cam_x - cam_board[0] / 2;
 cam_y0 = rivet_y + cam_lens_from_top - cam_board[1];
-cam_z = face_back - cam_lens_h - 1;
+cam_z = face_back + cam_pocket[1] - cam_lens_h - 1;
 mic_z = face_back - mic_board[2] - 0.5;
 
 pi_x = shell_t + pi_gap[0];
@@ -415,10 +423,10 @@ module shell_body() {
         // (bottom vents start above the microSD slot, so they do not merge)
         for (i = [0:3]) translate([pi_x + 4 + i * 9, -1, pi_z + sd_slot[1]]) cube([vent[0], shell_t + 2, vent[1]]);
         for (i = [0:3]) translate([-1, pi_y + 50 + i * 9, back_t + 6]) cube([shell_t + 2, vent[0], vent[1]]);
-        // Display screws: through the posts, countersunk on the wall side
+        // Display screws: a bore from the wall side, then the shoulder
         for (h = display_holes()) translate([h[0], h[1], -1]) {
             cylinder(d = 3.4, h = frame_back + 2);
-            cylinder(d1 = 7, d2 = 3.4, h = 2.8);
+            cylinder(d = display_bore_d, h = frame_back - display_shoulder + 1);
         }
     }
 }
@@ -512,6 +520,7 @@ module face_body(t) {
             through = abs(p[0] - cam_x) < 1 || abs(p[0] - mic_x) < 1;
             translate([p[0], p[1], through ? -1 : face_t - rivet_depth]) cylinder(d = rivet_d, h = face_t + 2);
         }
+        translate([cam_x, rivet_y, -1]) cylinder(d = cam_pocket[0], h = cam_pocket[1] + 1);
         for (p = face_magnets()) translate([p[0], p[1], -0.01]) cylinder(d = magnet_d + magnet_fit, h = magnet_h + 0.2);
         for (h = [0, 1], p = cover_magnets(h)) translate([p[0], p[1], face_t - magnet_h - 0.2]) cylinder(d = magnet_d + magnet_fit, h = magnet_h + 1);
     }
