@@ -834,11 +834,20 @@ module inside(cables = false) {
     if (cables) wiring();
 }
 
+// Countersunk heads of the corner screws, flush with the face
+module face_screw_heads() {
+    color("#3a3a3a") for (p = face_screws()) translate([p[0], p[1], depth - 1.86]) cylinder(d1 = face_screw_hole, d2 = face_screw_head - 0.2, h = 1.85);
+}
+
 module box(explode = 0) {
-    color("#d9d9d9") shell_all();
+    // Black outside, as printed
+    color("#262626") shell_all();
     translate([0, 0, explode]) inside();
     translate([0, 0, explode * 1.5]) glow();
-    color("#1b1b1b") translate([0, 0, explode * 2]) face_all();
+    color("#1b1b1b") translate([0, 0, explode * 2]) {
+        face_all();
+        face_screw_heads();
+    }
 }
 
 module legs() {
