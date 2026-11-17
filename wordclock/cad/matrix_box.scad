@@ -18,7 +18,7 @@
 // the Bambu Studio projects.
 
 /* [Part selection] */
-// shell | grid | face | cover | leg | test_plate | none, or a view: assembly | front |
+// shell | grid | face | cover | leg | test | none, or a view: assembly | front |
 // back | wall | table | inside | inside_3d | exploded | letters |
 // letters_exploded | letters_table
 part = "assembly";
@@ -492,9 +492,10 @@ module face_body(t) {
     }
 }
 
-// Printed front side down.
+// Printed front side up: the rivet dimples are open on top, so no layer
+// starts over air (front down they would be floating islands).
 module face(t) {
-    translate([0, 0, depth]) mirror([0, 0, 1]) face_body(t);
+    translate([0, 0, -face_back]) face_body(t);
 }
 
 // --- Letters cover -------------------------------------------------------
@@ -728,23 +729,23 @@ module split_lines() {
 
 // --- Fit test -----------------------------------------------------------
 //
-// Small pieces cut from the real parts, all on one plate, to check the fits
+// Small pieces cut from the real parts, printed together on one plate, to check the fits
 // before printing the whole box: dovetails and an M5 seam block, the Pi
 // posts and the microSD slot, the face with its rivets, the camera and
 // microphone holes and a magnet pocket, a grid corner with its lug and
 // strip notches, and two letters of the cover.
 
-// [name, part, piece, [x0, y0], [x1, y1], [layout x, layout y]]: the
-// region in front-view coordinates and where it goes on the plate.
+// [name, part, piece, [x0, y0], [x1, y1]]: each test piece is the region of
+// a part, in front-view coordinates, in that part's print orientation.
 function test_pieces() = [
-    ["grid_corner", "grid", 0, [margin - 9, grid_y - 9], [line_x(2) + 1, line_y(rows - 2) + 1], [0, 0]],
-    ["pi_corner", "shell", 0, [0, 0], [100, 60], [85, 0]],
-    ["seam_left", "shell", 0, [seam_x - 40, 0], [seam_x + tab_depth + 1, 50], [190, 0]],
-    ["seam_right", "shell", 1, [seam_x - 1, 0], [seam_x + 40, 50], [0, 90]],
-    ["face_band_left", "face", 0, [seam_x - 45, glass_top - 10], [seam_x + tab_depth + 1, split_y + 1], [50, 90]],
-    ["face_band_right", "face", 1, [seam_x - 1, glass_top - 10], [seam_x + 45, split_y + 1], [107, 90]],
-    ["face_corner", "face", 0, [0, 0], [40, 40], [162, 90]],
-    ["cover_letters", "cover", 0, [cover_x0, cover_y0], [cover_x0 + 75, cover_y0 + 45], [0, 150]],
+    ["grid_corner", "grid", 0, [margin - 9, grid_y - 9], [line_x(2) + 1, line_y(rows - 2) + 1]],
+    ["pi_corner", "shell", 0, [0, 0], [100, 60]],
+    ["seam_left", "shell", 0, [seam_x - 40, 0], [seam_x + tab_depth + 1, 50]],
+    ["seam_right", "shell", 1, [seam_x - 1, 0], [seam_x + 40, 50]],
+    ["face_band_left", "face", 0, [seam_x - 45, glass_top - 10], [seam_x + tab_depth + 1, split_y + 1]],
+    ["face_band_right", "face", 1, [seam_x - 1, glass_top - 10], [seam_x + 45, split_y + 1]],
+    ["face_corner", "face", 0, [0, 0], [40, 40]],
+    ["cover_letters", "cover", 0, [cover_x0, cover_y0], [cover_x0 + 75, cover_y0 + 45]],
 ];
 
 // One test piece in print orientation, its region moved to the origin.
@@ -761,11 +762,6 @@ module test_piece(p) {
     }
 }
 
-// Every test piece laid out on one plate of the A1.
-module test_plate() {
-    for (p = test_pieces()) translate([p[5][0], p[5][1], 0]) test_piece(p);
-}
-
 // --- Part selection -------------------------------------------------------
 
 if (part == "shell") shell(piece);
@@ -773,7 +769,7 @@ else if (part == "grid") grid(piece);
 else if (part == "face") face(piece);
 else if (part == "cover") cover(piece);
 else if (part == "leg") leg();
-else if (part == "test_plate") test_plate();
+else if (part == "test") test_piece(test_pieces()[piece]);
 else if (part == "assembly" || part == "front") {
     box();
     if (part == "front") split_lines();

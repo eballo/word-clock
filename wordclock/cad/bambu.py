@@ -175,7 +175,7 @@ def _object_model(object_id: int, mesh: Mesh) -> str:
     return "\n".join(lines)
 
 
-def _main_model(names: list[str]) -> str:
+def _main_model(names: list[str], positions: list[tuple[float, float]]) -> str:
     lines = [_XML, _MODEL_OPEN, f' <metadata name="Application">{APPLICATION}</metadata>']
     lines += [' <metadata name="BambuStudio:3mfVersion">1</metadata>', " <resources>"]
     for k in range(len(names)):
@@ -188,17 +188,16 @@ def _main_model(names: list[str]) -> str:
             "  </object>",
         ]
     lines += [" </resources>", " <build>"]
-    for k in range(len(names)):
-        x, y = plate_origin(k, len(names))
+    for k, (x, y) in enumerate(positions):
         lines.append(
             f'  <item objectid="{2 * k + 2}" transform="1 0 0 0 1 0 0 0 1'
-            f' {x + BED_SIZE / 2:.4f} {y + BED_SIZE / 2:.4f} 0" printable="1"/>'
+            f' {x:.4f} {y:.4f} 0" printable="1"/>'
         )
     lines += [" </build>", "</model>", ""]
     return "\n".join(lines)
 
 
-def _model_settings(names: list[str], overrides: dict[str, str]) -> str:
+def _model_settings(names: list[str], overrides: dict[str, str], plates: list[list[int]]) -> str:
     lines = [_XML, "<config>"]
     for k, name in enumerate(names):
         label = quoteattr(name)
@@ -217,19 +216,23 @@ def _model_settings(names: list[str], overrides: dict[str, str]) -> str:
             "    </part>",
             "  </object>",
         ]
-    for k, name in enumerate(names):
+    for p, members in enumerate(plates):
+        plate_name = names[members[0]] if len(members) == 1 else f"plate {p + 1}"
         lines += [
             "  <plate>",
-            f'    <metadata key="plater_id" value="{k + 1}"/>',
-            f'    <metadata key="plater_name" value={quoteattr(name)}/>',
+            f'    <metadata key="plater_id" value="{p + 1}"/>',
+            f'    <metadata key="plater_name" value={quoteattr(plate_name)}/>',
             '    <metadata key="locked" value="false"/>',
-            "    <model_instance>",
-            f'      <metadata key="object_id" value="{2 * k + 2}"/>',
-            '      <metadata key="instance_id" value="0"/>',
-            f'      <metadata key="identify_id" value="{100 + k}"/>',
-            "    </model_instance>",
-            "  </plate>",
         ]
+        for k in members:
+            lines += [
+                "    <model_instance>",
+                f'      <metadata key="object_id" value="{2 * k + 2}"/>',
+                '      <metadata key="instance_id" value="0"/>',
+                f'      <metadata key="identify_id" value="{100 + k}"/>',
+                "    </model_instance>",
+            ]
+        lines.append("  </plate>")
     lines += ["</config>", ""]
     return "\n".join(lines)
 
@@ -242,6 +245,42 @@ def _rels(targets: list[str]) -> str:
     ]
     lines += ["</Relationships>", ""]
     return "\n".join(lines)
+
+
+# Gap between parts that share one plate.
+PLATE_GAP = 6.0
+
+
+def pack_plate(
+    sizes: list[tuple[float, float]], bed: float = BED_SIZE, gap: float = PLATE_GAP
+) -> list[tuple[float, float]]:
+    """
+    Lay parts out on one plate in rows, tallest first in each row.
+
+    Args:
+        sizes: Footprint (width, depth) of every part.
+        bed: Bed size in millimetres.
+        gap: Space between parts and from the edges.
+
+    Returns:
+        Centre of every part on the plate, in the order of ``sizes``.
+
+    Raises:
+        ValueError: If the parts do not fit.
+    """
+    order = sorted(range(len(sizes)), key=lambda i: -sizes[i][1])
+    centres: dict[int, tuple[float, float]] = {}
+    x, y, row = gap, gap, 0.0
+    for i in order:
+        w, d = sizes[i]
+        if x + w + gap > bed:
+            x, y, row = gap, y + row + gap, 0.0
+        if x + w + gap > bed or y + d + gap > bed:
+            raise ValueError(f"The parts do not fit one {bed:.0f} mm plate")
+        centres[i] = (x + w / 2, y + d / 2)
+        x += w + gap
+        row = max(row, d)
+    return [centres[i] for i in range(len(sizes))]
 
 
 def write_project(stls: list[Path], output: Path, overrides: dict[str, str] | None = None) -> Path:
@@ -260,6 +299,54 @@ def write_project(stls: list[Path], output: Path, overrides: dict[str, str] | No
     Returns:
         Path of the written project.
     """
+    meshes = [centred(read_stl(path)) for path in stls]
+    positions = []
+    for k in range(len(stls)):
+        x, y = plate_origin(k, len(stls))
+        positions.append((x + BED_SIZE / 2, y + BED_SIZE / 2))
+    plates = [[k] for k in range(len(stls))]
+    _write(stls, meshes, positions, plates, output, overrides or {})
+    logger.info("Wrote %s (%d plates)", output, len(stls))
+    return output
+
+
+def write_plate(stls: list[Path], output: Path, overrides: dict[str, str] | None = None) -> Path:
+    """
+    Write a Bambu Studio project with every STL as its own object on one plate.
+
+    Separate objects let Bambu Studio orient, move and check each part on its
+    own.
+
+    Args:
+        stls: STL files, laid out side by side on the plate.
+        output: Path of the ``.3mf`` project to write.
+        overrides: Print settings applied to every object.
+
+    Returns:
+        Path of the written project.
+
+    Raises:
+        ValueError: If the parts do not fit one plate.
+    """
+    meshes = [centred(read_stl(path)) for path in stls]
+    sizes = [
+        tuple(max(v[i] for v in mesh.vertices) - min(v[i] for v in mesh.vertices) for i in (0, 1))
+        for mesh in meshes
+    ]
+    positions = pack_plate(sizes)  # type: ignore[arg-type]
+    _write(stls, meshes, positions, [list(range(len(stls)))], output, overrides or {})
+    logger.info("Wrote %s (%d parts on one plate)", output, len(stls))
+    return output
+
+
+def _write(
+    stls: list[Path],
+    meshes: list[Mesh],
+    positions: list[tuple[float, float]],
+    plates: list[list[int]],
+    output: Path,
+    overrides: dict[str, str],
+) -> None:
     names = [path.stem for path in stls]
     objects = [f"/3D/Objects/object_{k + 1}.model" for k in range(len(stls))]
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -267,11 +354,8 @@ def write_project(stls: list[Path], output: Path, overrides: dict[str, str] | No
         zf.writestr("[Content_Types].xml", _CONTENT_TYPES)
         zf.writestr("_rels/.rels", _rels(["/3D/3dmodel.model"]))
         zf.writestr("3D/_rels/3dmodel.model.rels", _rels(objects))
-        zf.writestr("3D/3dmodel.model", _main_model(names))
-        for k, path in enumerate(stls):
-            mesh = centred(read_stl(path))
+        zf.writestr("3D/3dmodel.model", _main_model(names, positions))
+        for k, mesh in enumerate(meshes):
             zf.writestr(objects[k].lstrip("/"), _object_model(2 * k + 1, mesh))
-        zf.writestr("Metadata/model_settings.config", _model_settings(names, overrides or {}))
+        zf.writestr("Metadata/model_settings.config", _model_settings(names, overrides, plates))
         zf.write(PROJECT_SETTINGS, "Metadata/project_settings.config")
-    logger.info("Wrote %s (%d plates)", output, len(stls))
-    return output

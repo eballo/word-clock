@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import re
 import zipfile
 from pathlib import Path
 
 from wordclock.cad import (
     BOX_PIECES,
     BOX_SCAD_FILE,
-    BOX_TEST_PIECES,
+    BOX_TEST_NAMES,
     EXTRA_PARTS,
     FACE_PARTS,
     MATRIX_BOX_PART,
@@ -364,30 +365,34 @@ class TestOversizedParts:
 
 
 class TestBoxFitTest:
-    def test_one_plate_job(self) -> None:
+    def test_one_job_per_piece(self) -> None:
         # Given / When
         jobs = plan_box_test_jobs(Path("build/stl"))
         # Then
-        assert jobs == [
-            RenderJob("test_plate", Path("build/stl/box/test_plate.stl"), scad=BOX_SCAD_FILE)
-        ]
+        assert [job.output.name for job in jobs] == [f"test_{n}.stl" for n in BOX_TEST_NAMES]
+        assert [job.piece for job in jobs] == list(range(len(BOX_TEST_NAMES)))
+        assert all(job.part == "test" for job in jobs)
 
-    def test_model_lists_every_test_piece(self) -> None:
+    def test_names_follow_the_model(self) -> None:
         # Given
         scad = BOX_SCAD_FILE.read_text(encoding="utf-8")
         start = scad.index("function test_pieces()")
         block = scad[start : scad.index("];", start)]
         # When
-        pieces = block.count('["')
+        names = re.findall(r'\["(\w+)", "', block)
         # Then
-        assert pieces == BOX_TEST_PIECES
+        assert tuple(names) == BOX_TEST_NAMES
 
-    def test_project_has_one_plate(self, tmp_path: Path) -> None:
+    def test_every_piece_on_one_plate(self, tmp_path: Path) -> None:
         # Given
-        stl = tmp_path / "stl" / "box" / "test_plate.stl"
-        stl.parent.mkdir(parents=True)
-        stl.write_text(tiny_stl(), encoding="ascii")
+        for job in plan_box_test_jobs(tmp_path / "stl"):
+            job.output.parent.mkdir(parents=True, exist_ok=True)
+            job.output.write_text(tiny_stl(40), encoding="ascii")
         # When
         projects = write_box_projects(tmp_path / "stl", tmp_path / "bambu")
-        # Then
+        # Then: one plate, one object per piece
         assert projects == [tmp_path / "bambu" / "box_test.3mf"]
+        with zipfile.ZipFile(projects[0]) as zf:
+            settings = zf.read("Metadata/model_settings.config").decode()
+        assert settings.count("<plate>") == 1
+        assert settings.count("<model_instance>") == len(BOX_TEST_NAMES)

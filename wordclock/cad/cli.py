@@ -8,7 +8,6 @@ from typing import Annotated
 import typer
 
 from wordclock.cad.build import (
-    BOX_TEST_PIECES,
     find_loose_parts,
     oversized_parts,
     plan_box_jobs,
@@ -84,9 +83,7 @@ def main(
     except RuntimeError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1) from exc
-    # The fit-test plate holds several pieces on purpose.
-    expected = BOX_TEST_PIECES if box and test else 1
-    loose = {p: n for p, n in find_loose_parts(paths).items() if n != expected}
+    loose = find_loose_parts(paths)
     for path, bodies in loose.items():
         typer.echo(f"Loose parts: {path} has {bodies} separate bodies", err=True)
     too_big = oversized_parts(paths)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from wordclock.cad.build import (
     BOX_PIECES,
     BOX_SCAD_FILE,
-    BOX_TEST_PIECES,
+    BOX_TEST_NAMES,
     EXTRA_PARTS,
     FACE_PARTS,
     MATRIX_BOX_PART,
@@ -31,7 +31,7 @@ from wordclock.cad.build import (
 )
 
 __all__ = [
-    "BOX_TEST_PIECES",
+    "BOX_TEST_NAMES",
     "BOX_PIECES",
     "BOX_SCAD_FILE",
     "EXTRA_PARTS",

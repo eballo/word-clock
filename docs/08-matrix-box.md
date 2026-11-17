@@ -82,7 +82,7 @@ per plate:
 |---------|--------|----------|----------|-------------|
 | `box_shell.3mf` | 4 shell tiles | White or grey PLA | 3 walls, 15 % infill | Back on the bed |
 | `box_grid.3mf` | 2 grid halves | White PLA | 3 walls, 15 % infill | Upside down: wall tops on the bed |
-| `box_face.3mf` | 4 face tiles | Black PLA | 100 % infill | Front on the bed |
+| `box_face.3mf` | 4 face tiles | Black PLA | 100 % infill | Front up, so the rivet dimples print open |
 | `box_cover.3mf` | 2 letters cover halves | Black PLA | 100 % infill | Front on the bed |
 | `box_legs.3mf` | 2 legs | Black PLA | 100 % infill | Flat |
 
@@ -93,7 +93,7 @@ parts. It takes a fraction of the filament and shows whether the fits work
 with your printer and filament:
 
 ```bash
-uv run wordclock-cad --box --test    # build/bambu/box_test.3mf, one plate
+uv run wordclock-cad --box --test    # build/bambu/box_test.3mf: every piece its own object, one plate
 ```
 
 | Piece | What to check |
