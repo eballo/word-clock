@@ -48,7 +48,7 @@ printing on the Bambu Lab A1, the wiring and the assembly.
 | # | Part | Use |
 |---|------|-----|
 | 1 | 5 V 4 A power supply, 5,5 × 2,1 mm plug | LEDs (limited to 1,5 A in software), Pi and display |
-| 2 | Female DC jack adapter 5,5 × 2,1 mm with screw terminals (the CCTV kind) | Nose through the bottom wall, body clipped in a cradle |
+| 2 | Female DC jack adapter 5,5 × 2,1 mm with screw terminals (the CCTV kind) | Nose through the right wall, 11 cm up, body clipped in a cradle |
 | 3 | 2 × WAGO 221-413 lever connectors | Share the 5 V and the ground |
 | 4 | CSI ribbon cable, 15 pins, 30 cm | The camera is about 25 cm from the Pi: the 15 cm cable that comes with most OV5647 boards is too short |
 | 5 | USB microphone, small (dongle size), optional | Behind the microphone rivet; set `mic = true` in the model first |
@@ -109,7 +109,7 @@ uv run wordclock-cad --box --test    # box_test_black.3mf, box_test_white.3mf an
 | Piece | What to check |
 |-------|---------------|
 | `seam_left` + `seam_right` | The dovetail slides in without forcing and holds; an M5 × 25 bolt goes through both blocks and the nut sits in its hex pocket |
-| `pi_corner` | The Raspberry Pi sits on the two posts with M2.5 screws; the microSD card comes out through the slot; the DC jack nose fits its hole and the body clips into the cradle |
+| `pi_corner` | The Raspberry Pi sits on the two posts with M2.5 screws; the microSD card comes out through the slot |
 | `face_band_left` + `face_band_right` | The face dovetail; the camera sees through its rivet; the plain rivets look the same |
 | `face_corner` | Set it into `pi_corner`: it sits flush with the walls on the corner post, an M3 × 12 countersunk screw goes into the post with its head flush, and without the screw a fingernail lifts it out again |
 | `grid_corner` | The strip passes under the walls through the notches; the lug sits on a 3 mm pin; the light of one LED fills the cell |
@@ -156,7 +156,7 @@ assembly views for the OpenSCAD GUI: set `part` to `assembly`, `exploded`,
 | Microphone | Optional, off by default. With `mic = true` the shell gets a cradle that holds it against the back of its rivet, and that rivet becomes a through hole: reprint the bottom-left shell tile and the bottom-left face tile (plate 1 of each project) |
 | Raspberry Pi | Upright left of the display on four posts, M2.5, 14 mm from the left wall so a screwdriver passes the corner post. USB and Ethernet up; the microSD card down, reached through a slot in the bottom wall; the GPIO header along the left edge, pin 1 at the bottom |
 | Arduino Uno | Upright right of the display on four 3 mm posts, USB-B up so the cable has room. Jumper wires in its headers need 90° plugs: straight ones reach the face |
-| Power | DC jack adapter in a cradle on the bottom wall, its screw terminals facing in; two WAGO connectors behind it, right of the Pi |
+| Power | DC jack adapter in a cradle at the right wall, 11 cm above the bottom edge, its screw terminals facing in. In the side wall the plug stays free both on the wall and on the legs, where the bottom edge rests on the table. Two WAGO connectors right of the Pi; the jack wires reach them under the display |
 | Air | Slots in the bottom wall under the Pi and high in the left wall |
 
 ---
@@ -177,7 +177,7 @@ assembly views for the OpenSCAD GUI: set `part` to `assembly`, `exploded`,
 
 | From | To | Wire |
 |------|----|------|
-| DC jack | WAGO 5 V and GND | 0,75 mm² (18 AWG) |
+| DC jack | WAGO 5 V and GND, about 35 cm under the display | 0,75 mm² (18 AWG) |
 | WAGO | Pi pins 2 and 6 | 0,5 mm², Dupont at the Pi end |
 | WAGO | Strip input 5 V and GND | 0,75 mm² |
 | WAGO | Display driver board, through a cut micro-USB cable (red 5 V, black GND) | Cable's own wires |
