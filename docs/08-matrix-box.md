@@ -53,14 +53,16 @@ printing on the Bambu Lab A1, the wiring and the assembly.
 | 4 | CSI ribbon cable, 30 cm | The camera is about 25 cm from the Pi |
 | 5 | USB microphone, small (dongle size) | Behind the microphone rivet |
 | 6 | 330 Ω resistor | In series with the LED data line |
-| 7 | 7 × M5 bolts and nuts: 3 × M5 × 25 mm (vertical seam), 4 × M5 × 16 mm (horizontal seam) | Join the shell tiles |
-| 8 | 2 × M5 wall screws with plugs, heads up to 10 mm | Hang the box |
-| 9 | 4 × M3 × 6 mm countersunk | Display, from the back into its frame |
-| 10 | 4 × M2.5 × 6 mm self-tapping | Raspberry Pi |
-| 11 | 4 × M2 × 6 mm self-tapping | Camera |
-| 12 | 4 × M3 × 8 mm self-tapping (optional) | Arduino Uno |
-| 13 | 40 neodymium magnets, 5 × 2 mm | 12 + 12 for the face, 8 + 8 for the letters cover |
-| 14 | Tracing paper | Diffuser, cut to the grid |
+| 7 | Short micro-USB cable to cut (power only) | Display power, see section 6 |
+| 8 | Female-female jumper wires; 90° ones for the Arduino | Pi pins 2, 6 and 12; Arduino headers |
+| 9 | 7 × M5 bolts and nuts: 3 × M5 × 25 mm (vertical seam), 4 × M5 × 16 mm (horizontal seam) | Join the shell tiles |
+| 10 | 2 × M5 wall screws with plugs, heads up to 10 mm | Hang the box |
+| 11 | 4 × M3 × 6 mm countersunk | Display, from the back into its frame |
+| 12 | 4 × M2.5 × 6 mm self-tapping | Raspberry Pi |
+| 13 | 4 × M2 × 6 mm self-tapping | Camera |
+| 14 | 4 × M3 × 6 mm self-tapping (optional) | Arduino Uno |
+| 15 | 40 neodymium magnets, 5 × 2 mm | 12 + 12 for the face, 8 + 8 for the letters cover |
+| 16 | Tracing paper | Diffuser, cut to the grid |
 
 M5 is used wherever the printed parts are bolted. The display (M3), the
 Raspberry Pi (M2.5), the camera (M2) and the Arduino (M3) keep the screws
@@ -143,8 +145,8 @@ assembly views for the OpenSCAD GUI: set `part` to `assembly`, `exploded`,
 | Display | Four posts from the back plate, M3 countersunk screws from the wall side into the threaded holes of its frame. It is fixed to the box, not to the face, so the face comes off without touching it |
 | Camera | Four posts, M2; the lens against the back of the camera rivet, which is a through hole |
 | Microphone | A cradle that holds it against the back of the microphone rivet |
-| Raspberry Pi | Upright left of the display on four posts, M2.5. USB and Ethernet up; the microSD card down, reached through a slot in the bottom wall |
-| Arduino Uno | Upright right of the display on four posts, USB-B up so the cable has room |
+| Raspberry Pi | Upright left of the display on four posts, M2.5, 14 mm from the left wall so a screwdriver passes the corner post. USB and Ethernet up; the microSD card down, reached through a slot in the bottom wall; the GPIO header along the left edge, pin 1 at the bottom |
+| Arduino Uno | Upright right of the display on four 3 mm posts, USB-B up so the cable has room. Jumper wires in its headers need 90° plugs: straight ones reach the face |
 | Power | DC jack in the bottom wall, two WAGO connectors next to the Pi |
 | Air | Slots in the bottom wall under the Pi and high in the left wall |
 
@@ -155,7 +157,7 @@ assembly views for the OpenSCAD GUI: set `part` to `assembly`, `exploded`,
 ```
    jack ──► WAGO 5 V ──┬──► Pi pin 2 (5 V)
             WAGO GND ──┼──► Pi pin 6 (GND)
-                       ├──► display driver board 5 V / GND
+                       ├──► display driver board micro-USB (cut cable)
                        └──► strip input 5 V / GND (left side, up to the bottom-left cell)
 
    Pi pin 12 (GPIO 18) ── 330 Ω ──► strip DIN
@@ -169,8 +171,17 @@ assembly views for the OpenSCAD GUI: set `part` to `assembly`, `exploded`,
 | DC jack | WAGO 5 V and GND | 0,75 mm² (18 AWG) |
 | WAGO | Pi pins 2 and 6 | 0,5 mm², Dupont at the Pi end |
 | WAGO | Strip input 5 V and GND | 0,75 mm² |
-| WAGO | Display driver board 5 V and GND | 0,5 mm² |
+| WAGO | Display driver board, through a cut micro-USB cable (red 5 V, black GND) | Cable's own wires |
 | Pi pin 12 (GPIO 18) | Strip DIN, through 330 Ω | 0,25 mm² |
+
+Room for the plugs, checked in the model:
+
+| Plug | Room |
+|------|------|
+| Jumper housings on the Pi header | 8,2 mm above them to bend the wires toward the WAGO connectors; the wires cross the bottom of the board |
+| Display driver board | 15,3 mm under it: too little for straight jumpers on its 5 V pins (16,5 mm), so it takes its power through its micro-USB port |
+| USB plugs on the Pi | About 40 mm above the ports, below the rivet row |
+| Camera ribbon | From the CSI connector up over the USB ports, then across just above the display glass, under the microphone cradle, into the bottom edge of the camera board |
 
 The strip starts at the bottom-left cell, next to the Pi, so the input
 wires are short. That is upside down and mirrored from the first matrix:
