@@ -117,10 +117,14 @@ uno_xy = [298, 22];
 uno_standoff = 3;
 
 /* [Power and wiring] */
-// Panel-mount 5.5 x 2.1 mm DC jack in the bottom wall, and two lever
-// connectors (WAGO 221-413) that share the 5 V and the ground
-jack_d = 11.4;
-jack_x = 82;
+// Female 5.5 x 2.1 mm DC jack adapter with screw terminals (the CCTV kind):
+// its round nose goes through the bottom wall, flush outside, and its body
+// clips into a cradle on the back plate. Measure yours and set the sizes.
+jack_nose = [11, 12];        // diameter, length
+jack_body = [13.5, 11.5, 23]; // width, height, length behind the nose
+jack_fit = 0.3;
+jack_x = 85;
+// Two lever connectors (WAGO 221-413) that share the 5 V and the ground
 wago = [20.2, 13.1, 8.3];
 vent = [3, 18];
 
@@ -216,17 +220,22 @@ pi_x = shell_t + pi_gap[0];
 pi_y = shell_t + pi_gap[1];
 pi_z = back_t + pi_standoff;
 pi_top = pi_z + pi_board_t + pi_ports_h;
-wago_xy = [pi_x + pi_board[0] + 6, shell_t + 22];
+// The jack body, from the end of its nose to its screw terminals
+jack_z = back_t + jack_body[1] / 2;
+jack_y0 = jack_nose[1];
+jack_y1 = jack_y0 + jack_body[2];
+// WAGO connectors behind the jack, room to bend its wires in between
+wago_xy = [pi_x + pi_board[0] + 6, jack_y1 + 10];
 // Female jumper housings (14 mm) pushed onto the 2.5 mm header base
 dupont_top = pi_z + pi_board_t + 2.5 + 14;
 
 function display_holes() = [for (h = lcd_m3) [glass_x, glass_y] + lcd_frame_pos + h];
 
-// Face magnets on posts: three per tile, clear of the seams, the keyholes
-// and the wires (the strip turns in the side margins).
+// Face magnets on posts: three per tile, clear of the seams, the keyholes,
+// the DC jack and the wires (the strip turns in the side margins).
 fm = shell_t + face_magnet_post / 2;
 function face_magnets() = [
-    [fm, fm], [box_w / 4, fm], [fm, rivet_y - 6],
+    [fm, fm], [box_w / 4 + 10, fm], [fm, rivet_y - 6],
     [box_w - fm, fm], [box_w * 3 / 4, fm], [box_w - fm, rivet_y - 6],
     [fm, box_h - fm], [box_w / 4, box_h - fm], [seam_x - 20, box_h - fm],
     [box_w - fm, box_h - fm], [box_w * 3 / 4, box_h - fm], [seam_x + 20, box_h - fm],
@@ -269,6 +278,8 @@ assert(uno_xy[0] > glass_x + lcd_glass[0] + 6 && uno_xy[0] + uno_board[0] < box_
 assert(cam_x0 > seam_x + 1, "The camera posts sit on the seam");
 assert(cam_y0 + cam_board[1] - cam_hole_top + cam_post_d / 2 + 1 < split_y, "The camera posts sit on the horizontal seam");
 assert(face_back - dupont_top >= 6, "No room to bend the jumper wires on the Pi header");
+assert(jack_x - jack_body[0] / 2 - 2 > pi_x + pi_board[0] + 2.5, "The jack cradle hits the Pi power port");
+assert(jack_x + jack_body[0] / 2 + 2 < box_w / 4 + 10 - face_magnet_post / 2, "The jack cradle hits a face magnet post");
 
 // --- 2D helpers ----------------------------------------------------------
 
@@ -392,11 +403,12 @@ module shell_body() {
                 offset(-shell_t) outline_2d();
             }
             shell_posts();
+            jack_cradle();
         }
         for (dx = [-keyhole_dx / 2, keyhole_dx / 2]) translate([seam_x + dx, box_h - keyhole_from_top, 0]) keyhole();
         leg_slots();
-        // DC jack in the bottom wall
-        translate([jack_x, -1, depth / 2 - 3]) rotate([-90, 0, 0]) cylinder(d = jack_d, h = shell_t + 2);
+        // DC jack nose through the bottom wall
+        translate([jack_x, -1, jack_z]) rotate([-90, 0, 0]) cylinder(d = jack_nose[0] + 2 * jack_fit, h = shell_t + 2);
         // microSD slot under the card
         translate([pi_x + pi_board[0] / 2 - sd_slot[0] / 2, -1, pi_z - 3]) cube([sd_slot[0], shell_t + 2, sd_slot[1]]);
         // Vents: bottom wall under the Pi, left wall high beside it
@@ -642,10 +654,29 @@ module mic() {
 }
 
 module jack() {
-    color("#222") translate([jack_x, shell_t, depth / 2 - 3]) rotate([-90, 0, 0]) {
-        cylinder(d = jack_d - 0.4, h = 4);
-        translate([0, 0, 4]) cylinder(d = 8, h = 12);
+    color("#222") {
+        translate([jack_x, 0, jack_z]) rotate([-90, 0, 0]) cylinder(d = jack_nose[0], h = jack_y0);
+        translate([jack_x - jack_body[0] / 2, jack_y0, back_t]) cube([jack_body[0], jack_body[2] - 8, jack_body[1]]);
     }
+    color("#2a8a3a") translate([jack_x - jack_body[0] / 2, jack_y1 - 8, back_t]) cube([jack_body[0], 8, jack_body[1]]);
+}
+
+// Cradle for the jack body: two rails with small lips that clip over it,
+// and a low stop behind it that takes the push of the plug
+module jack_cradle() {
+    w = jack_body[0] + 2 * jack_fit;
+    h = jack_body[1] + jack_fit;
+    rail = 1.6;
+    lip = 0.8;
+    for (side = [-1, 1]) translate([jack_x + side * (w / 2 + rail / 2), 0, 0]) {
+        translate([-rail / 2, jack_y0, 0]) cube([rail, jack_body[2] - 10, back_t + h + 1.2]);
+        // Lip, sloped underneath so it prints without support
+        translate([-side * rail / 2, jack_y0, back_t + h]) hull() {
+            cube([0.01, jack_body[2] - 10, 1.2]);
+            translate([-side * lip, 0, 0.6]) cube([0.01, jack_body[2] - 10, 0.6]);
+        }
+    }
+    translate([jack_x - w / 2 - rail, jack_y1 + jack_fit, 0]) cube([w + 2 * rail, 2, back_t + 3.5]);
 }
 
 module wagos() {
@@ -671,7 +702,7 @@ function pin(n) = [pi_x + (n % 2 == 0 ? 2.23 : 4.77), pi_y + 8.37 + 2.54 * floor
 module wiring() {
     w = [wago_xy[0] + 4, wago_xy[1] + 4, back_t + wago[2]];
     g = [wago_xy[0] + 4, wago_xy[1] + wago[1] + 7, back_t + wago[2]];
-    jk = [jack_x, shell_t + 16, depth / 2 - 3];
+    jk = [jack_x - 2, jack_y1, jack_z];
     up = 16;
     top = pi_y + pi_board[1] + 8;
     cable([jk, [jack_x, w[1], 10], w], "red");

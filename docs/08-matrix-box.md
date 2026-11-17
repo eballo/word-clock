@@ -48,9 +48,9 @@ printing on the Bambu Lab A1, the wiring and the assembly.
 | # | Part | Use |
 |---|------|-----|
 | 1 | 5 V 4 A power supply, 5,5 × 2,1 mm plug | LEDs (limited to 1,5 A in software), Pi and display |
-| 2 | Panel-mount DC jack 5,5 × 2,1 mm (DC-022) | In the bottom wall |
+| 2 | Female DC jack adapter 5,5 × 2,1 mm with screw terminals (the CCTV kind) | Nose through the bottom wall, body clipped in a cradle |
 | 3 | 2 × WAGO 221-413 lever connectors | Share the 5 V and the ground |
-| 4 | CSI ribbon cable, 30 cm | The camera is about 25 cm from the Pi |
+| 4 | CSI ribbon cable, 15 pins, 30 cm | The camera is about 25 cm from the Pi: the 15 cm cable that comes with most OV5647 boards is too short |
 | 5 | USB microphone, small (dongle size) | Behind the microphone rivet |
 | 6 | 330 Ω resistor | In series with the LED data line |
 | 7 | Short micro-USB cable to cut (power only) | Display power, see section 6 |
@@ -63,6 +63,11 @@ printing on the Bambu Lab A1, the wiring and the assembly.
 | 14 | 4 × M3 × 6 mm self-tapping (optional) | Arduino Uno |
 | 15 | 40 neodymium magnets, 5 × 2 mm | 12 + 12 for the face, 8 + 8 for the letters cover |
 | 16 | Tracing paper | Diffuser, cut to the grid |
+
+The jack cradle is drawn for an adapter with an 11 mm round nose, 12 mm
+long, and a 13,5 × 11,5 × 23 mm body. These vary between sellers: measure
+yours with a caliper and set `jack_nose` and `jack_body` at the top of the
+model before printing.
 
 M5 is used wherever the printed parts are bolted. The display (M3), the
 Raspberry Pi (M2.5), the camera (M2) and the Arduino (M3) keep the screws
@@ -101,7 +106,7 @@ uv run wordclock-cad --box --test    # build/bambu/box_test.3mf: every piece its
 | Piece | What to check |
 |-------|---------------|
 | `seam_left` + `seam_right` | The dovetail slides in without forcing and holds; an M5 × 25 bolt goes through both blocks and the nut sits in its hex pocket |
-| `pi_corner` | The Raspberry Pi sits on the two posts with M2.5 screws; the microSD card comes out through the slot; the DC jack fits its hole; a magnet presses into a post |
+| `pi_corner` | The Raspberry Pi sits on the two posts with M2.5 screws; the microSD card comes out through the slot; the DC jack nose fits its hole and the body clips into the cradle; a magnet presses into a post |
 | `face_band_left` + `face_band_right` | The face dovetail; the camera and the microphone see through their rivets; the plain rivets look the same |
 | `face_corner` | A magnet presses into the pocket and holds against a post magnet |
 | `grid_corner` | The strip passes under the walls through the notches; the lug sits on a 3 mm pin; the light of one LED fills the cell |
@@ -143,11 +148,11 @@ assembly views for the OpenSCAD GUI: set `part` to `assembly`, `exploded`,
 | Part | Mount |
 |------|-------|
 | Display | Four posts from the back plate, M3 countersunk screws from the wall side into the threaded holes of its frame. It is fixed to the box, not to the face, so the face comes off without touching it |
-| Camera | Four posts, M2; the lens against the back of the camera rivet, which is a through hole |
+| Camera | OV5647 board, 25 × 24 mm with M2 holes 21 × 12,5 mm apart, on four posts; the lens against the back of the camera rivet, which is a through hole. Check the holes on yours before printing |
 | Microphone | A cradle that holds it against the back of the microphone rivet |
 | Raspberry Pi | Upright left of the display on four posts, M2.5, 14 mm from the left wall so a screwdriver passes the corner post. USB and Ethernet up; the microSD card down, reached through a slot in the bottom wall; the GPIO header along the left edge, pin 1 at the bottom |
 | Arduino Uno | Upright right of the display on four 3 mm posts, USB-B up so the cable has room. Jumper wires in its headers need 90° plugs: straight ones reach the face |
-| Power | DC jack in the bottom wall, two WAGO connectors next to the Pi |
+| Power | DC jack adapter in a cradle on the bottom wall, its screw terminals facing in; two WAGO connectors behind it, right of the Pi |
 | Air | Slots in the bottom wall under the Pi and high in the left wall |
 
 ---
