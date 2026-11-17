@@ -51,7 +51,7 @@ printing on the Bambu Lab A1, the wiring and the assembly.
 | 2 | Female DC jack adapter 5,5 × 2,1 mm with screw terminals (the CCTV kind) | Nose through the bottom wall, body clipped in a cradle |
 | 3 | 2 × WAGO 221-413 lever connectors | Share the 5 V and the ground |
 | 4 | CSI ribbon cable, 15 pins, 30 cm | The camera is about 25 cm from the Pi: the 15 cm cable that comes with most OV5647 boards is too short |
-| 5 | USB microphone, small (dongle size) | Behind the microphone rivet |
+| 5 | USB microphone, small (dongle size), optional | Behind the microphone rivet; set `mic = true` in the model first |
 | 6 | 330 Ω resistor | In series with the LED data line |
 | 7 | Short micro-USB cable to cut (power only) | Display power, see section 6 |
 | 8 | Female-female jumper wires; 90° ones for the Arduino | Pi pins 2, 6 and 12; Arduino headers |
@@ -110,7 +110,7 @@ uv run wordclock-cad --box --test    # box_test_black.3mf and box_test_white.3mf
 |-------|---------------|
 | `seam_left` + `seam_right` | The dovetail slides in without forcing and holds; an M5 × 25 bolt goes through both blocks and the nut sits in its hex pocket |
 | `pi_corner` | The Raspberry Pi sits on the two posts with M2.5 screws; the microSD card comes out through the slot; the DC jack nose fits its hole and the body clips into the cradle |
-| `face_band_left` + `face_band_right` | The face dovetail; the camera and the microphone see through their rivets; the plain rivets look the same |
+| `face_band_left` + `face_band_right` | The face dovetail; the camera sees through its rivet; the plain rivets look the same |
 | `face_corner` | Set it into `pi_corner`: it sits flush with the walls on the corner post, an M3 × 12 countersunk screw goes into the post with its head flush, and without the screw a fingernail lifts it out again |
 | `grid_corner` | The strip passes under the walls through the notches; the lug sits on a 3 mm pin; the light of one LED fills the cell |
 | `cover_letters` | Two letters, with tracing paper behind, lit by one LED; a magnet in its pocket |
@@ -152,7 +152,7 @@ assembly views for the OpenSCAD GUI: set `part` to `assembly`, `exploded`,
 |------|-------|
 | Display | Four 10 mm posts from the back plate up to the threaded M3 holes of its metal frame (126,2 × 65,65 mm apart). An M3 × 8 pan-head screw goes in from the wall side down a bore in each post and seats on a 4 mm shoulder, so it bites about 3 mm into the frame and never reaches the panel. The glass sits in the window of the face. The display is fixed to the box, not to the face, so the face comes off without touching it. Take off the four standoffs on its back that are meant for a Pi |
 | Camera | OV5647 board, 25 × 24 mm with M2 holes 21 × 12,5 mm apart, on four posts with M2 × 6 screws, its ribbon connector down. The lens sits in a 12,5 mm pocket in the back of the face, 1 mm behind the front, so the 4 mm rivet hole does not crop the picture. Check the holes on yours before printing |
-| Microphone | A cradle that holds it against the back of the microphone rivet |
+| Microphone | Optional, off by default. With `mic = true` the shell gets a cradle that holds it against the back of its rivet, and that rivet becomes a through hole: reprint the left top shell tile and the left face band tile |
 | Raspberry Pi | Upright left of the display on four posts, M2.5, 14 mm from the left wall so a screwdriver passes the corner post. USB and Ethernet up; the microSD card down, reached through a slot in the bottom wall; the GPIO header along the left edge, pin 1 at the bottom |
 | Arduino Uno | Upright right of the display on four 3 mm posts, USB-B up so the cable has room. Jumper wires in its headers need 90° plugs: straight ones reach the face |
 | Power | DC jack adapter in a cradle on the bottom wall, its screw terminals facing in; two WAGO connectors behind it, right of the Pi |
@@ -171,7 +171,7 @@ assembly views for the OpenSCAD GUI: set `part` to `assembly`, `exploded`,
    Pi pin 12 (GPIO 18) ── 330 Ω ──► strip DIN
    Pi DSI  ═══ ribbon, under the display ═══► display driver board
    Pi CSI  ═══ 30 cm ribbon, up the left and across the band ═══► camera
-   Pi USB  ──► microphone          Pi USB ──► Arduino Uno (power and data)
+   Pi USB  ──► microphone (optional)   Pi USB ──► Arduino Uno (power and data)
 ```
 
 | From | To | Wire |
@@ -189,7 +189,7 @@ Room for the plugs, checked in the model:
 | Jumper housings on the Pi header | 8,2 mm above them to bend the wires toward the WAGO connectors; the wires cross the bottom of the board |
 | Display driver board | 15,3 mm under it: too little for straight jumpers on its 5 V pins (16,5 mm), so it takes its power through its micro-USB port |
 | USB plugs on the Pi | About 40 mm above the ports, below the rivet row |
-| Camera ribbon | From the CSI connector up over the USB ports, then across just above the display glass, under the microphone cradle, into the bottom edge of the camera board |
+| Camera ribbon | From the CSI connector up over the USB ports, then across just above the display glass, into the bottom edge of the camera board |
 
 The strip starts at the bottom-left cell, next to the Pi, so the input
 wires are short. That is upside down and mirrored from the first matrix:
@@ -205,7 +205,7 @@ so there is no micro-USB plug in the way.
 2. Slide the shell tiles together on their dovetails, then bolt the seams:
    3 × M5 × 25 down the middle, 4 × M5 × 16 across.
 3. Fit the DC jack, the WAGO connectors, the Raspberry Pi, the camera, the
-   microphone and, if used, the Arduino.
+   microphone and the Arduino if used.
 4. Lay the display face down on a towel, set the box on it so the posts
    meet the frame holes, and drive the four M3 × 8 screws in from the back
    down the bores; connect the DSI ribbon.
@@ -242,10 +242,10 @@ face out; everything inside is reachable without removing the display.
 - [ ] Shell, grid, face, cover and legs printed (`uv run wordclock-cad --box`)
 - [ ] Cover magnets pressed in, polarity checked
 - [ ] Shell tiles joined with 7 × M5
-- [ ] Jack, WAGO connectors, Pi, camera and microphone fitted
+- [ ] Jack, WAGO connectors, Pi and camera fitted
 - [ ] Display screwed on from the back, DSI ribbon connected
 - [ ] Strip stuck and soldered, starting at the bottom-left cell
 - [ ] `wiring` scene with `--rotate --mirror` lights the 60 cells in order
 - [ ] Grid halves on their pins, paper on, face on
-- [ ] Camera and microphone checked through their rivets
+- [ ] Camera checked through its rivet
 - [ ] Hung on the wall or standing on its legs

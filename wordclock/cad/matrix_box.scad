@@ -108,7 +108,9 @@ cam_lens_h = 6;
 // so the 4 mm rivet hole does not crop the picture
 cam_pocket = [12.5, 2];
 cam_post_d = 5;
-// USB microphone behind the rivet that mirrors the camera, in a cradle
+// Optional USB microphone behind the rivet that mirrors the camera, in a
+// cradle. Off: no cradle, and its rivet is a plain one like the rest.
+mic = false;
 mic_board = [16, 12, 6];
 rivet_d = 4;
 rivet_depth = 1;
@@ -404,7 +406,7 @@ module shell_posts() {
         translate([0, 0, 1]) cylinder(d = 2.6, h = back_t + uno_standoff);
     }
     // Microphone cradle up to the back of the face
-    translate([mic_x - mic_board[0] / 2 - 2, rivet_y - mic_board[1] / 2 - 2, 0]) difference() {
+    if (mic) translate([mic_x - mic_board[0] / 2 - 2, rivet_y - mic_board[1] / 2 - 2, 0]) difference() {
         cube([mic_board[0] + 4, mic_board[1] + 4, mic_z + 3]);
         translate([2, 2, mic_z]) cube([mic_board[0], mic_board[1], 4]);
         // Cable exit
@@ -542,7 +544,7 @@ module face_body(t) {
             windows_2d();
         }
         for (p = rivets()) {
-            through = abs(p[0] - cam_x) < 1 || abs(p[0] - mic_x) < 1;
+            through = abs(p[0] - cam_x) < 1 || (mic && abs(p[0] - mic_x) < 1);
             translate([p[0], p[1], through ? -1 : face_t - rivet_depth]) cylinder(d = rivet_d, h = face_t + 2);
         }
         translate([cam_x, rivet_y, -1]) cylinder(d = cam_pocket[0], h = cam_pocket[1] + 1);
@@ -690,7 +692,7 @@ module camera() {
 }
 
 module mic() {
-    translate([mic_x - mic_board[0] / 2, rivet_y - mic_board[1] / 2, mic_z]) color("#333") cube(mic_board);
+    if (mic) translate([mic_x - mic_board[0] / 2, rivet_y - mic_board[1] / 2, mic_z]) color("#333") cube(mic_board);
 }
 
 module jack() {
@@ -761,11 +763,11 @@ module wiring() {
     dsi = [pi_x + 28, pi_y + 4, pi_z + 7];
     cable([dsi, [dsi[0], dsi[1], 8], [drv[0], dsi[1], 8], drv + [0, -5, 0]], "#f2f2f2", 3.5);
     // CSI: up over the USB ports, then across just above the glass, under
-    // the microphone cradle, into the bottom edge of the camera board
+    // the microphone cradle if fitted, into the bottom edge of the camera board
     csi = [pi_x + 44.5, pi_y + 45, pi_z + 7];
     cable([csi, [csi[0], csi[1], pi_top + 3], [csi[0], glass_top + 2, pi_top + 3], [cam_x, glass_top + 2, 18], [cam_x, cam_y0, cam_z - 1]], "#f2f2f2", 3.5);
     usb = [pi_x + 15, pi_y + pi_board[1] + 2, pi_z + 10];
-    cable([usb, [usb[0], usb[1] + 6, 10], [mic_x - 20, glass_top + 3, 10], [mic_x - 20, rivet_y, 16], [mic_x - mic_board[0] / 2, rivet_y, mic_z + 2]], "#444", 3);
+    if (mic) cable([usb, [usb[0], usb[1] + 6, 10], [mic_x - 20, glass_top + 3, 10], [mic_x - 20, rivet_y, 16], [mic_x - mic_board[0] / 2, rivet_y, mic_z + 2]], "#444", 3);
     usb2 = [pi_x + 40, pi_y + pi_board[1] + 2, pi_z + 10];
     plug = [uno_xy[0] + 12, uno_xy[1] + uno_board[1] + 4, back_t + uno_standoff + 8];
     cable([usb2, [usb2[0], usb2[1] + 12, 6], [plug[0], usb2[1] + 12, 6], plug + [0, 20, 0], plug], "#444", 3);
