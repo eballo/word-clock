@@ -104,6 +104,15 @@ cover_r = 4;
 magnet_d = 5;
 magnet_h = 2;
 
+/* [Microphone and spare board] */
+// Small USB microphone behind the rivet that mirrors the camera, on a short
+// USB cable to the Pi. No I2S: those pins are the LED pin's (GPIO 18).
+mic_board = [16, 12, 6];
+// Room and clips for an Arduino Nano (45 x 18 mm) right of the display, on
+// USB to the Pi, for buttons and modules later. Empty until needed.
+nano = [45, 18, 8];
+nano_xy = [300, 60];
+
 /* [Power and wiring] */
 // Panel-mount 5.5 x 2.1 mm DC jack in the bottom wall, and two lever
 // connectors (WAGO 221-413) that share the 5 V and the ground
@@ -153,6 +162,7 @@ glass_back = depth - lcd_t;
 // Camera behind the rivet just right of the middle, clear of the seam
 cam_x = let(r = rivets()) [for (p = r) if (p[0] > box_w / 2 + 1) p[0]][0];
 cam_x0 = cam_x - cam_board[0] / 2;
+mic_x = box_w - cam_x;
 cam_y0 = rivet_y + cam_lens_from_top - cam_board[1];
 cam_z = face_back - cam_lens_h - 1;
 glass_origin = [glass_x, glass_y];
@@ -194,6 +204,7 @@ function magnets() = let(m = cover_border / 2) [
 ];
 
 assert(cover_y0 - rivet_y > rivet_d, "The letters cover hides the camera rivet");
+assert(nano_xy[0] > glass_x + lcd_glass[0] + 6 && nano_xy[0] + nano[0] < box_w - shell_t - 6, "The Nano does not fit right of the display");
 
 // --- Parts -------------------------------------------------------------------
 
@@ -290,7 +301,7 @@ module face() {
         for (p = magnets()) translate([p[0], p[1], face_t - magnet_h]) cylinder(d = magnet_d + 0.2, h = magnet_h + 1);
         // Rivets: shallow dimples, one goes through for the camera lens
         for (p = rivets())
-            translate([p[0], p[1], abs(p[0] - cam_x) < 1 ? -1 : face_t - 0.8]) cylinder(d = rivet_d, h = face_t + 2);
+            translate([p[0], p[1], abs(p[0] - cam_x) < 1 || abs(p[0] - mic_x) < 1 ? -1 : face_t - 0.8]) cylinder(d = rivet_d, h = face_t + 2);
     }
 }
 
@@ -340,6 +351,26 @@ module pi() {
         color("#333") translate([18, 25, pi_board_t]) cube([14, 14, 1.5]);
         // microSD card, under the board at the bottom edge
         color("#c33") translate([pi_board[0] / 2 - 6, -3, -1.5]) cube([12, 15, 1.4]);
+    }
+}
+
+// USB microphone behind its rivet, held by a printed cradle on the back plate.
+module mic() {
+    translate([mic_x - mic_board[0] / 2, rivet_y - mic_board[1] / 2, face_back - mic_board[2] - 0.5]) {
+        color("#333") cube(mic_board);
+        color("#555") translate([mic_board[0] / 2, mic_board[1] / 2, mic_board[2]]) cylinder(d = 3, h = 0.5);
+    }
+}
+
+// Spare Arduino Nano in its clips, reserved for later.
+module nano_board() {
+    translate([nano_xy[0], nano_xy[1], back_t]) {
+        color("#999", 0.5) difference() {
+            translate([-3, -3, 0]) cube([nano[0] + 6, nano[1] + 6, 6]);
+            translate([0, 0, 1]) cube([nano[0], nano[1], 6]);
+        }
+        color("#1c4fa0") translate([0, 0, 2]) cube([nano[0], nano[1], 1.6]);
+        color("#bbb") translate([-1.5, nano[1] / 2 - 4, 3.6]) cube([5, 8, 3]);
     }
 }
 
@@ -401,6 +432,11 @@ module wiring() {
     csi = [pi_x + 4, pi_y + 55, pi_z + 4];
     cam = [cam_x, cam_y0 + 2, cam_z];
     ribbon([csi, [shell_t + 3, csi[1], 10], [shell_t + 3, rivet_y - 6, 14], [cam[0] - 20, rivet_y - 6, 18], cam + [0, 0, -1]]);
+    // USB cables: the microphone and the spare Nano to the Pi USB ports
+    usb = [pi_x + 15, pi_y + pi_board[1] + 2, pi_z + 10];
+    cable([usb, [usb[0], usb[1] + 6, 10], [mic_x - 20, glass_top + 3, 10], [mic_x - 20, rivet_y, 16], [mic_x - mic_board[0] / 2, rivet_y, face_back - 4]], "#444", 3);
+    usb2 = [pi_x + 40, pi_y + pi_board[1] + 2, pi_z + 10];
+    cable([usb2, [usb2[0], usb2[1] + 10, 6], [glass_x + lcd_glass[0] + 4, usb2[1] + 10, 6], [glass_x + lcd_glass[0] + 4, nano_xy[1] + nano[1] / 2, 6], [nano_xy[0] - 2, nano_xy[1] + nano[1] / 2, back_t + 5]], "#444", 3);
 }
 
 module camera() {
@@ -449,6 +485,8 @@ module inside(cables = false) {
     camera();
     jack();
     wagos();
+    mic();
+    nano_board();
     if (cables) wiring();
 }
 
@@ -504,6 +542,8 @@ if (view == "front") {
     leds();
     pi();
     camera();
+    mic();
+    nano_board();
     jack();
     wagos();
     wiring();
