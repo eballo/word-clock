@@ -61,8 +61,9 @@ printing on the Bambu Lab A1, the wiring and the assembly.
 | 12 | 4 × M2.5 × 6 mm self-tapping | Raspberry Pi |
 | 13 | 4 × M2 × 6 mm self-tapping | Camera |
 | 14 | 4 × M3 × 6 mm self-tapping (optional) | Arduino Uno |
-| 15 | 16 neodymium magnets, 5 × 2 mm | 8 in the front of the face, 8 in the letters cover |
-| 16 | Tracing paper | Diffuser, cut to the grid |
+| 15 | 4 × M3 × 12 mm countersunk (ISO 10642), black if you can find them | Face, in its four corners |
+| 16 | 16 neodymium magnets, 5 × 2 mm | 8 in the front of the face, 8 in the letters cover |
+| 17 | Tracing paper | Diffuser, cut to the grid |
 
 The jack cradle is drawn for an adapter with an 11 mm round nose, 12 mm
 long, and a 13,5 × 11,5 × 23 mm body. These vary between sellers: measure
@@ -110,7 +111,7 @@ uv run wordclock-cad --box --test    # box_test_black.3mf and box_test_white.3mf
 | `seam_left` + `seam_right` | The dovetail slides in without forcing and holds; an M5 × 25 bolt goes through both blocks and the nut sits in its hex pocket |
 | `pi_corner` | The Raspberry Pi sits on the two posts with M2.5 screws; the microSD card comes out through the slot; the DC jack nose fits its hole and the body clips into the cradle |
 | `face_band_left` + `face_band_right` | The face dovetail; the camera and the microphone see through their rivets; the plain rivets look the same |
-| `face_corner` | Press it into `pi_corner`: it clicks under the two wall ridges, sits flush with the walls, and a fingernail lifts it out again. Too hard or too loose: change `snap_depth` |
+| `face_corner` | Press it into `pi_corner`: it clicks under the two wall ridges and sits flush with the walls; an M3 × 12 countersunk screw goes into the corner post with its head flush; without the screw, a fingernail lifts it out again. Too hard or too loose: change `snap_depth` |
 | `grid_corner` | The strip passes under the walls through the notches; the lug sits on a 3 mm pin; the light of one LED fills the cell |
 | `cover_letters` | Two letters, with tracing paper behind, lit by one LED; a magnet in its pocket |
 
@@ -129,7 +130,7 @@ assembly views for the OpenSCAD GUI: set `part` to `assembly`, `exploded`,
 | Joint | How |
 |-------|-----|
 | Shell tiles | Dovetails in the 3 mm back plate, plus M5 bolts through blocks across the seams, in the margins: nut pockets on the bottom and left tiles |
-| Face tiles | Dovetails in the margins and the band. The face sits inside the shell walls, flush with them, on 12 posts, and clicks in: 16 short ridges on the inside of the walls catch a groove round its edge. No magnets |
+| Face tiles | Dovetails in the margins and the band. The face sits inside the shell walls, flush with them, on 12 posts, and clicks in: 16 short ridges on the inside of the walls catch a groove round its edge. Four M3 countersunk screws in the corners, flush with the front, hold it for good. No magnets |
 | Grid halves | Lugs at the foot of the frame over 3 mm pins in the back plate; the face holds them down through the paper |
 | Letters cover | Two halves, four magnets each, into pockets in the front of the face |
 | Legs | Two hooks each go through slots in the back plate and slide down |
@@ -216,10 +217,13 @@ so there is no micro-USB plug in the way.
    through the notches. Lay the tracing paper on the grid.
 8. Slide the face tiles together, set the face on the box with the glass
    in its window, and press round the edge until every ridge clicks.
+   Drive the four M3 × 12 countersunk screws into the corners until the
+   heads sit flush; do not overtighten, they cut their own thread.
 9. For the letters cover: set its two halves on the grid area of the face.
 
-To open the box, put a fingernail or a coin in one of the two notches in
-the top of the bottom wall and lift the face out; everything inside is
+To open the box, take out the four corner screws, put a fingernail or a
+coin in one of the two notches in the top of the bottom wall and lift the
+face out; everything inside is
 reachable without removing the display.
 
 ---

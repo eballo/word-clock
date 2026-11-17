@@ -154,6 +154,12 @@ groove = [0.9, 1.6];   // depth, height
 snap_xs = [65, 125];   // along the bottom and top walls, mirrored
 snap_ys = [40, 110, 220, 320];   // along the left and right walls
 pry_notch = [14, 2];
+// Four M3 x 12 countersunk screws (ISO 10642) from the front, one in each
+// corner, into pilot holes in the corner posts
+face_screw_head = 6.9;
+face_screw_hole = 3.4;
+face_screw_pilot = 2.5;
+face_screw_depth = 12;
 pry_xs = [-30, 30];    // from the vertical seam
 
 /* [Letters cover] */
@@ -255,6 +261,9 @@ function display_holes() = [for (h = lcd_m3) [glass_x, glass_y] + lcd_frame_pos 
 // Posts the face rests on: three per tile, clear of the seams, the
 // keyholes, the DC jack and the wires (the strip turns in the side margins).
 fm = shell_t + face_post_d / 2;
+// Corner screws, nudged in from the corner posts so the heads clear the
+// rounded corners of the face
+function face_screws() = [for (x = [fm + 0.6, box_w - fm - 0.6], y = [fm + 0.6, box_h - fm - 0.6]) [x, y]];
 function face_posts() = [
     [fm, fm], [box_w / 4 + 10, fm], [fm, rivet_y - 6],
     [box_w - fm, fm], [box_w * 3 / 4, fm], [box_w - fm, rivet_y - 6],
@@ -300,6 +309,7 @@ assert(cam_x0 > seam_x + 1, "The camera posts sit on the seam");
 assert(cam_y0 + cam_board[1] - cam_hole_top + cam_post_d / 2 + 1 < split_y, "The camera posts sit on the horizontal seam");
 assert(face_back - dupont_top >= 6, "No room to bend the jumper wires on the Pi header");
 assert(jack_x - jack_body[0] / 2 - 2 > pi_x + pi_board[0] + 2.5, "The jack cradle hits the Pi power port");
+assert(face_screws()[0][0] - shell_t - face_fit - face_screw_head / 2 >= 1.2, "The face screw heads reach the edge of the face");
 assert(jack_x + jack_body[0] / 2 + 2 < box_w / 4 + 10 - face_post_d / 2, "The jack cradle hits a face magnet post");
 
 // --- 2D helpers ----------------------------------------------------------
@@ -426,6 +436,8 @@ module shell_body() {
         }
         for (dx = [-keyhole_dx / 2, keyhole_dx / 2]) translate([seam_x + dx, box_h - keyhole_from_top, 0]) keyhole();
         leg_slots();
+        // Pilot holes for the face screws
+        for (p = face_screws()) translate([p[0], p[1], face_back - face_screw_depth]) cylinder(d = face_screw_pilot, h = face_screw_depth + 1);
         // Notches to lift the face out
         for (dx = pry_xs) translate([seam_x + dx - pry_notch[0] / 2, -1, depth - pry_notch[1]]) cube([pry_notch[0], shell_t + 2, pry_notch[1] + 1]);
         // DC jack nose through the bottom wall
@@ -569,6 +581,13 @@ module face_body(t) {
             translate([p[0], p[1], through ? -1 : face_t - rivet_depth]) cylinder(d = rivet_d, h = face_t + 2);
         }
         translate([cam_x, rivet_y, -1]) cylinder(d = cam_pocket[0], h = cam_pocket[1] + 1);
+        // Countersunk screw holes in the corners, heads flush with the front
+        for (p = face_screws()) translate([p[0], p[1], 0]) {
+            translate([0, 0, -1]) cylinder(d = face_screw_hole, h = face_t + 2);
+            cs = (face_screw_head - face_screw_hole) / 2;
+            translate([0, 0, face_t - cs]) cylinder(d1 = face_screw_hole, d2 = face_screw_head, h = cs + 0.01);
+            translate([0, 0, face_t]) cylinder(d = face_screw_head, h = 1);
+        }
         for (h = [0, 1], p = cover_magnets(h)) translate([p[0], p[1], face_t - magnet_h - 0.2]) cylinder(d = magnet_d + magnet_fit, h = magnet_h + 1);
     }
 }
