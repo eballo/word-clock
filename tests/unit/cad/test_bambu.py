@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import zipfile
 from pathlib import Path
 
@@ -7,12 +8,14 @@ import pytest
 
 from wordclock.cad.bambu import (
     BED_SIZE,
+    BLACK,
     PLATE_STRIDE,
     Mesh,
     centred,
     count_bodies,
     pack_plate,
     plate_origin,
+    project_settings,
     read_stl,
     write_plate,
     write_project,
@@ -176,3 +179,22 @@ class TestWritePlate:
         assert settings.count("<plate>") == 1
         assert settings.count("<model_instance>") == 3
         assert model.count("<item ") == 3
+
+
+class TestProjectColour:
+    def test_colour_in_the_project_settings(self, tmp_path: Path, square_stl: Path) -> None:
+        # Given
+        output = tmp_path / "black.3mf"
+        # When
+        write_project([square_stl], output, colour=BLACK)
+        # Then
+        with zipfile.ZipFile(output) as zf:
+            settings = json.loads(zf.read("Metadata/project_settings.config"))
+        assert settings["filament_colour"] == ["#000000"]
+        assert settings["filament_type"] == ["PLA"]
+
+    def test_default_colour_kept(self) -> None:
+        # Given / When
+        settings = json.loads(project_settings())
+        # Then
+        assert settings["filament_colour"] == ["#00AE42"]

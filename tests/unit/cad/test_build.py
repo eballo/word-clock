@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import zipfile
 from pathlib import Path
@@ -383,16 +384,22 @@ class TestBoxFitTest:
         # Then
         assert tuple(names) == BOX_TEST_NAMES
 
-    def test_every_piece_on_one_plate(self, tmp_path: Path) -> None:
+    def test_one_plate_per_colour(self, tmp_path: Path) -> None:
         # Given
         for job in plan_box_test_jobs(tmp_path / "stl"):
             job.output.parent.mkdir(parents=True, exist_ok=True)
             job.output.write_text(tiny_stl(40), encoding="ascii")
         # When
         projects = write_box_projects(tmp_path / "stl", tmp_path / "bambu")
-        # Then: one plate, one object per piece
-        assert projects == [tmp_path / "bambu" / "box_test.3mf"]
-        with zipfile.ZipFile(projects[0]) as zf:
-            settings = zf.read("Metadata/model_settings.config").decode()
-        assert settings.count("<plate>") == 1
-        assert settings.count("<model_instance>") == len(BOX_TEST_NAMES)
+        # Then: the grid corner prints white, everything else black
+        bambu = tmp_path / "bambu"
+        assert projects == [bambu / "box_test_black.3mf", bambu / "box_test_white.3mf"]
+        counts = []
+        for project, colour in zip(projects, ("#000000", "#FFFFFF"), strict=True):
+            with zipfile.ZipFile(project) as zf:
+                settings = zf.read("Metadata/model_settings.config").decode()
+                filament = json.loads(zf.read("Metadata/project_settings.config"))
+            assert settings.count("<plate>") == 1
+            assert filament["filament_colour"] == [colour]
+            counts.append(settings.count("<model_instance>"))
+        assert counts == [len(BOX_TEST_NAMES) - 1, 1]

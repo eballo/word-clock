@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 import struct
 import zipfile
@@ -20,6 +21,10 @@ APPLICATION = "BambuStudio-02.08.02.61"
 # Bambu PLA Basic), exported by Bambu Studio. Bambu Studio needs the full
 # settings to open a multi-plate project.
 PROJECT_SETTINGS: Path = Path(__file__).parent / "bambu_a1_project_settings.config"
+
+# Filament colours for the project, as Bambu Studio shows them
+BLACK = "#000000"
+WHITE = "#FFFFFF"
 
 _XML = '<?xml version="1.0" encoding="UTF-8"?>'
 _MODEL_TYPE = "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"
@@ -283,7 +288,28 @@ def pack_plate(
     return [centres[i] for i in range(len(sizes))]
 
 
-def write_project(stls: list[Path], output: Path, overrides: dict[str, str] | None = None) -> Path:
+def project_settings(colour: str | None = None) -> str:
+    """
+    Read the A1 project settings, with the filament colour set.
+
+    Args:
+        colour: Filament colour as ``#RRGGBB``; None keeps the default.
+
+    Returns:
+        The settings as JSON text.
+    """
+    settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
+    if colour is not None:
+        settings["filament_colour"] = [colour]
+    return json.dumps(settings, indent=4)
+
+
+def write_project(
+    stls: list[Path],
+    output: Path,
+    overrides: dict[str, str] | None = None,
+    colour: str | None = None,
+) -> Path:
     """
     Write a Bambu Studio project for a Bambu Lab A1 with one STL per plate.
 
@@ -295,6 +321,7 @@ def write_project(stls: list[Path], output: Path, overrides: dict[str, str] | No
         output: Path of the ``.3mf`` project to write.
         overrides: Print settings applied to every object, e.g.
             ``{"sparse_infill_density": "100%"}``.
+        colour: Filament colour as ``#RRGGBB``, e.g. :data:`BLACK`.
 
     Returns:
         Path of the written project.
@@ -305,12 +332,17 @@ def write_project(stls: list[Path], output: Path, overrides: dict[str, str] | No
         x, y = plate_origin(k, len(stls))
         positions.append((x + BED_SIZE / 2, y + BED_SIZE / 2))
     plates = [[k] for k in range(len(stls))]
-    _write(stls, meshes, positions, plates, output, overrides or {})
+    _write(stls, meshes, positions, plates, output, overrides or {}, colour)
     logger.info("Wrote %s (%d plates)", output, len(stls))
     return output
 
 
-def write_plate(stls: list[Path], output: Path, overrides: dict[str, str] | None = None) -> Path:
+def write_plate(
+    stls: list[Path],
+    output: Path,
+    overrides: dict[str, str] | None = None,
+    colour: str | None = None,
+) -> Path:
     """
     Write a Bambu Studio project with every STL as its own object on one plate.
 
@@ -321,6 +353,7 @@ def write_plate(stls: list[Path], output: Path, overrides: dict[str, str] | None
         stls: STL files, laid out side by side on the plate.
         output: Path of the ``.3mf`` project to write.
         overrides: Print settings applied to every object.
+        colour: Filament colour as ``#RRGGBB``.
 
     Returns:
         Path of the written project.
@@ -334,7 +367,7 @@ def write_plate(stls: list[Path], output: Path, overrides: dict[str, str] | None
         for mesh in meshes
     ]
     positions = pack_plate(sizes)  # type: ignore[arg-type]
-    _write(stls, meshes, positions, [list(range(len(stls)))], output, overrides or {})
+    _write(stls, meshes, positions, [list(range(len(stls)))], output, overrides or {}, colour)
     logger.info("Wrote %s (%d parts on one plate)", output, len(stls))
     return output
 
@@ -346,6 +379,7 @@ def _write(
     plates: list[list[int]],
     output: Path,
     overrides: dict[str, str],
+    colour: str | None = None,
 ) -> None:
     names = [path.stem for path in stls]
     objects = [f"/3D/Objects/object_{k + 1}.model" for k in range(len(stls))]
@@ -358,4 +392,4 @@ def _write(
         for k, mesh in enumerate(meshes):
             zf.writestr(objects[k].lstrip("/"), _object_model(2 * k + 1, mesh))
         zf.writestr("Metadata/model_settings.config", _model_settings(names, overrides, plates))
-        zf.write(PROJECT_SETTINGS, "Metadata/project_settings.config")
+        zf.writestr("Metadata/project_settings.config", project_settings(colour))

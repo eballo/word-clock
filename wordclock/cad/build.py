@@ -6,7 +6,15 @@ from dataclasses import dataclass
 from logging import getLogger
 from pathlib import Path
 
-from wordclock.cad.bambu import BED_SIZE, count_bodies, read_stl, write_plate, write_project
+from wordclock.cad.bambu import (
+    BED_SIZE,
+    BLACK,
+    WHITE,
+    count_bodies,
+    read_stl,
+    write_plate,
+    write_project,
+)
 from wordclock.layouts.utils.layout import load_grid
 
 logger = getLogger(__name__)
@@ -340,13 +348,26 @@ def write_matrix_projects(stl_dir: Path, out_dir: Path) -> list[Path]:
     return projects
 
 
+# Filament per box piece: black outside, white for the grid so the cells
+# reflect the light. Test pieces print in the colour of their part.
+BOX_COLOURS: dict[str, str] = {
+    "shell": BLACK,
+    "face": BLACK,
+    "grid": WHITE,
+    "cover": BLACK,
+    "leg": BLACK,
+}
+BOX_TEST_WHITE: frozenset[str] = frozenset({"grid_corner"})
+
+
 def write_box_projects(stl_dir: Path, out_dir: Path) -> list[Path]:
     """
     Group the matrix box STL files into Bambu Studio projects, one piece per plate.
 
     Writes ``box_shell.3mf``, ``box_face.3mf``, ``box_grid.3mf``,
-    ``box_cover.3mf`` and ``box_legs.3mf`` (the leg twice), and
-    ``box_test.3mf`` when the fit-test plate was rendered.
+    ``box_cover.3mf`` and ``box_legs.3mf`` (the leg twice), each with its
+    filament colour from :data:`BOX_COLOURS`, and the fit test as
+    ``box_test_black.3mf`` and ``box_test_white.3mf`` when it was rendered.
 
     Args:
         stl_dir: Directory with the rendered STL files.
@@ -369,10 +390,17 @@ def write_box_projects(stl_dir: Path, out_dir: Path) -> list[Path]:
             stls = stls * 2
         if all(path.exists() for path in stls):
             output = out_dir / ("box_legs.3mf" if part == "leg" else f"box_{part}.3mf")
-            projects.append(write_project(stls, output, settings[part]))
+            projects.append(write_project(stls, output, settings[part], BOX_COLOURS[part]))
     tests = [box_stl(stl_dir, BOX_TEST_PART, name) for name in BOX_TEST_NAMES]
     if all(path.exists() for path in tests):
-        projects.append(write_plate(tests, out_dir / "box_test.3mf", GRID_SETTINGS))
+        for colour, name in ((BLACK, "black"), (WHITE, "white")):
+            group = [
+                path
+                for path, piece in zip(tests, BOX_TEST_NAMES, strict=True)
+                if (piece in BOX_TEST_WHITE) == (colour == WHITE)
+            ]
+            output = out_dir / f"box_test_{name}.3mf"
+            projects.append(write_plate(group, output, GRID_SETTINGS, colour))
     return projects
 
 

@@ -83,11 +83,13 @@ uv run wordclock-cad --box    # STL files in build/stl/box/, projects in build/b
 
 The command checks that every piece is one solid body and fits the 256 mm
 bed with 3 mm to spare, and writes five Bambu Studio projects, one piece
-per plate:
+per plate, each with its filament colour already set. Everything you see
+is black, so the box reads as one object; only the grid is white, so the
+cells reflect the light:
 
 | Project | Pieces | Filament | Settings | Orientation |
 |---------|--------|----------|----------|-------------|
-| `box_shell.3mf` | 4 shell tiles | White or grey PLA | 3 walls, 15 % infill | Back on the bed |
+| `box_shell.3mf` | 4 shell tiles | Black PLA | 3 walls, 15 % infill | Back on the bed |
 | `box_grid.3mf` | 2 grid halves | White PLA | 3 walls, 15 % infill | Upside down: wall tops on the bed |
 | `box_face.3mf` | 4 face tiles | Black PLA | 100 % infill | Front up, so the rivet dimples print open |
 | `box_cover.3mf` | 2 letters cover halves | Black PLA | 100 % infill | Front on the bed |
@@ -100,7 +102,7 @@ parts. It takes a fraction of the filament and shows whether the fits work
 with your printer and filament:
 
 ```bash
-uv run wordclock-cad --box --test    # build/bambu/box_test.3mf: every piece its own object, one plate
+uv run wordclock-cad --box --test    # box_test_black.3mf and box_test_white.3mf: every piece its own object
 ```
 
 | Piece | What to check |
