@@ -85,17 +85,25 @@ display_shoulder = 4;
 glass_fit = 0.3;
 
 /* [Raspberry Pi 3B] */
-// Upright left of the display: microSD card down (slot in the bottom wall),
-// USB and Ethernet up, GPIO header on the right. M2.5 screws into the posts.
-pi_board = [56, 85];
-pi_holes = [[3.5, 3.5], [52.5, 3.5], [3.5, 61.5], [52.5, 61.5]];
+// Lying left of the display, turned so the USB and Ethernet ports face the
+// left wall and come out through openings in it: they work from outside,
+// on the wall and on the legs. The GPIO header runs along the bottom, the
+// DSI connector faces the display, the microSD card sits at the right end
+// (take the face off to change it). M2.5 screws into the posts.
+// Sizes in the Pi's own frame: USB end at x = 85, GPIO header at the top.
+pi_board = [85, 56];
+pi_holes = [[3.5, 3.5], [61.5, 3.5], [3.5, 52.5], [61.5, 52.5]];
 pi_standoff = 4;
 pi_board_t = 1.6;
 pi_ports_h = 16;
-// Gap from the inner walls: wide on the left so the corner face magnet post
-// leaves room for a screwdriver; low so the microSD card stays reachable.
-pi_gap = [14, 5];
-sd_slot = [16, 5];
+// USB and Ethernet in the Pi's frame: [centre y, width, height]; they stick
+// out 2.2 mm past the board end
+pi_ports = [[10.25, 16, 13.5], [29, 13.2, 16], [47, 13.2, 16]];
+pi_ports_out = 2.2;
+port_fit = 0.6;
+// Board end 0.4 mm inside the wall, so the ports end flush with the outside;
+// above the corner face post
+pi_gap = [0.4, 12];
 
 /* [Camera and microphone] */
 // OV5647 board behind one rivet, M2 holes on 21 x 12.5 mm
@@ -128,14 +136,14 @@ uno_standoff = 3;
 
 /* [Power and wiring] */
 // Female 5.5 x 2.1 mm DC jack adapter with screw terminals (the CCTV kind):
-// its round nose goes through the right wall, flush outside, and its body
-// clips into a cradle on the back plate. In the side wall the plug stays
-// free both on the wall and standing on the legs, where the bottom edge
-// rests on the table. Measure yours and set the sizes.
+// its round nose goes through the left wall above the Pi, flush outside,
+// and its body clips into a cradle on the back plate. In the side wall the
+// plug stays free both on the wall and standing on the legs, where the
+// bottom edge rests on the table. Measure yours and set the sizes.
 jack_nose = [11, 12];        // diameter, length
 jack_body = [13.5, 11.5, 23]; // width, height, length behind the nose
 jack_fit = 0.3;
-jack_pos = 110;              // height of the jack above the bottom edge
+jack_pos = 95;               // height of the jack above the bottom edge
 // Two lever connectors (WAGO 221-413) that share the 5 V and the ground
 wago = [20.2, 13.1, 8.3];
 vent = [3, 18];
@@ -242,16 +250,22 @@ mic_z = face_back - mic_board[2] - 0.5;
 
 pi_x = shell_t + pi_gap[0];
 pi_y = shell_t + pi_gap[1];
+// A point of the Pi's frame in the box: turned half a turn, USB end left
+function pi_point(p) = [pi_x + pi_board[0] - p[0], pi_y + pi_board[1] - p[1]];
+module pi_place() {
+    translate([pi_x + pi_board[0], pi_y + pi_board[1], 0]) rotate([0, 0, 180]) children();
+}
 pi_z = back_t + pi_standoff;
 pi_top = pi_z + pi_board_t + pi_ports_h;
 // The jack is drawn in its own frame: the wall's outer face at y = 0, the
 // jack pointing in along +y, centred on x = 0. jack_place() puts it in the
-// right wall.
+// left wall.
 jack_z = back_t + jack_body[1] / 2;
 jack_y0 = jack_nose[1];
 jack_y1 = jack_y0 + jack_body[2];
 // WAGO connectors behind the jack, room to bend its wires in between
-wago_xy = [pi_x + pi_board[0] + 6, shell_t + 22];
+// WAGO connectors right of the jack, clear of the camera ribbon
+wago_xy = [jack_y1 + 20, jack_pos - 12];
 // Female jumper housings (14 mm) pushed onto the 2.5 mm header base
 dupont_top = pi_z + pi_board_t + 2.5 + 14;
 
@@ -299,7 +313,8 @@ assert(seam_x + tab_depth < 250 && box_h - split_y + tab_depth < 250, "A tile do
 assert(face_back - pi_top >= 8, "Less than 8 mm above the Pi ports");
 assert(glass_back - lcd_back_h - back_t >= 8, "No room for the ribbon under the display");
 assert(pi_x + pi_board[0] < glass_x, "The Pi overlaps the display");
-assert(norm([pi_x + pi_holes[0][0], pi_y + pi_holes[0][1]] - [fm, fm]) - face_post_d / 2 >= 8, "No screwdriver room between the Pi and the corner post");
+assert(min([for (h = pi_holes) norm(pi_point(h) - [fm, fm])]) - face_post_d / 2 >= 8, "No screwdriver room between the Pi and the corner post");
+assert(pi_x + pi_board[0] + 3 < box_w / 4 + 10 - face_post_d / 2 || pi_y > fm + face_post_d / 2 + 1, "The Pi sits on a face post");
 assert(wago_xy[0] + wago[0] < glass_x + lcd_frame_pos[0], "The WAGO connectors sit under the display frame");
 assert(rivet_y + rivet_d / 2 + 2 < split_y, "The split cuts the rivet row");
 assert(split_y + tab_depth < grid_y + bar_w / 2 + window_r, "Face dovetails reach the windows");
@@ -308,7 +323,7 @@ assert(uno_xy[0] > glass_x + lcd_glass[0] + 6 && uno_xy[0] + uno_board[0] < box_
 assert(cam_x0 > seam_x + 1, "The camera posts sit on the seam");
 assert(cam_y0 + cam_board[1] - cam_hole_top + cam_post_d / 2 + 1 < split_y, "The camera posts sit on the horizontal seam");
 assert(face_back - dupont_top >= 6, "No room to bend the jumper wires on the Pi header");
-assert(jack_pos - jack_body[0] / 2 - 4 > uno_xy[1] + uno_board[1] + 2, "The jack cradle hits the Arduino");
+assert(jack_pos - jack_body[0] / 2 - 4 > pi_y + pi_board[1] + 2.5, "The jack cradle hits the Pi");
 assert(min([for (p = face_screws()) min(p[0], p[1], box_w - p[0], box_h - p[1])]) - shell_t - face_fit - face_screw_head / 2 >= 1.2, "The face screw heads reach the edge of the face");
 assert(jack_pos + jack_body[0] / 2 + 4 < rivet_y - 6 - face_post_d / 2, "The jack cradle hits a face post");
 
@@ -400,7 +415,7 @@ module shell_posts() {
                 translate([0, 0, cam_z - 6]) cylinder(d = 1.6, h = 7);
             }
     // Raspberry Pi: M2.5 pilot holes
-    for (h = pi_holes) translate([pi_x + h[0], pi_y + h[1], 0]) difference() {
+    for (h = pi_holes) translate(pi_point(h)) difference() {
         cylinder(d = 6, h = pi_z);
         translate([0, 0, pi_z - 6]) cylinder(d = 2.2, h = 7);
     }
@@ -441,12 +456,12 @@ module shell_body() {
         for (dx = pry_xs) translate([seam_x + dx - pry_notch[0] / 2, -1, depth - pry_notch[1]]) cube([pry_notch[0], shell_t + 2, pry_notch[1] + 1]);
         // DC jack nose through the right wall
         jack_place() translate([0, -1, jack_z]) rotate([-90, 0, 0]) cylinder(d = jack_nose[0] + 2 * jack_fit, h = shell_t + 2);
-        // microSD slot under the card
-        translate([pi_x + pi_board[0] / 2 - sd_slot[0] / 2, -1, pi_z - 3]) cube([sd_slot[0], shell_t + 2, sd_slot[1]]);
+        // USB and Ethernet openings in the left wall
+        for (q = pi_ports) translate([-1, pi_point([0, q[0]])[1] - q[1] / 2 - port_fit, pi_z + pi_board_t - port_fit])
+            cube([shell_t + 2, q[1] + 2 * port_fit, q[2] + 2 * port_fit]);
         // Vents: bottom wall under the Pi, left wall high beside it
-        // (bottom vents start above the microSD slot, so they do not merge)
-        for (i = [0:3]) translate([pi_x + 4 + i * 9, -1, pi_z + sd_slot[1]]) cube([vent[0], shell_t + 2, vent[1]]);
-        for (i = [0:3]) translate([-1, pi_y + 50 + i * 9, back_t + 6]) cube([shell_t + 2, vent[0], vent[1]]);
+        for (i = [0:3]) translate([20 + i * 9, -1, back_t + 9]) cube([vent[0], shell_t + 2, vent[1]]);
+        for (i = [0:1]) translate([-1, pi_y + pi_board[1] + 4 + i * 6, back_t + 6]) cube([shell_t + 2, vent[0], vent[1]]);
         // Display screws: a bore from the wall side, then the shoulder
         for (h = display_holes()) translate([h[0], h[1], -1]) {
             cylinder(d = 3.4, h = frame_back + 2);
@@ -653,27 +668,27 @@ module display() {
     }
 }
 
-// Raspberry Pi 3B seen from the component side with USB up: the GPIO
-// header runs along the left edge (pin 1 at the bottom), HDMI, power and
-// audio stick out on the right, DSI at the bottom, CSI in the middle right.
+// Raspberry Pi 3B drawn in its own frame (component side up, USB end at
+// x = 85, GPIO header along the top, pin 1 at the left), then turned into
+// place by pi_place()
 module pi() {
-    translate([pi_x, pi_y, pi_z]) {
+    pi_place() translate([0, 0, pi_z]) {
         color("#1f7a3a") cube([pi_board[0], pi_board[1], pi_board_t]);
-        // USB and Ethernet, 2 mm past the top edge
-        color("#bbb") translate([2, pi_board[1] - 19, pi_board_t]) cube([52, 21, pi_ports_h]);
+        // Ethernet and two USB stacks, past the USB end
+        color("#bbb") for (q = pi_ports) translate([pi_board[0] - 21 + pi_ports_out, q[0] - q[1] / 2, pi_board_t]) cube([21, q[1], q[2]]);
         // GPIO header with jumper housings on pins 2, 6 and 12
-        color("#222") translate([1, 7.1, pi_board_t]) cube([5, 50.8, 8.5]);
-        color("#c33") for (n = [2, 6, 12]) translate(pin(n) - [pi_x + 1.27, pi_y + 1.27, pi_z - pi_board_t - 2.5]) cube([2.54, 2.54, 14]);
-        // DSI along the bottom, CSI to the right
-        color("#eee") translate([17, 1.5, pi_board_t]) cube([22, 5, 5.5]);
-        color("#eee") translate([33.5, 42.5, pi_board_t]) cube([22, 5, 5.5]);
-        // Power, HDMI and audio past the right edge
-        color("#999") translate([pi_board[0] - 5.6, 10.6 - 4, pi_board_t]) cube([7, 8, 3]);
-        color("#999") translate([pi_board[0] - 11, 32 - 7.5, pi_board_t]) cube([12, 15, 6.5]);
-        color("#222") translate([pi_board[0] - 12, 53.5 - 3, pi_board_t]) cube([14.5, 6, 6]);
-        color("#333") translate([18, 25, pi_board_t]) cube([14, 14, 1.5]);
-        // microSD card under the board, sticking out at the bottom
-        color("#c33") translate([pi_board[0] / 2 - 6, -2.5, -1.5]) cube([12, 15, 1.4]);
+        color("#222") translate([7.1, pi_board[1] - 6, pi_board_t]) cube([50.8, 5, 8.5]);
+        color("#c33") for (n = [2, 6, 12]) translate([pin_xy(n)[0] - 1.27, pin_xy(n)[1] - 1.27, pi_board_t + 2.5]) cube([2.54, 2.54, 14]);
+        // DSI at the left end, CSI between HDMI and audio
+        color("#eee") translate([1.5, 17, pi_board_t]) cube([5, 22, 5.5]);
+        color("#eee") translate([42.5, 0.5, pi_board_t]) cube([5, 22, 5.5]);
+        // Power, HDMI and audio along the bottom edge
+        color("#999") translate([10.6 - 4, -1.5, pi_board_t]) cube([8, 7, 3]);
+        color("#999") translate([32 - 7.5, -1, pi_board_t]) cube([15, 12, 6.5]);
+        color("#222") translate([53.5 - 3, -2.5, pi_board_t]) cube([6, 14.5, 6]);
+        color("#333") translate([25, 18, pi_board_t]) cube([14, 14, 1.5]);
+        // microSD card under the board, sticking out at the left end
+        color("#c33") translate([-2.5, pi_board[1] / 2 - 6, -1.5]) cube([15, 12, 1.4]);
     }
 }
 
@@ -700,11 +715,11 @@ module mic() {
 }
 
 module jack_place() {
-    translate([box_w, jack_pos, 0]) rotate([0, 0, 90]) children();
+    translate([0, jack_pos, 0]) rotate([0, 0, -90]) children();
 }
 
 // A point of the jack frame in the box
-function jack_point(p) = [box_w - p[1], jack_pos + p[0], p[2]];
+function jack_point(p) = [p[1], jack_pos - p[0], p[2]];
 
 module jack() {
     jack_place() {
@@ -751,41 +766,38 @@ module cable(points, c, d = 2) {
 // The strip starts at the bottom-left cell (run the show with --rotate
 // --mirror); power and data come up the left side of the band.
 strip_in = [cell_x(0), cell_y(rows - 1), back_t + 1];
-// GPIO pin n: even pins on the board edge row, pin 1 near the microSD end
-function pin(n) = [pi_x + (n % 2 == 0 ? 2.23 : 4.77), pi_y + 8.37 + 2.54 * floor((n - 1) / 2), pi_z + pi_board_t + 2.5];
+// GPIO pin n in the Pi's frame: even pins on the board edge row, pin 1 at
+// the microSD end; pin(n) is the same pin in the box, at the header base
+function pin_xy(n) = [8.37 + 2.54 * floor((n - 1) / 2), n % 2 == 0 ? pi_board[1] - 2.23 : pi_board[1] - 4.77];
+function pin(n) = concat(pi_point(pin_xy(n)), [pi_z + pi_board_t + 2.5]);
 
 module wiring() {
     w = [wago_xy[0] + 4, wago_xy[1] + 4, back_t + wago[2]];
     g = [wago_xy[0] + 4, wago_xy[1] + wago[1] + 7, back_t + wago[2]];
-    jk = jack_point([-2, jack_y1, jack_z]);
-    // Jack wires: in under the display, below its frame, to the WAGO connectors
-    under = 100;
+    jk = jack_point([2, jack_y1, jack_z]);
     up = 16;
     top = pi_y + pi_board[1] + 8;
-    cable([jk, [jk[0] - 8, under, 8], [w[0] + 14, under, 8], [w[0] + 14, w[1], 10], w], "red");
-    cable([jk + [0, 4, 0], [jk[0] - 8, under + 4, 8], [w[0] + 17, under + 4, 8], [w[0] + 17, g[1], 10], g], "black");
-    // Pi 5 V and ground: up out of the jumper housings, across the bottom
-    // of the board above its parts, down to the WAGO connectors
+    cable([jk, [jk[0] + 6, jk[1], 8], [jk[0] + 6, w[1], 8], w], "red");
+    cable([jk - [0, 4, 0], [jk[0] + 3, jk[1] - 4, 8], [jk[0] + 3, g[1], 8], g], "black");
+    // Pi 5 V and ground: up out of the jumper housings, up past the Pi to
+    // the WAGO connectors
     hz = dupont_top + 4;
-    cable([w + [6, 0, 0], [w[0] + 6, w[1], hz], [pin(2)[0], w[1] - 6, hz], [pin(2)[0], pin(2)[1], hz], pin(2) + [0, 0, 14]], "red", 1.4);
-    cable([g + [6, 0, 0], [g[0] + 6, g[1], hz], [pin(6)[0] + 1, g[1] - 6, hz], [pin(6)[0], pin(6)[1], hz], pin(6) + [0, 0, 14]], "black", 1.4);
+    cable([w + [6, 0, 0], [w[0] + 6, w[1], hz], [pin(2)[0] + 4, w[1], hz], [pin(2)[0] + 4, pin(2)[1], hz], pin(2) + [0, 0, 14]], "red", 1.4);
+    cable([g + [6, 0, 0], [g[0] + 6, g[1], hz], [pin(6)[0] + 6, g[1], hz], [pin(6)[0] + 6, pin(6)[1], hz], pin(6) + [0, 0, 14]], "black", 1.4);
     cable([w + [12, 0, 0], [w[0] + 12, top, 6], [up, top, 6], [up, strip_in[1] - 6, 4], [line_x(0) - 3, strip_in[1] - 4, 4], strip_in + [-6, -4, 0]], "red");
     cable([g + [12, 0, 0], [g[0] + 15, top + 3, 6], [up + 2.5, top + 3, 6], [up + 2.5, strip_in[1] - 3, 4], [line_x(0) - 3, strip_in[1], 4], strip_in + [-6, 0, 0]], "black");
-    cable([pin(12) + [0, 0, 14], [pin(12)[0], pin(12)[1], hz], [shell_t + 5, pin(12)[1], hz], [shell_t + 5, top + 6, 8], [up + 5, top + 6, 8], [up + 5, strip_in[1], 4], [line_x(0) - 3, strip_in[1] + 4, 4], strip_in + [-6, 4, 0]], "green", 1.4);
+    cable([pin(12) + [0, 0, 14], [pin(12)[0], pin(12)[1], hz], [pin(12)[0], top + 6, hz], [up + 5, top + 6, 8], [up + 5, top + 6, 8], [up + 5, strip_in[1], 4], [line_x(0) - 3, strip_in[1] + 4, 4], strip_in + [-6, 4, 0]], "green", 1.4);
     drv = [glass_x + lcd_glass[0] / 2, glass_y + 30, glass_back - lcd_back_h];
     cable([w + [18, 0, 0], [w[0] + 30, w[1], 8], [drv[0] - 20, drv[1], 8], drv + [-20, 0, 0]], "red", 1.4);
     cable([g + [18, 0, 0], [g[0] + 30, g[1], 8], [drv[0] - 20, drv[1] + 4, 8], drv + [-20, 4, 0]], "black", 1.4);
-    dsi = [pi_x + 28, pi_y + 4, pi_z + 7];
+    dsi = concat(pi_point([4, 28]), [pi_z + 7]);
     cable([dsi, [dsi[0], dsi[1], 8], [drv[0], dsi[1], 8], drv + [0, -5, 0]], "#f2f2f2", 3.5);
-    // CSI: up over the USB ports, then across just above the glass, under
-    // the microphone cradle if fitted, into the bottom edge of the camera board
-    csi = [pi_x + 44.5, pi_y + 45, pi_z + 7];
+    // CSI: up past the top of the Pi, then across just above the glass,
+    // under the microphone cradle if fitted, into the camera board
+    csi = concat(pi_point([45, 11.5]), [pi_z + 7]);
     cable([csi, [csi[0], csi[1], pi_top + 3], [csi[0], glass_top + 2, pi_top + 3], [cam_x, glass_top + 2, 18], [cam_x, cam_y0, cam_z - 1]], "#f2f2f2", 3.5);
-    usb = [pi_x + 15, pi_y + pi_board[1] + 2, pi_z + 10];
-    if (mic) cable([usb, [usb[0], usb[1] + 6, 10], [mic_x - 20, glass_top + 3, 10], [mic_x - 20, rivet_y, 16], [mic_x - mic_board[0] / 2, rivet_y, mic_z + 2]], "#444", 3);
-    usb2 = [pi_x + 40, pi_y + pi_board[1] + 2, pi_z + 10];
-    plug = [uno_xy[0] + 12, uno_xy[1] + uno_board[1] + 4, back_t + uno_standoff + 8];
-    cable([usb2, [usb2[0], usb2[1] + 12, 6], [plug[0], usb2[1] + 12, 6], plug + [0, 20, 0], plug], "#444", 3);
+    // The USB ports face out, so the Arduino and the microphone, if fitted,
+    // plug in from outside
 }
 
 module seam_bolts_drawn() {
@@ -867,14 +879,14 @@ module split_lines() {
 // a part, in front-view coordinates, in that part's print orientation.
 function test_pieces() = [
     ["grid_corner", "grid", 0, [margin - 9, grid_y - 9], [line_x(2) + 1, line_y(rows - 2) + 1]],
-    ["pi_corner", "shell", 0, [0, 0], [100, 60]],
+    ["pi_corner", "shell", 0, [0, 0], [100, pi_y + pi_board[1] + 4]],
     ["seam_left", "shell", 0, [seam_x - 40, 0], [seam_x + tab_depth + 1, 50]],
     ["seam_right", "shell", 1, [seam_x - 1, 0], [seam_x + 40, 50]],
     ["face_band_left", "face", 0, [seam_x - 45, glass_top - 10], [seam_x + tab_depth + 1, split_y + 1]],
     ["face_band_right", "face", 1, [seam_x - 1, glass_top - 10], [seam_x + 45, split_y + 1]],
     ["face_corner", "face", 0, [0, 0], [100, 60]],
     ["cover_letters", "cover", 0, [cover_x0, cover_y0], [cover_x0 + 75, cover_y0 + 45]],
-    ["jack_cradle", "shell", 1, [box_w - jack_y1 - 6, jack_pos - jack_body[0] / 2 - 6], [box_w + 1, jack_pos + jack_body[0] / 2 + 6]],
+    ["jack_cradle", "shell", 0, [-1, jack_pos - jack_body[0] / 2 - 6], [jack_y1 + 6, jack_pos + jack_body[0] / 2 + 6]],
 ];
 
 // One test piece in print orientation, its region moved to the origin.
