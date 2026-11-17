@@ -87,7 +87,9 @@ pi_holes = [[3.5, 3.5], [52.5, 3.5], [3.5, 61.5], [52.5, 61.5]];
 pi_standoff = 4;
 pi_board_t = 1.6;
 pi_ports_h = 16;
-pi_gap = [8, 5];
+// Gap from the inner walls: wide on the left so the corner face magnet post
+// leaves room for a screwdriver; low so the microSD card stays reachable.
+pi_gap = [14, 5];
 sd_slot = [16, 5];
 
 /* [Camera and microphone] */
@@ -252,6 +254,8 @@ assert(seam_x + tab_depth < 250 && box_h - split_y + tab_depth < 250, "A tile do
 assert(face_back - pi_top >= 8, "Less than 8 mm above the Pi ports");
 assert(glass_back - lcd_back_h - back_t >= 8, "No room for the ribbon under the display");
 assert(pi_x + pi_board[0] < glass_x, "The Pi overlaps the display");
+assert(norm([pi_x + pi_holes[0][0], pi_y + pi_holes[0][1]] - [fm, fm]) - face_magnet_post / 2 >= 8, "No screwdriver room between the Pi and the corner post");
+assert(wago_xy[0] + wago[0] < glass_x + lcd_frame_pos[0], "The WAGO connectors sit under the display frame");
 assert(rivet_y + rivet_d / 2 + 2 < split_y, "The split cuts the rivet row");
 assert(split_y + tab_depth < grid_y + bar_w / 2 + window_r, "Face dovetails reach the windows");
 assert(cover_y0 - rivet_y > rivet_d, "The letters cover hides the rivets");
