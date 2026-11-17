@@ -6,6 +6,10 @@
 // detachable triangle stand slides into the back to stand it on a table.
 // No button: the touch screen does its job.
 //
+// A letters cover can sit on top of the grid, held by magnets, to try the
+// word clock face on the small matrix: stencil letters over the cells,
+// swapped without tools.
+//
 // Volumes only, no print details. Sizes in millimetres. Front-view
 // coordinates: x to the right, y up, z out of the wall (0 = the wall, the
 // front of the face at z = depth).
@@ -13,7 +17,7 @@
 //   openscad -o front.png --render -D 'view="front"' matrix_box.scad
 
 /* [View] */
-// front | back | wall | table | exploded
+// front | back | wall | table | exploded | letters | letters_exploded | letters_table
 view = "exploded";
 
 /* [Matrix] (as in ../matrix.scad) */
@@ -57,6 +61,31 @@ cam_lens_h = 6;
 rivet_d = 4;
 rivet_pitch = 24;
 
+/* [Letters cover] */
+// Top-left 6 x 10 corner of the Catalan word clock grid
+letters = [
+    "ÉSÓNTVORAH",
+    "UNGDOSNTRE",
+    "QUARTSSBKC",
+    "IMENYSZCIN",
+    "DED'LAPLES",
+    "UNADUESTRE",
+];
+font = "Karla:style=Bold Stencil";
+// Same cap height as the big clock, so the test shows the real letter size
+cap_height = 15;
+cap_ratio = 0.901;
+accent_ratio = 1.25;
+descent_ratio = 0.25;
+cover_t = 2.4;
+// Border of the cover around the grid, and its corner radius
+cover_border = 9;
+cover_r = 4;
+// 5 x 2 mm neodymium magnets: one in the face, one in the cover, at each
+// corner of the grid and in the middle of each side
+magnet_d = 5;
+magnet_h = 2;
+
 /* [Wall and table] */
 // Keyholes in the top margin for two M5 wall screws
 keyhole_dx = 100;
@@ -70,6 +99,8 @@ stand_y1 = 125;
 stand_reach = 100;
 stand_t = 4;
 stand_dx = 120;
+
+use <../fonts/KarlaBoldStencil.ttf>
 
 $fn = 40;
 
@@ -106,6 +137,19 @@ assert(pi_top < face_back, "The Pi ports reach the face: deepen the box");
 assert(glass_back - lcd_back_h > back_t, "The display does not fit in the depth");
 assert(rivet_y - (cam_board[1] - cam_lens_from_top) > glass_top, "Camera board hits the display");
 assert(rivet_y + cam_lens_from_top < grid_y, "Camera board hits the grid");
+
+font_size = cap_height / cap_ratio;
+baseline = -(accent_ratio - descent_ratio) * font_size / 2;
+cover_x0 = margin - cover_border;
+cover_y0 = grid_y - cover_border;
+cover_size = [grid_w + 2 * cover_border, grid_hh + 2 * cover_border];
+function magnets() = let(m = cover_border / 2) [
+    for (x = [cover_x0 + m, box_w / 2, cover_x0 + cover_size[0] - m],
+         y = [cover_y0 + m, grid_y + grid_hh / 2, cover_y0 + cover_size[1] - m])
+        if (!(x == box_w / 2 && y == grid_y + grid_hh / 2)) [x, y]
+];
+
+assert(cover_y0 - rivet_y > rivet_d, "The letters cover hides the camera rivet");
 
 // --- Parts -------------------------------------------------------------------
 
@@ -175,9 +219,33 @@ module face() {
                 linear_extrude(face_t + 2) rounded([pitch - 3, pitch - 3], 1.5);
         // Display glass window
         translate([glass_x - 0.2, glass_y - 0.2, -1]) cube([lcd_glass[0] + 0.4, lcd_glass[1] + 0.4, face_t + 2]);
+        // Magnet pockets for the letters cover
+        for (p = magnets()) translate([p[0], p[1], face_t - magnet_h]) cylinder(d = magnet_d + 0.2, h = magnet_h + 1);
         // Rivets: shallow dimples, one goes through for the camera lens
         for (p = rivets())
             translate([p[0], p[1], abs(p[0] - cam_x) < 1 ? -1 : face_t - 0.8]) cylinder(d = rivet_d, h = face_t + 2);
+    }
+}
+
+// Letters cover in place on the face: stencil letters through, one per
+// cell, row 0 at the top.
+module letters_cover() {
+    translate([0, 0, depth]) difference() {
+        translate([cover_x0, cover_y0, 0]) linear_extrude(cover_t) rounded(cover_size, cover_r);
+        for (r = [0:rows - 1], c = [0:cols - 1])
+            let(ch = letters[r][c]) if (ch != " ")
+                translate([margin + (c + 0.5) * pitch, grid_y + (rows - r - 0.5) * pitch + baseline, -1])
+                    linear_extrude(cover_t + 2)
+                        text(ch, size = font_size, font = font, halign = "center", valign = "baseline");
+        for (p = magnets()) translate([p[0], p[1], -0.01]) cylinder(d = magnet_d + 0.2, h = magnet_h);
+    }
+}
+
+// Magnet pairs: in pockets at the front of the face and the back of the cover.
+module magnet_pairs(gap = 0) {
+    color("silver") for (p = magnets()) translate([p[0], p[1], 0]) {
+        translate([0, 0, depth - magnet_h]) cylinder(d = magnet_d, h = magnet_h);
+        translate([0, 0, depth + gap]) cylinder(d = magnet_d, h = magnet_h);
     }
 }
 
@@ -274,6 +342,20 @@ if (view == "front") {
     rotate([90 - tilt, 0, 0]) {
         box();
         stand();
+    }
+} else if (view == "letters") {
+    box();
+    color("#1b1b1b") letters_cover();
+} else if (view == "letters_exploded") {
+    box();
+    magnet_pairs(gap = 60);
+    color("#1b1b1b") translate([0, 0, 60]) letters_cover();
+} else if (view == "letters_table") {
+    color("#a07850") translate([-40, -150, -8]) cube([box_w + 80, 300, 8]);
+    rotate([90 - tilt, 0, 0]) {
+        box();
+        stand();
+        color("#1b1b1b") letters_cover();
     }
 } else if (view == "exploded") {
     box(explode = 35);
