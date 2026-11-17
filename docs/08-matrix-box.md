@@ -86,6 +86,28 @@ per plate:
 | `box_cover.3mf` | 2 letters cover halves | Black PLA | 100 % infill | Front on the bed |
 | `box_legs.3mf` | 2 legs | Black PLA | 100 % infill | Flat |
 
+### 3.1 Fit test first
+
+Before the whole box, print one plate of small pieces cut from the real
+parts. It takes a fraction of the filament and shows whether the fits work
+with your printer and filament:
+
+```bash
+uv run wordclock-cad --box --test    # build/bambu/box_test.3mf, one plate
+```
+
+| Piece | What to check |
+|-------|---------------|
+| `seam_left` + `seam_right` | The dovetail slides in without forcing and holds; an M5 × 25 bolt goes through both blocks and the nut sits in its hex pocket |
+| `pi_corner` | The Raspberry Pi sits on the two posts with M2.5 screws; the microSD card comes out through the slot; the DC jack fits its hole; a magnet presses into a post |
+| `face_band_left` + `face_band_right` | The face dovetail; the camera and the microphone see through their rivets; the plain rivets look the same |
+| `face_corner` | A magnet presses into the pocket and holds against a post magnet |
+| `grid_corner` | The strip passes under the walls through the notches; the lug sits on a 3 mm pin; the light of one LED fills the cell |
+| `cover_letters` | Two letters, with tracing paper behind, lit by one LED; a magnet in its pocket |
+
+If a fit is too tight or too loose, change `joint_gap`, `magnet_fit` or
+`slot_fit` at the top of the model and print the test again.
+
 To change a size, edit the parameters at the top of
 `wordclock/cad/matrix_box.scad` and render again. The model also draws
 assembly views for the OpenSCAD GUI: set `part` to `assembly`, `exploded`,
@@ -195,6 +217,7 @@ reachable without removing the display.
 
 ## 9. Build checklist
 
+- [ ] Fit test printed and checked (`uv run wordclock-cad --box --test`)
 - [ ] Shell, grid, face, cover and legs printed (`uv run wordclock-cad --box`)
 - [ ] Magnets pressed in, polarity checked on the face and the cover
 - [ ] Shell tiles joined with 7 × M5

@@ -180,6 +180,11 @@ BOX_PIECES: dict[str, tuple[str, ...]] = {
     "cover": BOX_HALVES,
     "leg": ("",),
 }
+# Fit test: eight small pieces cut from the real parts, laid out on one
+# plate by `test_pieces()` in the model.
+BOX_TEST_PART = "test_plate"
+BOX_TEST_PIECES = 8
+
 # Free space kept around a part on the 256 mm bed.
 BED_MARGIN = 3.0
 
@@ -219,6 +224,19 @@ def plan_box_jobs(out_dir: Path) -> list[RenderJob]:
         for part, names in BOX_PIECES.items()
         for index, name in enumerate(names)
     ]
+
+
+def plan_box_test_jobs(out_dir: Path) -> list[RenderJob]:
+    """
+    List the fit-test plate of the matrix box.
+
+    Args:
+        out_dir: Directory for the STL files; it goes into ``box/``.
+
+    Returns:
+        One render job: every test piece on one plate.
+    """
+    return [RenderJob(BOX_TEST_PART, box_stl(out_dir, BOX_TEST_PART, ""), scad=BOX_SCAD_FILE)]
 
 
 def oversized_parts(
@@ -315,7 +333,8 @@ def write_box_projects(stl_dir: Path, out_dir: Path) -> list[Path]:
     Group the matrix box STL files into Bambu Studio projects, one piece per plate.
 
     Writes ``box_shell.3mf``, ``box_face.3mf``, ``box_grid.3mf``,
-    ``box_cover.3mf`` and ``box_legs.3mf`` (the leg twice).
+    ``box_cover.3mf`` and ``box_legs.3mf`` (the leg twice), and
+    ``box_test.3mf`` when the fit-test plate was rendered.
 
     Args:
         stl_dir: Directory with the rendered STL files.
@@ -339,6 +358,9 @@ def write_box_projects(stl_dir: Path, out_dir: Path) -> list[Path]:
         if all(path.exists() for path in stls):
             output = out_dir / ("box_legs.3mf" if part == "leg" else f"box_{part}.3mf")
             projects.append(write_project(stls, output, settings[part]))
+    test = box_stl(stl_dir, BOX_TEST_PART, "")
+    if test.exists():
+        projects.append(write_project([test], out_dir / "box_test.3mf", GRID_SETTINGS))
     return projects
 
 

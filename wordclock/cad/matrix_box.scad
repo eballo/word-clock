@@ -18,7 +18,7 @@
 // the Bambu Studio projects.
 
 /* [Part selection] */
-// shell | grid | face | cover | leg | none, or a view: assembly | front |
+// shell | grid | face | cover | leg | test_plate | none, or a view: assembly | front |
 // back | wall | table | inside | inside_3d | exploded | letters |
 // letters_exploded | letters_table
 part = "assembly";
@@ -726,6 +726,46 @@ module split_lines() {
     }
 }
 
+// --- Fit test -----------------------------------------------------------
+//
+// Small pieces cut from the real parts, all on one plate, to check the fits
+// before printing the whole box: dovetails and an M5 seam block, the Pi
+// posts and the microSD slot, the face with its rivets, the camera and
+// microphone holes and a magnet pocket, a grid corner with its lug and
+// strip notches, and two letters of the cover.
+
+// [name, part, piece, [x0, y0], [x1, y1], [layout x, layout y]]: the
+// region in front-view coordinates and where it goes on the plate.
+function test_pieces() = [
+    ["grid_corner", "grid", 0, [margin - 9, grid_y - 9], [line_x(2) + 1, line_y(rows - 2) + 1], [0, 0]],
+    ["pi_corner", "shell", 0, [0, 0], [100, 60], [85, 0]],
+    ["seam_left", "shell", 0, [seam_x - 40, 0], [seam_x + tab_depth + 1, 50], [190, 0]],
+    ["seam_right", "shell", 1, [seam_x - 1, 0], [seam_x + 40, 50], [0, 90]],
+    ["face_band_left", "face", 0, [seam_x - 45, glass_top - 10], [seam_x + tab_depth + 1, split_y + 1], [50, 90]],
+    ["face_band_right", "face", 1, [seam_x - 1, glass_top - 10], [seam_x + 45, split_y + 1], [107, 90]],
+    ["face_corner", "face", 0, [0, 0], [40, 40], [162, 90]],
+    ["cover_letters", "cover", 0, [cover_x0, cover_y0], [cover_x0 + 75, cover_y0 + 45], [0, 150]],
+];
+
+// One test piece in print orientation, its region moved to the origin.
+module test_piece(p) {
+    x0 = p[3][0];
+    y0 = p[3][1];
+    region = [p[4][0] - x0, p[4][1] - y0];
+    translate([-x0, -y0, 0]) intersection() {
+        if (p[1] == "shell") shell(p[2]);
+        else if (p[1] == "face") face(p[2]);
+        else if (p[1] == "grid") grid(p[2]);
+        else if (p[1] == "cover") cover(p[2]);
+        translate([x0, y0, -1]) cube([region[0], region[1], depth + 10]);
+    }
+}
+
+// Every test piece laid out on one plate of the A1.
+module test_plate() {
+    for (p = test_pieces()) translate([p[5][0], p[5][1], 0]) test_piece(p);
+}
+
 // --- Part selection -------------------------------------------------------
 
 if (part == "shell") shell(piece);
@@ -733,6 +773,7 @@ else if (part == "grid") grid(piece);
 else if (part == "face") face(piece);
 else if (part == "cover") cover(piece);
 else if (part == "leg") leg();
+else if (part == "test_plate") test_plate();
 else if (part == "assembly" || part == "front") {
     box();
     if (part == "front") split_lines();

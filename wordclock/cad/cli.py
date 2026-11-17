@@ -8,9 +8,11 @@ from typing import Annotated
 import typer
 
 from wordclock.cad.build import (
+    BOX_TEST_PIECES,
     find_loose_parts,
     oversized_parts,
     plan_box_jobs,
+    plan_box_test_jobs,
     plan_jobs,
     plan_matrix_jobs,
     render_all,
@@ -35,7 +37,9 @@ def main(
     optional: Annotated[
         bool, typer.Option(help="Also render optional parts (frame rings, Pi Zero tray)")
     ] = False,
-    test: Annotated[bool, typer.Option(help="Render only the 4x4 test corner")] = False,
+    test: Annotated[
+        bool, typer.Option(help="Render only the 4x4 test corner (with --box: the fit-test plate)")
+    ] = False,
     matrix: Annotated[
         bool, typer.Option(help="Render only the mini 10x6 matrix for the 30 LEDs/m strip")
     ] = False,
@@ -66,7 +70,9 @@ def main(
         typer.echo(f"OpenSCAD not found: {openscad!r}", err=True)
         raise typer.Exit(1)
 
-    if box:
+    if box and test:
+        jobs = plan_box_test_jobs(out)
+    elif box:
         jobs = plan_box_jobs(out)
     elif matrix:
         jobs = plan_matrix_jobs(out)
@@ -78,7 +84,9 @@ def main(
     except RuntimeError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1) from exc
-    loose = find_loose_parts(paths)
+    # The fit-test plate holds several pieces on purpose.
+    expected = BOX_TEST_PIECES if box and test else 1
+    loose = {p: n for p, n in find_loose_parts(paths).items() if n != expected}
     for path, bodies in loose.items():
         typer.echo(f"Loose parts: {path} has {bodies} separate bodies", err=True)
     too_big = oversized_parts(paths)

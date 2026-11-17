@@ -6,6 +6,7 @@ from pathlib import Path
 from wordclock.cad import (
     BOX_PIECES,
     BOX_SCAD_FILE,
+    BOX_TEST_PIECES,
     EXTRA_PARTS,
     FACE_PARTS,
     MATRIX_BOX_PART,
@@ -21,6 +22,7 @@ from wordclock.cad import (
     RenderJob,
     oversized_parts,
     plan_box_jobs,
+    plan_box_test_jobs,
     plan_jobs,
     plan_matrix_jobs,
     scad_command,
@@ -359,3 +361,33 @@ class TestOversizedParts:
         # Then: 252 mm leaves less than 3 mm on each side of the 256 mm bed
         assert list(too_big) == [big]
         assert too_big[big] == (252.0, 252.0)
+
+
+class TestBoxFitTest:
+    def test_one_plate_job(self) -> None:
+        # Given / When
+        jobs = plan_box_test_jobs(Path("build/stl"))
+        # Then
+        assert jobs == [
+            RenderJob("test_plate", Path("build/stl/box/test_plate.stl"), scad=BOX_SCAD_FILE)
+        ]
+
+    def test_model_lists_every_test_piece(self) -> None:
+        # Given
+        scad = BOX_SCAD_FILE.read_text(encoding="utf-8")
+        start = scad.index("function test_pieces()")
+        block = scad[start : scad.index("];", start)]
+        # When
+        pieces = block.count('["')
+        # Then
+        assert pieces == BOX_TEST_PIECES
+
+    def test_project_has_one_plate(self, tmp_path: Path) -> None:
+        # Given
+        stl = tmp_path / "stl" / "box" / "test_plate.stl"
+        stl.parent.mkdir(parents=True)
+        stl.write_text(tiny_stl(), encoding="ascii")
+        # When
+        projects = write_box_projects(tmp_path / "stl", tmp_path / "bambu")
+        # Then
+        assert projects == [tmp_path / "bambu" / "box_test.3mf"]
