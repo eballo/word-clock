@@ -393,13 +393,18 @@ class TestBoxFitTest:
         projects = write_box_projects(tmp_path / "stl", tmp_path / "bambu")
         # Then: the grid corner prints white, everything else black
         bambu = tmp_path / "bambu"
-        assert projects == [bambu / "box_test_black.3mf", bambu / "box_test_white.3mf"]
+        assert projects == [
+            bambu / "box_test_black.3mf",
+            bambu / "box_test_white.3mf",
+            bambu / "box_test_jack.3mf",
+        ]
         counts = []
-        for project, colour in zip(projects, ("#000000", "#FFFFFF"), strict=True):
+        for project, colour in zip(projects, ("#000000", "#FFFFFF", "#000000"), strict=True):
             with zipfile.ZipFile(project) as zf:
                 settings = zf.read("Metadata/model_settings.config").decode()
                 filament = json.loads(zf.read("Metadata/project_settings.config"))
             assert settings.count("<plate>") == 1
             assert filament["filament_colour"] == [colour]
             counts.append(settings.count("<model_instance>"))
-        assert counts == [len(BOX_TEST_NAMES) - 1, 1]
+        # The jack cradle also prints alone
+        assert counts == [len(BOX_TEST_NAMES) - 1, 1, 1]

@@ -859,6 +859,7 @@ function test_pieces() = [
     ["face_band_right", "face", 1, [seam_x - 1, glass_top - 10], [seam_x + 45, split_y + 1]],
     ["face_corner", "face", 0, [0, 0], [100, 60]],
     ["cover_letters", "cover", 0, [cover_x0, cover_y0], [cover_x0 + 75, cover_y0 + 45]],
+    ["jack_cradle", "shell", 0, [jack_x - jack_body[0] / 2 - 6, 0], [jack_x + jack_body[0] / 2 + 6, jack_y1 + 6]],
 ];
 
 // One test piece in print orientation, its region moved to the origin.

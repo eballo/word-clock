@@ -103,7 +103,7 @@ parts. It takes a fraction of the filament and shows whether the fits work
 with your printer and filament:
 
 ```bash
-uv run wordclock-cad --box --test    # box_test_black.3mf and box_test_white.3mf: every piece its own object
+uv run wordclock-cad --box --test    # box_test_black.3mf, box_test_white.3mf and box_test_jack.3mf
 ```
 
 | Piece | What to check |
@@ -114,6 +114,7 @@ uv run wordclock-cad --box --test    # box_test_black.3mf and box_test_white.3mf
 | `face_corner` | Set it into `pi_corner`: it sits flush with the walls on the corner post, an M3 × 12 countersunk screw goes into the post with its head flush, and without the screw a fingernail lifts it out again |
 | `grid_corner` | The strip passes under the walls through the notches; the lug sits on a 3 mm pin; the light of one LED fills the cell |
 | `cover_letters` | Two letters, with tracing paper behind, lit by one LED; a magnet in its pocket |
+| `jack_cradle` | Also alone in `box_test_jack.3mf`. The jack nose goes through the wall hole flush with the outside, the body clips between the rails under their lips, the plug goes in without pushing the jack back. Too tight or loose: change `jack_fit`, or `jack_nose` and `jack_body` |
 
 If a fit is too tight or too loose, change `joint_gap`, `face_fit`, `magnet_fit` or
 `slot_fit` at the top of the model and print the test again.

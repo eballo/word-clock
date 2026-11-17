@@ -200,7 +200,10 @@ BOX_TEST_NAMES: tuple[str, ...] = (
     "face_band_right",
     "face_corner",
     "cover_letters",
+    "jack_cradle",
 )
+# Test pieces that also get a project of their own, to print alone
+BOX_TEST_ALONE: tuple[str, ...] = ("jack_cradle",)
 
 # Free space kept around a part on the 256 mm bed.
 BED_MARGIN = 3.0
@@ -367,7 +370,8 @@ def write_box_projects(stl_dir: Path, out_dir: Path) -> list[Path]:
     Writes ``box_shell.3mf``, ``box_face.3mf``, ``box_grid.3mf``,
     ``box_cover.3mf`` and ``box_legs.3mf`` (the leg twice), each with its
     filament colour from :data:`BOX_COLOURS`, and the fit test as
-    ``box_test_black.3mf`` and ``box_test_white.3mf`` when it was rendered.
+    ``box_test_black.3mf`` and ``box_test_white.3mf`` when it was rendered,
+    plus ``box_test_jack.3mf`` with the jack cradle alone.
 
     Args:
         stl_dir: Directory with the rendered STL files.
@@ -401,6 +405,10 @@ def write_box_projects(stl_dir: Path, out_dir: Path) -> list[Path]:
             ]
             output = out_dir / f"box_test_{name}.3mf"
             projects.append(write_plate(group, output, GRID_SETTINGS, colour))
+        for piece in BOX_TEST_ALONE:
+            path = tests[BOX_TEST_NAMES.index(piece)]
+            output = out_dir / f"box_test_{piece.split('_')[0]}.3mf"
+            projects.append(write_plate([path], output, GRID_SETTINGS, BLACK))
     return projects
 
 
