@@ -188,13 +188,15 @@ cover_border = 9;
 cover_r = 4;
 
 /* [Wall and table] */
-// Keyholes in the top margin for two M5 wall screws
-keyhole_dx = 100;
+// Keyholes in the top margin for two M5 wall screws: the screw heads go in
+// through the wide entry, then the box drops so they sit at the top of the
+// narrow slot. 120 mm apart, clear of the grid's top pins.
+keyhole_dx = 120;
 wall_head_d = 10.4;
 wall_neck_d = 5.6;
-wall_slide = 8;
-// Centre of the wide entry, below the top wall
-keyhole_from_top = 8.3;
+wall_slide = 7;
+// Where the screw rests, the top of the slot, below the top edge
+keyhole_from_top = 8.2;
 // Triangle legs: two hooks on each go through slots in the back plate and
 // slide down. The box rests on its bottom back edge and on the feet.
 tilt = 15;
@@ -321,6 +323,11 @@ assert(split_y + tab_depth < grid_y + bar_w / 2 + window_r, "Face dovetails reac
 assert(cover_y0 - rivet_y > rivet_d, "The letters cover hides the rivets");
 assert(uno_xy[0] > glass_x + lcd_glass[0] + 6 && uno_xy[0] + uno_board[0] < box_w - shell_t - 6, "The Uno does not fit");
 assert(cam_x0 > seam_x + 1, "The camera posts sit on the seam");
+// Keyholes: the screw head (as wide as the entry) clears the grid frame on
+// the way in and the top wall where it rests, and misses the grid's top lugs
+assert(box_h - keyhole_from_top - wall_slide - wall_head_d / 2 > grid_y + grid_hh + wall_t / 2 + 0.5, "A keyhole entry reaches the grid frame");
+assert(box_h - keyhole_from_top + wall_head_d / 2 < box_h - shell_t, "A resting wall screw head hits the top wall");
+assert(min([for (x = keyhole_xs(), p = grid_pins()) abs(x - p[0])]) > wall_head_d / 2 + 3.5 + 1, "A keyhole sits on a grid lug");
 assert(cam_y0 + cam_board[1] - cam_hole_top + cam_post_d / 2 + 1 < split_y, "The camera posts sit on the horizontal seam");
 assert(face_back - dupont_top >= 6, "No room to bend the jumper wires on the Pi header");
 assert(jack_pos - jack_body[0] / 2 - 4 > pi_y + pi_board[1] + 2.5, "The jack cradle hits the Pi");
@@ -374,12 +381,14 @@ module tile_2d(t, ys, xs) {
 
 // --- Shell ---------------------------------------------------------------
 
+// Wide entry at the origin, narrow slot going up to where the screw rests
 module keyhole() {
     translate([0, 0, -1]) {
         cylinder(d = wall_head_d, h = back_t + 2);
-        hull() for (dy = [0, wall_slide]) translate([0, -dy, 0]) cylinder(d = wall_neck_d, h = back_t + 2);
+        hull() for (dy = [0, wall_slide]) translate([0, dy, 0]) cylinder(d = wall_neck_d, h = back_t + 2);
     }
 }
+function keyhole_xs() = [seam_x - keyhole_dx / 2, seam_x + keyhole_dx / 2];
 
 module leg_slots() {
     for (dx = [-stand_dx, stand_dx], y = hook_ys)
@@ -448,7 +457,7 @@ module shell_body() {
             shell_posts();
             jack_place() jack_cradle();
         }
-        for (dx = [-keyhole_dx / 2, keyhole_dx / 2]) translate([seam_x + dx, box_h - keyhole_from_top, 0]) keyhole();
+        for (x = keyhole_xs()) translate([x, box_h - keyhole_from_top - wall_slide, 0]) keyhole();
         leg_slots();
         // Pilot holes for the face screws
         for (p = face_screws()) translate([p[0], p[1], face_back - face_screw_depth]) cylinder(d = face_screw_pilot, h = face_screw_depth + 1);
@@ -853,8 +862,9 @@ module cover_all() {
 }
 
 module wall_screws() {
-    color("silver") for (dx = [-keyhole_dx / 2, keyhole_dx / 2])
-        translate([seam_x + dx, box_h - keyhole_from_top - wall_slide, -6]) {
+    // Hung: each screw at the top of its slot
+    color("silver") for (x = keyhole_xs())
+        translate([x, box_h - keyhole_from_top, -6]) {
             cylinder(d = 5, h = 6 + back_t + 1);
             translate([0, 0, back_t + 1]) cylinder(d = 9.5, h = 3);
         }

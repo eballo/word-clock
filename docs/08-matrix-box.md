@@ -231,7 +231,7 @@ face out; everything inside is reachable without removing the display.
 
 | Where | How |
 |-------|-----|
-| Wall | Two M5 screws 100 mm apart, heads about 3 mm proud of the wall; the box drops onto them through the keyholes |
+| Wall | Two M5 screws 120 mm apart and level, heads about 3 mm proud of the wall. Set the box on them so the heads go through the wide part of the keyholes, then let it drop 7 mm: the screws end at the top of the narrow slots. The top screw is 8 mm below the top edge of the box |
 | Table | Hook the two legs into the slots in the back and slide them down; the box leans back 15° |
 
 ---
