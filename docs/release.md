@@ -2,6 +2,7 @@
 
 | Version | Date       | Description         |
 |---------|------------|---------------------|
+| v0.21.0 | 2026-11-23 | Bump fastapi from 0.162.6 to 0.163.0 in the uv group |
 | v0.20.0 | 2026-11-17 | Matrix box: one flat box with the display, Pi and hidden camera, printable on the A1 |
 | v0.19.0 | 2026-11-16 | Matrix: nine new effects, a forecast, a counter clock every 5 minutes, and a scenes package |
 | v0.18.0 | 2026-11-16 | Matrix: Dutch texts, and one file per language |
